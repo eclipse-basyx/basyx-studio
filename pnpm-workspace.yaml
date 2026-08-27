@@ -1,0 +1,18 @@
+packages:
+  - "."
+
+storeDir: ../.pnpm-store
+minimumReleaseAge: 1440
+minimumReleaseAgeStrict: true
+strictDepBuilds: true
+blockExoticSubdeps: true
+trustLockfile: false
+
+# Reviewed native/build steps required by the Nuxt toolchain. Exact versions are
+# pinned in pnpm-lock.yaml: @parcel/watcher 2.6.0; esbuild 0.25.12, 0.27.7, and
+# 0.28.2; unrs-resolver 1.12.2.
+allowBuilds:
+  "@parcel/watcher": true
+  electron-winstaller: true
+  esbuild: true
+  unrs-resolver: true
