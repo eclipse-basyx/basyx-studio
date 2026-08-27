@@ -1,0 +1,70 @@
+name: Release App Binaries
+
+on:
+  release:
+    types: [published]
+
+concurrency:
+  group: release-binaries-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }} binaries
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: Linux
+            runner: ubuntu-latest
+            build_script: build:electron:linux
+            release_files: |
+              dist/*.AppImage
+          - platform: macOS
+            runner: macos-latest
+            build_script: build:electron:mac
+            release_files: |
+              dist/*.dmg
+              dist/*.zip
+          - platform: Windows
+            runner: windows-latest
+            build_script: build:electron:win
+            release_files: |
+              dist/*.exe
+
+    steps:
+      - name: Check out release
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@a7487c7e89a18df4991f7f222e4898a00d66ddda # v4.1.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # v6.1.0
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Set application version from release tag
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: pnpm version "${RELEASE_TAG#v}" --no-git-tag-version --allow-same-version
+
+      - name: Build ${{ matrix.platform }} binaries
+        run: pnpm ${{ matrix.build_script }}
+
+      - name: Attach binaries to release
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
+        with:
+          files: ${{ matrix.release_files }}
+          fail_on_unmatched_files: true
