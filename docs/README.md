@@ -26,6 +26,8 @@ This directory is the central source of product, architecture, decision, and dev
 - [Runtime-installable app platform](architecture/app-platform.md): app store, manifests, semantic matching, permissions, and isolation
 - [Security](architecture/security.md): BFF, OAuth/OIDC, app capabilities, Electron, and network boundaries
 - [Observability](architecture/observability.md): reuse of the BaSyx Go OpenTelemetry/Grafana stack
+- [Studio frontend API](api/README.md): OpenAPI 3.1 draft for the versioned UI-to-BFF HTTP/SSE contract
+  - [Endpoint overview](api/endpoints.md): focused explanation of the API surface
 
 ## Decisions
 

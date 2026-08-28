@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <defs>
+    <linearGradient id="gray-layer" gradientUnits="userSpaceOnUse" x1="299.5347" y1="533.1815" x2="704.0945" y2="937.7413">
+      <stop offset="0" stop-color="#929497" stop-opacity="0"/>
+      <stop offset="1" stop-color="#929497"/>
+    </linearGradient>
+    <linearGradient id="cyan-layer" gradientUnits="userSpaceOnUse" x1="7103.2393" y1="298.7205" x2="6698.6792" y2="703.2803" gradientTransform="matrix(-1 0 0 1 7402.7739 0)">
+      <stop offset="0" stop-color="#00ADEE" stop-opacity="0"/>
+      <stop offset="1" stop-color="#00ADEE"/>
+    </linearGradient>
+    <linearGradient id="orange-layer" gradientUnits="userSpaceOnUse" x1="7103.2393" y1="64.2594" x2="6698.6792" y2="468.8192" gradientTransform="matrix(-1 0 0 1 7402.7739 0)">
+      <stop offset="0" stop-color="#F69222" stop-opacity="0"/>
+      <stop offset="1" stop-color="#F69222"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#gray-layer)" d="M547.25,485.48l311.33,203.89c33.22,21.76,33.22,70.44,0,92.2L547.25,985.45c-27.6,18.07-63.28,18.07-90.87,0L145.04,781.56c-33.22-21.76-33.22-70.44,0-92.2l311.33-203.89C483.97,467.4,519.66,467.4,547.25,485.48z"/>
+  <path fill="url(#cyan-layer)" d="M547.25,251.01L858.59,454.9c33.22,21.76,33.22,70.44,0,92.2L547.25,750.99c-27.6,18.07-63.28,18.07-90.87,0L145.04,547.1c-33.22-21.76-33.22-70.44,0-92.2l311.33-203.89C483.97,232.94,519.66,232.94,547.25,251.01z"/>
+  <path fill="url(#orange-layer)" d="M547.25,16.55l311.33,203.89c33.22,21.76,33.22,70.44,0,92.2L547.25,516.52c-27.6,18.07-63.28,18.07-90.87,0L145.04,312.64c-33.22-21.76-33.22-70.44,0-92.2L456.38,16.55C483.97-1.52,519.66-1.52,547.25,16.55z"/>
+</svg>

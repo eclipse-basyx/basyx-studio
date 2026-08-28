@@ -1,0 +1,3864 @@
+openapi: 3.1.0
+jsonSchemaDialect: https://json-schema.org/draft/2020-12/schema
+info:
+  title: BaSyx Studio Frontend API
+  version: 1.0.0-draft.1
+  summary: Versioned contract between the BaSyx Studio UI and the Studio Service BFF
+  description: |
+    This is the first contract draft for communication between the core Nuxt/Vue
+    frontend and the trusted Studio Service. It applies unchanged to hosted web and
+    Electron deployments.
+
+    The API is target-oriented. Clients send opaque Studio target and resource keys;
+    they never send downstream service URLs or receive OAuth tokens, client secrets,
+    database credentials, native file paths, or unrestricted filesystem handles.
+    Live AAS operations are implemented by the BFF through `basyx-typescript-sdk`;
+    local AASX operations use the desktop Workspace Worker behind the same contract.
+
+    AAS payload schemas intentionally remain generic here. Their authoritative
+    structure and validation come from the generated AAS Core 3.1 model and package
+    validators, not from a second Studio-maintained metamodel schema.
+
+    Queries and commands use HTTP. One-way progress, invalidation, and notification
+    events use Server-Sent Events with bounded polling through the operations API as
+    fallback. This contract does not define a generic downstream proxy or WebSocket
+    command protocol.
+  license:
+    name: MIT
+    identifier: MIT
+  x-status: first-draft
+  x-contract-role: bootstrap-design-source
+  x-generation-guardrail: Replace this bootstrap file with output from the authoritative Studio route/contract source once implementation begins; do not maintain duplicate DTO definitions.
+  x-design-constraints: [ARCH-001, ARCH-002, ARCH-003, ARCH-004, ARCH-005, ARCH-006, ARCH-007, ARCH-008, ARCH-009, OPS-001, OPS-003, OPS-004, OPS-005, OPS-006, OPS-008]
+  x-adjacent-contracts:
+    electronIpc: Native dialogs, approved handles, update control, and launch-secret injection are a separate validated Electron bridge contract.
+    appRpc: Sandboxed app and widget calls use the separate versioned Studio SDK postMessage/capability RPC contract.
+    workspaceWorker: Package parsing and serialization use an internal versioned local worker contract.
+    marketplace: Publisher, build, signing, catalogue storage, and OCI distribution are independent marketplace service contracts.
+    downstreamAas: BaSyx repository, registry, discovery, file server, and orchestration APIs are BFF implementation details accessed through basyx-typescript-sdk.
+  x-requirement-sources:
+    - ../requirements.md
+    - ../architecture/overview.md
+    - ../architecture/deployment-variants.md
+    - ../architecture/mechanisms.md
+    - ../architecture/data-and-workspaces.md
+    - ../architecture/views-and-dashboards.md
+    - ../architecture/app-platform.md
+    - ../architecture/security.md
+    - ../architecture/observability.md
+    - ../architecture/technology-stack.md
+    - ../adr/0001-runtime-and-service-boundaries.md
+    - ../adr/0002-bff-and-authentication.md
+    - ../adr/0003-aas-targets-and-workspaces.md
+    - ../adr/0004-runtime-installable-apps.md
+    - ../adr/0005-storage-and-observability.md
+    - ../adr/0006-frontend-state-and-validation.md
+    - ../adr/0007-http-and-realtime-transports.md
+    - ../adr/0008-evolutionary-architecture-and-dependencies.md
+    - ../adr/0009-declarative-graphical-views.md
+servers:
+  - url: /api/studio/v1
+    description: Same-origin hosted API or authenticated Electron loopback API
+security:
+  - studioSession: []
+tags:
+  - name: Context
+  - name: Authentication
+  - name: Targets
+  - name: Infrastructures
+  - name: AAS
+  - name: Workspaces
+  - name: Copies
+  - name: Views
+  - name: Apps
+  - name: Operations
+  - name: Audit
+
+paths:
+  /context:
+    get:
+      tags: [Context]
+      operationId: getStudioContext
+      summary: Get deployment, user, and feature context needed to bootstrap the UI
+      security: []
+      x-requirements: [PROD-003, DATA-003, DATA-016, DEP-001, DEP-003, DEP-004]
+      responses:
+        '200':
+          description: Current context
+          headers:
+            X-Request-ID: { $ref: '#/components/headers/XRequestId' }
+            X-Correlation-ID: { $ref: '#/components/headers/XCorrelationId' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StudioContext' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /session:
+    get:
+      tags: [Authentication]
+      operationId: getSession
+      summary: Get the current opaque Studio session
+      x-requirements: [SEC-001, SEC-002, SEC-004, DATA-011]
+      responses:
+        '200':
+          description: Authenticated session
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Session' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      operationId: startLogin
+      summary: Start generic OIDC authorization-code login with PKCE
+      security: []
+      x-requirements: [SEC-001, SEC-002, SEC-004]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Authorization navigation instruction
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthorizationInstruction' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /auth/callback:
+    get:
+      tags: [Authentication]
+      operationId: finishLogin
+      summary: Receive a Studio-login or target-specific OIDC authorization callback
+      description: The BFF maps the opaque state to the exact Studio or target authorization attempt, validates state and nonce, exchanges the code using its PKCE verifier, stores tokens server-side in the correct isolated context, and sets or resumes the secure HttpOnly Studio session.
+      security: []
+      x-requirements: [SEC-001, SEC-002, SEC-004]
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema: { type: string }
+        - name: state
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '303':
+          description: Redirect to the validated post-login UI location
+          headers:
+            Location:
+              schema: { type: string, format: uri-reference }
+            Set-Cookie:
+              description: Secure, HttpOnly, SameSite Studio session cookie
+              schema: { type: string }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      operationId: logout
+      summary: End the Studio session and revoke server-side target sessions where applicable
+      x-requirements: [SEC-001, DATA-011]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204': { description: Session ended }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets:
+    get:
+      tags: [Targets]
+      operationId: listTargets
+      summary: List all infrastructures and local workspaces visible to the current user
+      x-requirements: [DATA-002, DATA-003, DATA-011, UX-001, UX-004]
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Target page with independent health and authentication state
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TargetPage' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}:
+    get:
+      tags: [Targets]
+      operationId: getTarget
+      summary: Get sanitized target capabilities, permissions, and status
+      x-requirements: [DATA-002, DATA-003, DATA-016]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+      responses:
+        '200':
+          description: Target context
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Target' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/activation:
+    put:
+      tags: [Targets]
+      operationId: activateTarget
+      summary: Verify and set the active target for the current Studio session
+      x-requirements: [DATA-002, DATA-003, DATA-011, UX-001, UX-005]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ActivateTargetRequest' }
+      responses:
+        '200':
+          description: Verified active target context
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ActiveTargetContext' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '428': { $ref: '#/components/responses/PreconditionRequired' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/authorization:
+    post:
+      tags: [Authentication, Targets]
+      operationId: startTargetAuthorization
+      summary: Start or resume authentication for exactly one target
+      x-requirements: [DATA-002, DATA-011, SEC-001, SEC-002, SEC-004]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TargetAuthorizationRequest' }
+      responses:
+        '200':
+          description: Authorization navigation instruction or already-connected result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthorizationInstruction' }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Authentication, Targets]
+      operationId: disconnectTarget
+      summary: Remove only this target's delegated credential context
+      x-requirements: [DATA-002, DATA-011]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '204': { description: Target session disconnected }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /infrastructures:
+    get:
+      tags: [Infrastructures]
+      operationId: listInfrastructures
+      summary: List Studio-managed live infrastructure configurations
+      x-requirements: [DATA-002, SEC-006]
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Sanitized infrastructure configurations
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InfrastructurePage' }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Infrastructures]
+      operationId: createInfrastructure
+      summary: Validate, probe, and register a live AAS infrastructure
+      description: Endpoint URLs are accepted only in this authorized administration flow. Credentials are referenced through server-side secret storage or an OS-protected native handle; raw secrets are not part of this contract.
+      x-requirements: [DEP-001, DEP-003, DATA-002, SEC-003, SEC-004, SEC-007, SEC-008]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InfrastructureCreateRequest' }
+      responses:
+        '201':
+          description: Infrastructure registered and available as a target
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Infrastructure' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /infrastructures/{targetId}:
+    get:
+      tags: [Infrastructures]
+      operationId: getInfrastructure
+      summary: Get one sanitized infrastructure configuration
+      x-requirements: [DATA-002, SEC-006]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+      responses:
+        '200':
+          description: Infrastructure
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Infrastructure' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        default: { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [Infrastructures]
+      operationId: updateInfrastructure
+      summary: Validate, probe, and update infrastructure metadata or security configuration
+      x-requirements: [DATA-002, SEC-003, SEC-007, SEC-008]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema: { $ref: '#/components/schemas/InfrastructureUpdateRequest' }
+      responses:
+        '200':
+          description: Updated infrastructure
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Infrastructure' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Infrastructures]
+      operationId: deleteInfrastructure
+      summary: Remove an infrastructure configuration without changing its AAS data
+      x-requirements: [DATA-002, UX-003]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '204': { description: Configuration removed }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /infrastructures/{targetId}/probe:
+    post:
+      tags: [Infrastructures]
+      operationId: probeInfrastructure
+      summary: Refresh connectivity, service, metamodel, and capability information
+      x-requirements: [DATA-002, SEC-008]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200':
+          description: Bounded probe result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InfrastructureProbeResult' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/shells:
+    get:
+      tags: [AAS]
+      operationId: listShells
+      summary: List shell summaries on one target
+      x-requirements: [PROD-001, PROD-002, PROD-005, DATA-001, DATA-003, DATA-016]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/IdShortFilter'
+        - $ref: '#/components/parameters/SemanticIdFilter'
+      responses:
+        '200':
+          description: Shell page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AasResourcePage' }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [AAS]
+      operationId: createShell
+      summary: Create and validate an Asset Administration Shell
+      x-requirements: [PROD-001, PROD-004, DATA-001, DATA-007, DATA-016]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AasResourceWrite' }
+      responses:
+        '201': { $ref: '#/components/responses/AasResourceCreated' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/shells/{resourceKey}:
+    parameters:
+      - $ref: '#/components/parameters/TargetId'
+      - $ref: '#/components/parameters/ResourceKey'
+    get:
+      tags: [AAS]
+      operationId: getShell
+      summary: Read one shell with its target-scoped revision
+      x-requirements: [PROD-001, PROD-002, PROD-005, DATA-001, DATA-009]
+      responses:
+        '200': { $ref: '#/components/responses/AasResource' }
+        '304': { description: Not modified }
+        default: { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [AAS]
+      operationId: replaceShell
+      summary: Replace and validate one shell using optimistic concurrency
+      x-requirements: [PROD-001, PROD-004, DATA-007, DATA-009]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AasResourceWrite' }
+      responses:
+        '200': { $ref: '#/components/responses/AasResource' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [AAS]
+      operationId: deleteShell
+      summary: Delete one shell after explicit UI confirmation
+      x-requirements: [PROD-001, DATA-009, UX-003]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '204': { description: Shell deleted }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/submodels:
+    get:
+      tags: [AAS]
+      operationId: listSubmodels
+      summary: List submodel summaries on one target
+      x-requirements: [PROD-001, PROD-002, DATA-001, DATA-003]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/IdShortFilter'
+        - $ref: '#/components/parameters/SemanticIdFilter'
+        - name: shellKey
+          in: query
+          schema: { $ref: '#/components/schemas/ResourceKey' }
+      responses:
+        '200':
+          description: Submodel page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AasResourcePage' }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [AAS]
+      operationId: createSubmodel
+      summary: Create and validate a submodel
+      x-requirements: [PROD-001, PROD-004, DATA-001, DATA-007, DATA-009]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AasResourceWrite' }
+      responses:
+        '201': { $ref: '#/components/responses/AasResourceCreated' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/submodels/{resourceKey}:
+    parameters:
+      - $ref: '#/components/parameters/TargetId'
+      - $ref: '#/components/parameters/ResourceKey'
+    get:
+      tags: [AAS]
+      operationId: getSubmodel
+      summary: Read one submodel with revision metadata
+      x-requirements: [PROD-001, PROD-002, DATA-001, DATA-009]
+      responses:
+        '200': { $ref: '#/components/responses/AasResource' }
+        default: { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [AAS]
+      operationId: replaceSubmodel
+      summary: Replace and validate one submodel using optimistic concurrency
+      x-requirements: [PROD-001, DATA-007, DATA-009]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AasResourceWrite' }
+      responses:
+        '200': { $ref: '#/components/responses/AasResource' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [AAS]
+      operationId: deleteSubmodel
+      summary: Delete one submodel after explicit UI confirmation
+      x-requirements: [PROD-001, DATA-009, UX-003]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '204': { description: Submodel deleted }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/submodels/{resourceKey}/elements:
+    get:
+      tags: [AAS]
+      operationId: listSubmodelElements
+      summary: List child elements without exposing downstream repository URLs
+      x-requirements: [PROD-001, PROD-004, DATA-001, DATA-016]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/ResourceKey'
+        - name: parentElementKey
+          in: query
+          schema: { $ref: '#/components/schemas/ResourceKey' }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Element page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AasResourcePage' }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [AAS]
+      operationId: createSubmodelElement
+      summary: Create and validate a submodel element
+      x-requirements: [PROD-001, PROD-004, DATA-007, DATA-009]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/ResourceKey'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SubmodelElementWrite' }
+      responses:
+        '201': { $ref: '#/components/responses/AasResourceCreated' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}:
+    parameters:
+      - $ref: '#/components/parameters/TargetId'
+      - name: submodelKey
+        in: path
+        required: true
+        schema: { $ref: '#/components/schemas/ResourceKey' }
+      - name: elementKey
+        in: path
+        required: true
+        schema: { $ref: '#/components/schemas/ResourceKey' }
+    get:
+      tags: [AAS]
+      operationId: getSubmodelElement
+      summary: Read one target-scoped submodel element
+      x-requirements: [PROD-001, PROD-002, DATA-001, DATA-009]
+      responses:
+        '200': { $ref: '#/components/responses/AasResource' }
+        default: { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [AAS]
+      operationId: replaceSubmodelElement
+      summary: Replace and validate a submodel element
+      x-requirements: [PROD-001, DATA-007, DATA-009]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AasResourceWrite' }
+      responses:
+        '200': { $ref: '#/components/responses/AasResource' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [AAS]
+      operationId: deleteSubmodelElement
+      summary: Delete a submodel element
+      x-requirements: [PROD-001, DATA-009, UX-003]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '204': { description: Element deleted }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/concept-descriptions:
+    get:
+      tags: [AAS]
+      operationId: listConceptDescriptions
+      summary: List concept descriptions where supported by the target
+      x-requirements: [DATA-003, DATA-012]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/IdShortFilter'
+      responses:
+        '200':
+          description: Concept description page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AasResourcePage' }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [AAS]
+      operationId: createConceptDescription
+      summary: Create and validate a concept description where supported
+      x-requirements: [PROD-004, DATA-003, DATA-007, DATA-009]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AasResourceWrite' }
+      responses:
+        '201': { $ref: '#/components/responses/AasResourceCreated' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/concept-descriptions/{resourceKey}:
+    parameters:
+      - $ref: '#/components/parameters/TargetId'
+      - $ref: '#/components/parameters/ResourceKey'
+    get:
+      tags: [AAS]
+      operationId: getConceptDescription
+      summary: Read one concept description
+      x-requirements: [DATA-003, DATA-009]
+      responses:
+        '200': { $ref: '#/components/responses/AasResource' }
+        default: { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [AAS]
+      operationId: replaceConceptDescription
+      summary: Replace and validate one concept description
+      x-requirements: [DATA-007, DATA-009]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AasResourceWrite' }
+      responses:
+        '200': { $ref: '#/components/responses/AasResource' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [AAS]
+      operationId: deleteConceptDescription
+      summary: Delete one concept description
+      x-requirements: [DATA-009, UX-003]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '204': { description: Concept description deleted }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/operation-invocations:
+    post:
+      tags: [AAS]
+      operationId: invokeAasOperation
+      summary: Invoke an explicitly selected AAS operation where supported
+      x-requirements: [DATA-003, VIEW-004, VIEW-008, UX-003]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AasOperationInvocationRequest' }
+      responses:
+        '200':
+          description: Synchronous invocation result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AasOperationInvocationResult' }
+        '202':
+          description: Asynchronous operation accepted
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OperationAccepted' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/files:
+    get:
+      tags: [AAS]
+      operationId: listSupplementaryFiles
+      summary: List supplementary files available through constrained target capabilities
+      x-requirements: [DATA-003, DATA-005, DATA-006, DATA-012]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Supplementary file metadata page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FileMetadataPage' }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [AAS]
+      operationId: uploadSupplementaryFile
+      summary: Stream a bounded supplementary file to the selected target
+      x-requirements: [DATA-003, DATA-005, DATA-006, APP-007]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: { $ref: '#/components/schemas/FileUploadRequest' }
+      responses:
+        '201':
+          description: File stored
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FileMetadata' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/files/{fileKey}:
+    parameters:
+      - $ref: '#/components/parameters/TargetId'
+      - name: fileKey
+        in: path
+        required: true
+        schema: { $ref: '#/components/schemas/ResourceKey' }
+    get:
+      tags: [AAS]
+      operationId: downloadSupplementaryFile
+      summary: Stream one supplementary file without exposing a native path or downstream URL
+      x-requirements: [DATA-003, DATA-005, APP-007]
+      responses:
+        '200':
+          description: Bounded file stream
+          headers:
+            Content-Disposition:
+              schema: { type: string }
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/octet-stream:
+              schema: { type: string, format: binary }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [AAS]
+      operationId: deleteSupplementaryFile
+      summary: Delete one supplementary file
+      x-requirements: [DATA-003, DATA-009, UX-003]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '204': { description: File deleted }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/semantic-index:
+    get:
+      tags: [AAS]
+      operationId: querySemanticIndex
+      summary: Query bounded semantic facts for selection and applicability
+      x-requirements: [APP-003, APP-009, VIEW-003, VIEW-005]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/SemanticIdFilter'
+        - name: contextResourceKey
+          in: query
+          schema: { $ref: '#/components/schemas/ResourceKey' }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Semantic match page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SemanticMatchPage' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /workspaces:
+    get:
+      tags: [Workspaces]
+      operationId: listWorkspaces
+      summary: List desktop-local AASX projects known to Studio
+      description: This route is advertised only when the deployment context contains the `localWorkspaces` capability. It never returns native filesystem paths.
+      x-requirements: [PROD-002, DEP-004, DATA-005, OPS-003, UX-004]
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Workspace project page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspacePage' }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Workspaces]
+      operationId: createWorkspace
+      summary: Create a local AASX project through an Electron-approved native handle
+      x-requirements: [PROD-002, PROD-004, DEP-004, DATA-005, DATA-006]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WorkspaceCreateRequest' }
+      responses:
+        '201':
+          description: Workspace created and exposed as a local target
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /workspaces/imports:
+    post:
+      tags: [Workspaces]
+      operationId: importWorkspace
+      summary: Safely import an AASX package through an Electron-approved native handle
+      description: Archive processing occurs in the bounded Workspace Worker and checks size, entry count, normalized paths, traversal, absolute paths, MIME/content, timeouts, and resource use.
+      x-requirements: [PROD-002, DEP-004, DATA-005, DATA-006, DATA-007]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WorkspaceImportRequest' }
+      responses:
+        '201':
+          description: Package imported as a workspace
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}:
+    parameters:
+      - $ref: '#/components/parameters/WorkspaceId'
+    get:
+      tags: [Workspaces]
+      operationId: getWorkspace
+      summary: Get local project metadata, recovery state, revision, and diagnostics
+      x-requirements: [PROD-002, DATA-005, DATA-006, UX-005]
+      responses:
+        '200':
+          description: Workspace
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+        default: { $ref: '#/components/responses/Problem' }
+    patch:
+      tags: [Workspaces]
+      operationId: updateWorkspaceMetadata
+      summary: Update local project metadata using optimistic concurrency
+      x-requirements: [PROD-002, DATA-009, OPS-003, UX-005]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/merge-patch+json:
+            schema: { $ref: '#/components/schemas/WorkspaceMetadataUpdate' }
+      responses:
+        '200':
+          description: Updated workspace
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Workspaces]
+      operationId: deleteWorkspace
+      summary: Delete Studio project metadata and, only when explicitly requested, user-controlled project files
+      x-requirements: [DATA-005, OPS-003, UX-003]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+        - name: deleteFiles
+          in: query
+          required: true
+          description: Explicit destructive choice; false removes only Studio metadata.
+          schema: { type: boolean, default: false }
+      responses:
+        '204': { description: Workspace removed as requested }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/activation:
+    put:
+      tags: [Workspaces, Targets]
+      operationId: openWorkspace
+      summary: Open a local project and expose it as the active Local AASX target
+      x-requirements: [PROD-002, DATA-003, DATA-005, DATA-016]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200':
+          description: Active local target context
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ActiveTargetContext' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/duplications:
+    post:
+      tags: [Workspaces]
+      operationId: duplicateWorkspace
+      summary: Duplicate a project into an Electron-approved destination
+      x-requirements: [PROD-002, DATA-005, UX-003]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WorkspaceDuplicateRequest' }
+      responses:
+        '201':
+          description: Duplicate created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Workspace' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/saves:
+    post:
+      tags: [Workspaces]
+      operationId: saveWorkspace
+      summary: Atomically persist the current workspace revision to its package
+      x-requirements: [PROD-002, DEP-004, DATA-005, DATA-007, DATA-009, UX-005]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WorkspaceSaveRequest' }
+      responses:
+        '200':
+          description: Package saved atomically
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceSaveResult' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/exports:
+    post:
+      tags: [Workspaces]
+      operationId: exportWorkspace
+      summary: Validate and export the current revision through an approved destination handle
+      x-requirements: [PROD-002, DEP-004, DATA-005, DATA-006, DATA-007]
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WorkspaceExportRequest' }
+      responses:
+        '200':
+          description: Export written atomically
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WorkspaceSaveResult' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /copy-plans:
+    post:
+      tags: [Copies]
+      operationId: createCopyPlan
+      summary: Build a read-only preflight plan for a snapshot copy between two targets
+      description: The default and always-supported collision policy is `fail_without_changes`. Planning never modifies the source or destination.
+      x-requirements: [PROD-007, DATA-011, DATA-012, DATA-013, DATA-014]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CopyPlanRequest' }
+      responses:
+        '201':
+          description: Durable, expiring preflight plan
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CopyPlan' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /copy-plans/{copyPlanId}:
+    get:
+      tags: [Copies]
+      operationId: getCopyPlan
+      summary: Get a copy preflight plan with permissions, capabilities, collisions, findings, and planned actions
+      x-requirements: [DATA-012, DATA-013, DATA-014]
+      parameters:
+        - $ref: '#/components/parameters/CopyPlanId'
+      responses:
+        '200':
+          description: Copy plan
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CopyPlan' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /copy-plans/{copyPlanId}/executions:
+    post:
+      tags: [Copies, Operations]
+      operationId: executeCopyPlan
+      summary: Confirm and execute one current copy plan
+      description: The BFF reauthorizes source reads and every destination write immediately before execution. Independent targets do not form a distributed transaction; partial destination success is an expected report state and the source remains unchanged.
+      x-requirements: [PROD-007, DATA-012, DATA-013, DATA-014, DATA-015, OPS-007]
+      parameters:
+        - $ref: '#/components/parameters/CopyPlanId'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CopyExecutionRequest' }
+      responses:
+        '202':
+          description: Copy operation accepted
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OperationAccepted' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /copy-operations/{operationId}/report:
+    get:
+      tags: [Copies, Operations]
+      operationId: getCopyReport
+      summary: Get the durable per-resource result of a completed or interrupted copy
+      x-requirements: [DATA-012, DATA-014, DATA-015, OPS-007]
+      parameters:
+        - $ref: '#/components/parameters/OperationId'
+      responses:
+        '200':
+          description: Complete, partial-success, or failed copy report
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CopyReport' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /copy-operations/{operationId}/retries:
+    post:
+      tags: [Copies, Operations]
+      operationId: retryCopyOperation
+      summary: Safely retry eligible failed or incomplete resources
+      x-requirements: [DATA-014, DATA-015, OPS-007]
+      parameters:
+        - $ref: '#/components/parameters/OperationId'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CopyRetryRequest' }
+      responses:
+        '202':
+          description: Retry operation accepted
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OperationAccepted' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /views:
+    get:
+      tags: [Views]
+      operationId: listViews
+      summary: List view definitions visible to the current user
+      x-requirements: [PROD-006, VIEW-001, VIEW-002, VIEW-007, VIEW-008]
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: owner
+          in: query
+          schema: { type: string }
+        - name: targetId
+          in: query
+          schema: { $ref: '#/components/schemas/TargetId' }
+      responses:
+        '200':
+          description: View page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ViewPage' }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Views]
+      operationId: createView
+      summary: Validate and save a new declarative view
+      x-requirements: [PROD-006, VIEW-001, VIEW-002, VIEW-003, VIEW-007, VIEW-008, VIEW-010]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ViewCreateRequest' }
+      responses:
+        '201':
+          description: Saved view
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/View' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /views/validations:
+    post:
+      tags: [Views]
+      operationId: validateViewDraft
+      summary: Validate an unsaved declarative definition without persisting or executing it
+      x-requirements: [VIEW-002, VIEW-005, VIEW-011]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ViewValidationRequest' }
+      responses:
+        '200':
+          description: Schema, widget, binding, compatibility, and permission diagnostics
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ViewValidationResult' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /views/imports:
+    post:
+      tags: [Views]
+      operationId: importView
+      summary: Validate and import a portable view definition
+      x-requirements: [VIEW-007, VIEW-009]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ViewImportRequest' }
+      responses:
+        '201':
+          description: Imported view and pre-activation diagnostics
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ViewImportResult' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /views/{viewId}:
+    parameters:
+      - $ref: '#/components/parameters/ViewId'
+    get:
+      tags: [Views]
+      operationId: getView
+      summary: Get one authorized view definition
+      x-requirements: [VIEW-002, VIEW-007, VIEW-008]
+      responses:
+        '200':
+          description: View
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/View' }
+        default: { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [Views]
+      operationId: replaceView
+      summary: Validate and replace a declarative view definition
+      x-requirements: [VIEW-001, VIEW-002, VIEW-003, VIEW-007, VIEW-008, VIEW-009]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ViewUpdateRequest' }
+      responses:
+        '200':
+          description: Saved view revision
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/View' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Views]
+      operationId: deleteView
+      summary: Delete one view definition without changing bound AAS data
+      x-requirements: [VIEW-007, VIEW-008, UX-003]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '204': { description: View deleted }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /views/{viewId}/access-rules:
+    get:
+      tags: [Views]
+      operationId: getViewAccessRules
+      summary: Get view-open and view-authoring access rules
+      x-requirements: [VIEW-007, VIEW-008]
+      parameters:
+        - $ref: '#/components/parameters/ViewId'
+      responses:
+        '200':
+          description: View access rules
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccessRuleSet' }
+        default: { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [Views]
+      operationId: replaceViewAccessRules
+      summary: Replace view-open and view-authoring access rules independently
+      x-requirements: [SEC-006, VIEW-007, VIEW-008]
+      parameters:
+        - $ref: '#/components/parameters/ViewId'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AccessRuleSet' }
+      responses:
+        '200':
+          description: Updated access rules
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccessRuleSet' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /views/{viewId}/runtime-contexts:
+    post:
+      tags: [Views]
+      operationId: resolveViewRuntimeContext
+      summary: Load and migrate a view, authorize it, resolve widgets, and diagnose every binding
+      x-requirements: [VIEW-003, VIEW-004, VIEW-005, VIEW-006, VIEW-008, VIEW-011]
+      parameters:
+        - $ref: '#/components/parameters/ViewId'
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ViewContext' }
+      responses:
+        '200':
+          description: Runtime context; individual unavailable widgets or bindings are diagnostics, not a failure of the entire view
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ViewRuntimeContext' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /views/{viewId}/export:
+    get:
+      tags: [Views]
+      operationId: exportView
+      summary: Export a portable declarative definition without apps, credentials, or AAS values
+      x-requirements: [VIEW-009]
+      parameters:
+        - $ref: '#/components/parameters/ViewId'
+      responses:
+        '200':
+          description: Portable view JSON
+          headers:
+            Content-Disposition:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ViewDefinition' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /binding-resolutions:
+    post:
+      tags: [Views]
+      operationId: resolveBindingDraft
+      summary: Resolve and authorize a proposed instance or semantic binding
+      x-requirements: [VIEW-003, VIEW-004, VIEW-005, VIEW-008]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BindingResolutionRequest' }
+      responses:
+        '200':
+          description: Resolved, ambiguous, missing, incompatible, or unauthorized result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BindingResolution' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /binding-executions:
+    post:
+      tags: [Views]
+      operationId: executeViewBinding
+      summary: Read, write, or invoke exactly one authorized scoped view binding
+      description: Opening or authoring a view does not grant this authority. The BFF checks the current user, target, view, widget/app identity, binding declaration, action, and resource on every call.
+      x-requirements: [VIEW-004, VIEW-005, VIEW-006, VIEW-008, UX-003]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IdempotencyKeyOptional'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BindingExecutionRequest' }
+      responses:
+        '200':
+          description: Scoped binding result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BindingExecutionResult' }
+        '202':
+          description: Asynchronous invocation accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OperationAccepted' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /widget-types:
+    get:
+      tags: [Views, Apps]
+      operationId: listWidgetTypes
+      summary: List the authorized built-in and installed-app widget palette for a context
+      x-requirements: [APP-003, APP-016, VIEW-001, VIEW-005, UX-002]
+      parameters:
+        - name: targetId
+          in: query
+          required: true
+          schema: { $ref: '#/components/schemas/TargetId' }
+        - name: contextResourceKey
+          in: query
+          schema: { $ref: '#/components/schemas/ResourceKey' }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Widget types with technical compatibility, semantic applicability, permissions, and reasons
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WidgetTypePage' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /apps/catalog:
+    get:
+      tags: [Apps]
+      operationId: searchAppCatalog
+      summary: Search the Studio-projected marketplace catalogue
+      description: This is a sanitized BFF projection for the core UI, not the independent marketplace publisher or OCI API.
+      x-requirements: [APP-001, APP-002, APP-003, APP-013, UX-002]
+      parameters:
+        - name: query
+          in: query
+          schema: { type: string, maxLength: 200 }
+        - name: targetId
+          in: query
+          schema: { $ref: '#/components/schemas/TargetId' }
+        - name: contextResourceKey
+          in: query
+          schema: { $ref: '#/components/schemas/ResourceKey' }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Catalogue entries with compatibility and applicability explanations
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppCatalogPage' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /apps/catalog/{appId}/versions/{version}:
+    get:
+      tags: [Apps]
+      operationId: getCatalogAppVersion
+      summary: Get immutable app-version metadata, provenance, permissions, and compatibility
+      x-requirements: [APP-003, APP-011, APP-012, APP-013, UX-002]
+      parameters:
+        - $ref: '#/components/parameters/AppId'
+        - name: version
+          in: path
+          required: true
+          schema: { type: string, minLength: 1, maxLength: 100 }
+        - name: targetId
+          in: query
+          schema: { $ref: '#/components/schemas/TargetId' }
+        - name: contextResourceKey
+          in: query
+          schema: { $ref: '#/components/schemas/ResourceKey' }
+      responses:
+        '200':
+          description: App version
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppVersion' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /app-installations:
+    get:
+      tags: [Apps]
+      operationId: listAppInstallations
+      summary: List deployment- or machine-scoped app installations visible to the user
+      x-requirements: [APP-004, APP-005, SEC-006]
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: targetId
+          in: query
+          schema: { $ref: '#/components/schemas/TargetId' }
+      responses:
+        '200':
+          description: App installation page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppInstallationPage' }
+        default: { $ref: '#/components/responses/Problem' }
+    post:
+      tags: [Apps, Operations]
+      operationId: installApp
+      summary: Verify and install an immutable app artifact with explicit capability approval
+      description: Installation verifies digest, signature, compatibility, revocation status, and approved permissions before atomic activation. The request never causes runtime dependency installation in the Studio Service.
+      x-requirements: [APP-004, APP-005, APP-008, APP-010, APP-011, APP-012, APP-013, APP-014, SEC-006, SEC-008]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AppInstallRequest' }
+      responses:
+        '202':
+          description: Installation operation accepted
+          headers:
+            Location: { $ref: '#/components/headers/Location' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OperationAccepted' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /app-installations/{installationId}:
+    parameters:
+      - $ref: '#/components/parameters/InstallationId'
+    get:
+      tags: [Apps]
+      operationId: getAppInstallation
+      summary: Get one installed app and its current lifecycle, permissions, visibility, and compatibility state
+      x-requirements: [APP-003, APP-004, APP-005, SEC-006]
+      responses:
+        '200':
+          description: App installation
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppInstallation' }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Apps, Operations]
+      operationId: removeAppInstallation
+      summary: Remove an installation without executing app code in the Studio Service
+      x-requirements: [APP-004, APP-005, APP-010, UX-003]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '202':
+          description: Removal operation accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OperationAccepted' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /app-installations/{installationId}/compatibility:
+    get:
+      tags: [Apps]
+      operationId: evaluateInstalledAppCompatibility
+      summary: Evaluate technical compatibility and semantic applicability separately
+      x-requirements: [APP-003, APP-009, UX-002]
+      parameters:
+        - $ref: '#/components/parameters/InstallationId'
+        - name: targetId
+          in: query
+          required: true
+          schema: { $ref: '#/components/schemas/TargetId' }
+        - name: contextResourceKey
+          in: query
+          schema: { $ref: '#/components/schemas/ResourceKey' }
+      responses:
+        '200':
+          description: Compatibility and applicability with end-user explanations
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppEvaluation' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /app-installations/{installationId}/activations:
+    post:
+      tags: [Apps, Operations]
+      operationId: activateAppInstallation
+      summary: Activate a verified installation for an allowed target and user context
+      x-requirements: [APP-003, APP-006, APP-010, APP-011, SEC-006]
+      parameters:
+        - $ref: '#/components/parameters/InstallationId'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AppActivationRequest' }
+      responses:
+        '202':
+          description: Activation operation accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OperationAccepted' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Apps]
+      operationId: deactivateAppInstallation
+      summary: Stop or disable an app installation while retaining installed artifacts
+      x-requirements: [APP-004, APP-005, APP-010]
+      parameters:
+        - $ref: '#/components/parameters/InstallationId'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      responses:
+        '204': { description: App deactivated }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /app-installations/{installationId}/updates:
+    post:
+      tags: [Apps, Operations]
+      operationId: updateAppInstallation
+      summary: Verify and stage an immutable app version while retaining rollback state
+      x-requirements: [APP-011, APP-012, APP-013]
+      parameters:
+        - $ref: '#/components/parameters/InstallationId'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AppUpdateRequest' }
+      responses:
+        '202':
+          description: Update operation accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OperationAccepted' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /app-installations/{installationId}/rollbacks:
+    post:
+      tags: [Apps, Operations]
+      operationId: rollbackAppInstallation
+      summary: Roll back to a previously verified retained version
+      x-requirements: [APP-011, APP-013, UX-003]
+      parameters:
+        - $ref: '#/components/parameters/InstallationId'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AppRollbackRequest' }
+      responses:
+        '202':
+          description: Rollback operation accepted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OperationAccepted' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /app-installations/{installationId}/visibility:
+    get:
+      tags: [Apps]
+      operationId: getAppVisibility
+      summary: Get user/group visibility independently from installation scope
+      x-requirements: [APP-004, APP-005, SEC-006]
+      parameters:
+        - $ref: '#/components/parameters/InstallationId'
+      responses:
+        '200':
+          description: Visibility rules
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccessRuleSet' }
+        default: { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [Apps]
+      operationId: replaceAppVisibility
+      summary: Replace user/group visibility without changing approved capabilities
+      x-requirements: [APP-004, APP-005, SEC-006]
+      parameters:
+        - $ref: '#/components/parameters/InstallationId'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AccessRuleSet' }
+      responses:
+        '200':
+          description: Updated visibility rules
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AccessRuleSet' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /operations:
+    get:
+      tags: [Operations]
+      operationId: listOperations
+      summary: Poll bounded long-running copy and app lifecycle operations
+      x-requirements: [OPS-007]
+      parameters:
+        - name: kind
+          in: query
+          schema: { $ref: '#/components/schemas/OperationKind' }
+        - name: status
+          in: query
+          schema: { $ref: '#/components/schemas/OperationStatus' }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Operation page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OperationPage' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /operations/{operationId}:
+    get:
+      tags: [Operations]
+      operationId: getOperation
+      summary: Poll one durable operation as the portable fallback to SSE
+      x-requirements: [DATA-015, OPS-007]
+      parameters:
+        - $ref: '#/components/parameters/OperationId'
+      responses:
+        '200':
+          description: Current operation state
+          headers:
+            ETag: { $ref: '#/components/headers/ETag' }
+            Retry-After: { $ref: '#/components/headers/RetryAfter' }
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Operation' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /operations/{operationId}/events:
+    get:
+      tags: [Operations]
+      operationId: streamOperationEvents
+      summary: Observe one-way progress and outcomes with Server-Sent Events
+      description: Clients reconnect with `Last-Event-ID`. Polling `GET /operations/{operationId}` remains the required fallback. No command messages are accepted on this stream.
+      x-requirements: [OPS-007]
+      parameters:
+        - $ref: '#/components/parameters/OperationId'
+        - $ref: '#/components/parameters/LastEventId'
+      responses:
+        '200':
+          description: SSE stream containing typed JSON event data
+          headers:
+            Cache-Control:
+              schema: { type: string, const: no-cache }
+          content:
+            text/event-stream:
+              schema:
+                type: string
+              x-event-schema:
+                $ref: '#/components/schemas/OperationEvent'
+        default: { $ref: '#/components/responses/Problem' }
+
+  /events:
+    get:
+      tags: [Context, Targets, Views]
+      operationId: streamStudioEvents
+      summary: Observe bounded notifications and cache invalidations with SSE
+      description: The stream is one-way and topic-filtered. It is not a generic command protocol. Clients refresh affected resources through ordinary HTTP and may use bounded polling when SSE is unavailable.
+      x-requirements: [DATA-010, VIEW-011, OPS-007]
+      parameters:
+        - name: topics
+          in: query
+          required: true
+          description: Bounded event topics authorized for this session.
+          schema:
+            type: array
+            minItems: 1
+            maxItems: 10
+            items:
+              type: string
+              enum: [target, aas, view, app, notification]
+        - $ref: '#/components/parameters/LastEventId'
+      responses:
+        '200':
+          description: SSE notification and invalidation stream
+          content:
+            text/event-stream:
+              schema: { type: string }
+              x-event-schema:
+                $ref: '#/components/schemas/StudioEvent'
+        default: { $ref: '#/components/responses/Problem' }
+
+  /audit-events:
+    get:
+      tags: [Audit]
+      operationId: listAuditEvents
+      summary: List authorized durable audit summaries for administration and operation diagnosis
+      description: Audit records never include OAuth tokens, credentials, transferred AAS contents, AASX contents, request/response bodies, or arbitrary app logs.
+      x-requirements: [SEC-005, OPS-004, OPS-006]
+      parameters:
+        - name: targetId
+          in: query
+          schema: { $ref: '#/components/schemas/TargetId' }
+        - name: operationId
+          in: query
+          schema: { $ref: '#/components/schemas/OperationId' }
+        - name: action
+          in: query
+          schema: { type: string, maxLength: 100 }
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Audit event page
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuditEventPage' }
+        default: { $ref: '#/components/responses/Problem' }
+
+components:
+  securitySchemes:
+    studioSession:
+      type: apiKey
+      in: cookie
+      name: basyx_studio_session
+      description: Opaque server-side Studio session. In hosted production the cookie is HttpOnly, Secure, and SameSite; it never contains or exposes a downstream token.
+
+  parameters:
+    TargetId:
+      name: targetId
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/TargetId' }
+    ResourceKey:
+      name: resourceKey
+      in: path
+      required: true
+      description: Opaque, URL-safe, target-scoped resource key returned by Studio. It prevents arbitrary AAS identifiers and downstream URLs from being interpreted as routing input.
+      schema: { $ref: '#/components/schemas/ResourceKey' }
+    WorkspaceId:
+      name: workspaceId
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/WorkspaceId' }
+    CopyPlanId:
+      name: copyPlanId
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/CopyPlanId' }
+    ViewId:
+      name: viewId
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/ViewId' }
+    AppId:
+      name: appId
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/AppId' }
+    InstallationId:
+      name: installationId
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/InstallationId' }
+    OperationId:
+      name: operationId
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/OperationId' }
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque cursor obtained from the preceding page.
+      schema: { type: string, maxLength: 2048 }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+    IdShortFilter:
+      name: idShort
+      in: query
+      schema: { type: string, maxLength: 128 }
+    SemanticIdFilter:
+      name: semanticId
+      in: query
+      schema: { type: string, maxLength: 2048 }
+    CsrfToken:
+      name: X-CSRF-Token
+      in: header
+      required: true
+      description: Session-bound anti-CSRF value obtained from the session bootstrap response. Deployments additionally enforce same-origin policy.
+      schema: { type: string, minLength: 32, maxLength: 4096 }
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      description: Strong target- or Studio-resource revision ETag on which the command is based.
+      schema: { type: string, minLength: 3, maxLength: 512 }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Client-generated key scoped to user, route, and target or operation context.
+      schema: { type: string, minLength: 16, maxLength: 200, pattern: '^[A-Za-z0-9._:-]+$' }
+    IdempotencyKeyOptional:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: Required by the server for write or invoke actions; unnecessary for reads.
+      schema: { type: string, minLength: 16, maxLength: 200, pattern: '^[A-Za-z0-9._:-]+$' }
+    LastEventId:
+      name: Last-Event-ID
+      in: header
+      required: false
+      description: Last processed bounded event identifier used to resume an SSE stream.
+      schema: { type: string, maxLength: 200 }
+
+  headers:
+    XRequestId:
+      description: Canonical request identifier generated or validated by Studio.
+      schema: { type: string, minLength: 1, maxLength: 200 }
+    XCorrelationId:
+      description: Canonical correlation identifier propagated across Studio and downstream BaSyx calls.
+      schema: { type: string, minLength: 1, maxLength: 200 }
+    ETag:
+      description: Strong opaque revision for optimistic concurrency.
+      schema: { type: string }
+    Location:
+      description: Relative URI of the created resource or accepted operation.
+      schema: { type: string, format: uri-reference }
+    RetryAfter:
+      description: Suggested bounded polling delay in seconds.
+      schema: { type: integer, minimum: 1, maximum: 60 }
+
+  responses:
+    Problem:
+      description: Normalized Studio or downstream failure. Downstream response bodies, stack traces, URLs with credentials, tokens, secrets, and package contents are never forwarded.
+      headers:
+        X-Request-ID: { $ref: '#/components/headers/XRequestId' }
+        X-Correlation-ID: { $ref: '#/components/headers/XCorrelationId' }
+        Retry-After: { $ref: '#/components/headers/RetryAfter' }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unauthorized:
+      description: The opaque Studio session is absent or expired. Target-specific reauthentication uses a typed target state/problem and does not masquerade as a missing Studio session.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    NotFound:
+      description: The resource does not exist or is intentionally concealed from this subject.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Conflict:
+      description: Business-state conflict, target authentication requirement, identifier collision, idempotency conflict, or operation-state conflict.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    PreconditionFailed:
+      description: The supplied revision is stale. The user's draft remains client-owned and is not discarded.
+      headers:
+        ETag: { $ref: '#/components/headers/ETag' }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    PreconditionRequired:
+      description: A required revision, confirmation, target selection, or other explicit precondition is missing.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    PayloadTooLarge:
+      description: Configured upload, archive, uncompressed-size, entry-count, or stream limit exceeded.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    UnsupportedMediaType:
+      description: The media type or detected package/file content is unsupported.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    Unprocessable:
+      description: Syntactically valid input failed Studio schema, AAS Core, package, semantic, compatibility, or policy validation.
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    AasResource:
+      description: Target-scoped AAS resource
+      headers:
+        ETag: { $ref: '#/components/headers/ETag' }
+        X-Request-ID: { $ref: '#/components/headers/XRequestId' }
+        X-Correlation-ID: { $ref: '#/components/headers/XCorrelationId' }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/AasResource' }
+    AasResourceCreated:
+      description: Target-scoped AAS resource created
+      headers:
+        Location: { $ref: '#/components/headers/Location' }
+        ETag: { $ref: '#/components/headers/ETag' }
+        X-Request-ID: { $ref: '#/components/headers/XRequestId' }
+        X-Correlation-ID: { $ref: '#/components/headers/XCorrelationId' }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/AasResource' }
+
+  schemas:
+    OpaqueId:
+      type: string
+      minLength: 8
+      maxLength: 200
+      pattern: '^[A-Za-z0-9_-]+$'
+    TargetId:
+      $ref: '#/components/schemas/OpaqueId'
+    ResourceKey:
+      $ref: '#/components/schemas/OpaqueId'
+    WorkspaceId:
+      $ref: '#/components/schemas/OpaqueId'
+    CopyPlanId:
+      $ref: '#/components/schemas/OpaqueId'
+    ViewId:
+      $ref: '#/components/schemas/OpaqueId'
+    InstallationId:
+      $ref: '#/components/schemas/OpaqueId'
+    OperationId:
+      $ref: '#/components/schemas/OpaqueId'
+    AppId:
+      type: string
+      minLength: 3
+      maxLength: 200
+      pattern: '^[a-z0-9][a-z0-9._-]+$'
+    Revision:
+      type: string
+      minLength: 1
+      maxLength: 512
+      description: Opaque target- or Studio-resource revision. Clients compare it for equality and also receive it as an ETag.
+    Timestamp:
+      type: string
+      format: date-time
+    PageInfo:
+      type: object
+      additionalProperties: false
+      required: [hasMore]
+      properties:
+        nextCursor: { type: [string, 'null'], maxLength: 2048 }
+        hasMore: { type: boolean }
+    Permission:
+      type: string
+      enum:
+        - target.read
+        - target.configure
+        - aas.create
+        - aas.read
+        - aas.update
+        - aas.delete
+        - aas.operation.invoke
+        - file.read
+        - file.write
+        - copy.plan
+        - copy.execute
+        - workspace.manage
+        - view.open
+        - view.author
+        - view.share
+        - app.install
+        - app.activate
+        - app.manageVisibility
+        - audit.read
+    PermissionSet:
+      type: object
+      additionalProperties: false
+      required: [granted]
+      properties:
+        granted:
+          type: array
+          uniqueItems: true
+          items: { $ref: '#/components/schemas/Permission' }
+        denied:
+          type: array
+          uniqueItems: true
+          items: { $ref: '#/components/schemas/Permission' }
+        reasons:
+          type: array
+          maxItems: 50
+          items: { type: string, maxLength: 500 }
+    DeploymentMode:
+      type: string
+      enum: [hosted, desktop]
+    DeploymentCapability:
+      type: string
+      enum:
+        - liveTargets
+        - localWorkspaces
+        - nativeFileBroker
+        - appInstallation
+        - backendApps
+        - privilegedApps
+        - automaticUpdates
+        - serverSentEvents
+        - viewSharing
+    StudioContext:
+      type: object
+      additionalProperties: false
+      required: [studioVersion, apiVersion, deploymentMode, capabilities, session]
+      properties:
+        studioVersion: { type: string }
+        apiVersion: { type: string, const: '1' }
+        deploymentMode: { $ref: '#/components/schemas/DeploymentMode' }
+        capabilities:
+          type: array
+          uniqueItems: true
+          items: { $ref: '#/components/schemas/DeploymentCapability' }
+        supportedAasMetamodelVersions:
+          type: array
+          items: { type: string }
+        session: { $ref: '#/components/schemas/Session' }
+    User:
+      type: object
+      additionalProperties: false
+      required: [id, displayName, roles, groups]
+      properties:
+        id: { type: string, minLength: 1, maxLength: 500 }
+        displayName: { type: string, minLength: 1, maxLength: 300 }
+        roles:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 200 }
+        groups:
+          type: array
+          uniqueItems: true
+          maxItems: 1000
+          items: { type: string, maxLength: 500 }
+    Session:
+      type: object
+      additionalProperties: false
+      required: [authenticated, csrfToken]
+      properties:
+        authenticated: { type: boolean }
+        user:
+          oneOf:
+            - $ref: '#/components/schemas/User'
+            - type: 'null'
+        csrfToken:
+          type: string
+          minLength: 32
+          maxLength: 4096
+          description: Session-bound value for the X-CSRF-Token header; this is not an authentication token.
+        activeTargetId:
+          oneOf:
+            - $ref: '#/components/schemas/TargetId'
+            - type: 'null'
+        expiresAt:
+          oneOf:
+            - $ref: '#/components/schemas/Timestamp'
+            - type: 'null'
+        permissions: { $ref: '#/components/schemas/PermissionSet' }
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        returnTo:
+          type: string
+          format: uri-reference
+          maxLength: 2048
+          description: Same-origin relative route validated by the BFF.
+    AuthorizationInstruction:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [navigation_required, connected]
+        authorizationUrl:
+          type: string
+          format: uri
+          maxLength: 4096
+          description: Validated authorization URL for browser or system-browser navigation; never contains a Studio or downstream access token.
+        expiresAt: { $ref: '#/components/schemas/Timestamp' }
+        targetId: { $ref: '#/components/schemas/TargetId' }
+    TargetAuthorizationRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        returnTo:
+          type: string
+          format: uri-reference
+          maxLength: 2048
+    TargetKind:
+      type: string
+      enum: [infrastructure, local_aasx]
+    TargetAvailability:
+      type: string
+      enum: [available, authentication_required, unavailable, insufficient_permission, incompatible]
+    TargetHealthStatus:
+      type: string
+      enum: [healthy, degraded, unavailable, unknown]
+    TargetHealth:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status: { $ref: '#/components/schemas/TargetHealthStatus' }
+        checkedAt: { $ref: '#/components/schemas/Timestamp' }
+        reasonCode: { type: string, maxLength: 100 }
+        message: { type: string, maxLength: 500 }
+    TargetAuthenticationState:
+      type: string
+      enum: [not_required, connected, authentication_required, refreshing, failed]
+    TargetCapabilityName:
+      type: string
+      enum:
+        - shells.list
+        - shells.create
+        - shells.update
+        - shells.delete
+        - submodels.list
+        - submodels.create
+        - submodels.update
+        - submodels.delete
+        - conceptDescriptions.read
+        - conceptDescriptions.write
+        - operations.invoke
+        - files.read
+        - files.write
+        - revisions
+        - semanticIndex
+        - crossTargetCopySource
+        - crossTargetCopyDestination
+        - localPackageSave
+        - localPackageExport
+        - events
+    CapabilityLimit:
+      type: object
+      additionalProperties: false
+      required: [name, value]
+      properties:
+        name: { type: string, maxLength: 100 }
+        value: { type: integer, minimum: 0 }
+        unit: { type: string, maxLength: 50 }
+    TargetCapabilities:
+      type: object
+      additionalProperties: false
+      required: [supported]
+      properties:
+        supported:
+          type: array
+          uniqueItems: true
+          items: { $ref: '#/components/schemas/TargetCapabilityName' }
+        aasMetamodelVersions:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 100 }
+        limits:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/CapabilityLimit' }
+    TargetCounts:
+      type: object
+      additionalProperties: false
+      properties:
+        shells: { type: integer, minimum: 0 }
+        submodels: { type: integer, minimum: 0 }
+        services: { type: integer, minimum: 0 }
+    Target:
+      type: object
+      additionalProperties: false
+      required: [id, kind, name, availability, authenticationState, health, capabilities, permissions, active]
+      properties:
+        id: { $ref: '#/components/schemas/TargetId' }
+        kind: { $ref: '#/components/schemas/TargetKind' }
+        name: { type: string, minLength: 1, maxLength: 200 }
+        description: { type: string, maxLength: 1000 }
+        environment: { type: string, maxLength: 100 }
+        availability: { $ref: '#/components/schemas/TargetAvailability' }
+        authenticationState: { $ref: '#/components/schemas/TargetAuthenticationState' }
+        health: { $ref: '#/components/schemas/TargetHealth' }
+        capabilities: { $ref: '#/components/schemas/TargetCapabilities' }
+        permissions: { $ref: '#/components/schemas/PermissionSet' }
+        counts: { $ref: '#/components/schemas/TargetCounts' }
+        revision: { $ref: '#/components/schemas/Revision' }
+        active: { type: boolean }
+    TargetPage:
+      type: object
+      additionalProperties: false
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Target' }
+        page: { $ref: '#/components/schemas/PageInfo' }
+    ActivateTargetRequest:
+      type: object
+      additionalProperties: false
+      required: [draftDisposition]
+      properties:
+        draftDisposition:
+          type: string
+          enum: [none, saved, discarded]
+          description: UI decision about any prior target's unsaved client-owned draft. The server never silently discards it.
+    ActiveTargetContext:
+      type: object
+      additionalProperties: false
+      required: [target, initialShells]
+      properties:
+        target: { $ref: '#/components/schemas/Target' }
+        initialShells: { $ref: '#/components/schemas/AasResourcePage' }
+    InfrastructureSecurityMode:
+      type: string
+      enum: [delegated_user, deployment_client_credentials, unsecured]
+      description: '`unsecured` is allowed only for explicitly configured trusted local development and still uses the same authorization, endpoint-validation, and audit controls.'
+    InfrastructureEndpointType:
+      type: string
+      enum: [aasRepository, submodelRepository, aasRegistry, submodelRegistry, discovery, aasxFileServer, orchestration]
+    InfrastructureEndpointInput:
+      type: object
+      additionalProperties: false
+      required: [type, url]
+      properties:
+        type: { $ref: '#/components/schemas/InfrastructureEndpointType' }
+        url:
+          type: string
+          format: uri
+          maxLength: 4096
+          writeOnly: true
+          description: Accepted only from an authorized administrator and revalidated by SSRF defenses on redirects and DNS changes.
+    InfrastructureEndpointSummary:
+      type: object
+      additionalProperties: false
+      required: [type, configured]
+      properties:
+        type: { $ref: '#/components/schemas/InfrastructureEndpointType' }
+        configured: { type: boolean }
+        displayOrigin:
+          type: string
+          maxLength: 500
+          description: Optional role-sanitized origin; never includes credentials, query strings, or internal routing detail not authorized for the viewer.
+    CredentialReference:
+      type: string
+      minLength: 1
+      maxLength: 500
+      writeOnly: true
+      description: Reference to a deployment secret or OS-protected native credential handle. It is never returned by Studio.
+    InfrastructureCreateRequest:
+      type: object
+      additionalProperties: false
+      required: [name, securityMode, endpoints]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        description: { type: string, maxLength: 1000 }
+        environment: { type: string, maxLength: 100 }
+        securityMode: { $ref: '#/components/schemas/InfrastructureSecurityMode' }
+        endpoints:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items: { $ref: '#/components/schemas/InfrastructureEndpointInput' }
+        oidcIssuer:
+          type: string
+          format: uri
+          maxLength: 4096
+          writeOnly: true
+        clientId:
+          type: string
+          maxLength: 500
+          writeOnly: true
+        credentialReference: { $ref: '#/components/schemas/CredentialReference' }
+        visibility: { $ref: '#/components/schemas/AccessRuleSet' }
+    InfrastructureUpdateRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        description: { type: string, maxLength: 1000 }
+        environment: { type: string, maxLength: 100 }
+        securityMode: { $ref: '#/components/schemas/InfrastructureSecurityMode' }
+        endpoints:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items: { $ref: '#/components/schemas/InfrastructureEndpointInput' }
+        oidcIssuer: { type: string, format: uri, maxLength: 4096, writeOnly: true }
+        clientId: { type: string, maxLength: 500, writeOnly: true }
+        credentialReference: { $ref: '#/components/schemas/CredentialReference' }
+        visibility: { $ref: '#/components/schemas/AccessRuleSet' }
+    Infrastructure:
+      type: object
+      additionalProperties: false
+      required: [id, kind, name, availability, authenticationState, health, capabilities, permissions, active, securityMode, endpoints]
+      properties:
+        id: { $ref: '#/components/schemas/TargetId' }
+        kind: { type: string, const: infrastructure }
+        name: { type: string, minLength: 1, maxLength: 200 }
+        description: { type: string, maxLength: 1000 }
+        environment: { type: string, maxLength: 100 }
+        availability: { $ref: '#/components/schemas/TargetAvailability' }
+        authenticationState: { $ref: '#/components/schemas/TargetAuthenticationState' }
+        health: { $ref: '#/components/schemas/TargetHealth' }
+        capabilities: { $ref: '#/components/schemas/TargetCapabilities' }
+        permissions: { $ref: '#/components/schemas/PermissionSet' }
+        counts: { $ref: '#/components/schemas/TargetCounts' }
+        revision: { $ref: '#/components/schemas/Revision' }
+        active: { type: boolean }
+        securityMode: { $ref: '#/components/schemas/InfrastructureSecurityMode' }
+        endpoints:
+          type: array
+          items: { $ref: '#/components/schemas/InfrastructureEndpointSummary' }
+        visibility: { $ref: '#/components/schemas/AccessRuleSet' }
+        createdAt: { $ref: '#/components/schemas/Timestamp' }
+        updatedAt: { $ref: '#/components/schemas/Timestamp' }
+    InfrastructurePage:
+      type: object
+      additionalProperties: false
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Infrastructure' }
+        page: { $ref: '#/components/schemas/PageInfo' }
+    InfrastructureProbeResult:
+      type: object
+      additionalProperties: false
+      required: [health, capabilities, checkedAt, findings]
+      properties:
+        health: { $ref: '#/components/schemas/TargetHealth' }
+        capabilities: { $ref: '#/components/schemas/TargetCapabilities' }
+        checkedAt: { $ref: '#/components/schemas/Timestamp' }
+        findings:
+          type: array
+          maxItems: 200
+          items: { $ref: '#/components/schemas/Diagnostic' }
+    AasModelPayload:
+      type: object
+      description: Authoritative AAS model JSON. The route implementation must bind this placeholder to schemas generated from the pinned AAS Core 3.1 model and validate it with AAS Core/package tooling; this draft deliberately does not recreate the metamodel.
+      x-authoritative-schema: '@aas-core-works/aas-core3.1-typescript'
+      unevaluatedProperties: true
+    AasResourceType:
+      type: string
+      enum: [shell, submodel, submodelElement, conceptDescription]
+    AasResourceSummary:
+      type: object
+      additionalProperties: false
+      required: [key, resourceType, identifier, revision, permissions]
+      properties:
+        key: { $ref: '#/components/schemas/ResourceKey' }
+        resourceType: { $ref: '#/components/schemas/AasResourceType' }
+        identifier: { type: string, minLength: 1, maxLength: 4096 }
+        idShort: { type: string, maxLength: 128 }
+        displayName: { type: string, maxLength: 500 }
+        semanticIds:
+          type: array
+          maxItems: 100
+          items: { type: string, maxLength: 4096 }
+        revision: { $ref: '#/components/schemas/Revision' }
+        permissions: { $ref: '#/components/schemas/PermissionSet' }
+    AasResource:
+      type: object
+      additionalProperties: false
+      required: [summary, model, validation]
+      properties:
+        summary: { $ref: '#/components/schemas/AasResourceSummary' }
+        model: { $ref: '#/components/schemas/AasModelPayload' }
+        validation: { $ref: '#/components/schemas/ValidationResult' }
+    AasResourcePage:
+      type: object
+      additionalProperties: false
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/AasResourceSummary' }
+        page: { $ref: '#/components/schemas/PageInfo' }
+    AasResourceWrite:
+      type: object
+      additionalProperties: false
+      required: [model]
+      properties:
+        model: { $ref: '#/components/schemas/AasModelPayload' }
+    SubmodelElementWrite:
+      type: object
+      additionalProperties: false
+      required: [model]
+      properties:
+        parentElementKey: { $ref: '#/components/schemas/ResourceKey' }
+        model: { $ref: '#/components/schemas/AasModelPayload' }
+    AasOperationInvocationRequest:
+      type: object
+      additionalProperties: false
+      required: [operationKey, inputs, confirmation]
+      properties:
+        operationKey: { $ref: '#/components/schemas/ResourceKey' }
+        inputs:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/AasModelPayload' }
+        inoutput:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/AasModelPayload' }
+        confirmation:
+          type: boolean
+          description: Explicit UI confirmation for an operation declared safety-relevant by the target/policy.
+    AasOperationInvocationResult:
+      type: object
+      additionalProperties: false
+      required: [outputs]
+      properties:
+        outputs:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/AasModelPayload' }
+        inoutput:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/AasModelPayload' }
+        diagnostics:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/Diagnostic' }
+    FileMetadata:
+      type: object
+      additionalProperties: false
+      required: [key, name, mediaType, size, revision]
+      properties:
+        key: { $ref: '#/components/schemas/ResourceKey' }
+        name: { type: string, minLength: 1, maxLength: 255 }
+        mediaType: { type: string, maxLength: 200 }
+        size: { type: integer, minimum: 0 }
+        sha256: { type: string, pattern: '^[a-f0-9]{64}$' }
+        revision: { $ref: '#/components/schemas/Revision' }
+        referencedBy:
+          type: array
+          maxItems: 1000
+          items: { $ref: '#/components/schemas/ResourceKey' }
+    FileMetadataPage:
+      type: object
+      additionalProperties: false
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/FileMetadata' }
+        page: { $ref: '#/components/schemas/PageInfo' }
+    FileUploadRequest:
+      type: object
+      additionalProperties: false
+      required: [file]
+      properties:
+        file: { type: string, format: binary }
+        name: { type: string, maxLength: 255 }
+        parentResourceKey: { $ref: '#/components/schemas/ResourceKey' }
+    SemanticMatch:
+      type: object
+      additionalProperties: false
+      required: [resource, match]
+      properties:
+        resource: { $ref: '#/components/schemas/AasResourceSummary' }
+        match:
+          type: string
+          enum: [exact, version_compatible, partial]
+        matchedSemanticIds:
+          type: array
+          items: { type: string, maxLength: 4096 }
+        reasons:
+          type: array
+          maxItems: 50
+          items: { type: string, maxLength: 500 }
+    SemanticMatchPage:
+      type: object
+      additionalProperties: false
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/SemanticMatch' }
+        page: { $ref: '#/components/schemas/PageInfo' }
+    NativeHandle:
+      type: string
+      minLength: 16
+      maxLength: 1000
+      pattern: '^[A-Za-z0-9._:-]+$'
+      writeOnly: true
+      description: Short-lived opaque handle issued by the constrained Electron native broker. It is not a path and cannot be chosen by ordinary browser code.
+    WorkspaceMetadata:
+      type: object
+      additionalProperties: false
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        description: { type: string, maxLength: 5000 }
+        author: { type: string, maxLength: 500 }
+        templateId: { type: string, maxLength: 200 }
+        metamodelVersion: { type: string, maxLength: 100 }
+        projectFormatVersion:
+          type: string
+          maxLength: 100
+          description: Internal versioned project format; the prototype directory shape is not a public compatibility promise.
+    WorkspaceMetadataUpdate:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        description: { type: string, maxLength: 5000 }
+        author: { type: string, maxLength: 500 }
+        templateId: { type: string, maxLength: 200 }
+    WorkspaceState:
+      type: string
+      enum: [closed, opening, ready, unsaved, recovering, invalid, unavailable]
+    RecoveryState:
+      type: object
+      additionalProperties: false
+      required: [available]
+      properties:
+        available: { type: boolean }
+        snapshotRevision: { $ref: '#/components/schemas/Revision' }
+        createdAt: { $ref: '#/components/schemas/Timestamp' }
+        message: { type: string, maxLength: 1000 }
+    Workspace:
+      type: object
+      additionalProperties: false
+      required: [id, targetId, metadata, state, revision, validation, recovery, saved]
+      properties:
+        id: { $ref: '#/components/schemas/WorkspaceId' }
+        targetId: { $ref: '#/components/schemas/TargetId' }
+        metadata: { $ref: '#/components/schemas/WorkspaceMetadata' }
+        state: { $ref: '#/components/schemas/WorkspaceState' }
+        revision: { $ref: '#/components/schemas/Revision' }
+        persistedPackageRevision: { $ref: '#/components/schemas/Revision' }
+        validation: { $ref: '#/components/schemas/ValidationResult' }
+        recovery: { $ref: '#/components/schemas/RecoveryState' }
+        saved: { type: boolean }
+        updatedAt: { $ref: '#/components/schemas/Timestamp' }
+    WorkspacePage:
+      type: object
+      additionalProperties: false
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Workspace' }
+        page: { $ref: '#/components/schemas/PageInfo' }
+    WorkspaceCreateRequest:
+      type: object
+      additionalProperties: false
+      required: [destinationHandle, metadata]
+      properties:
+        destinationHandle: { $ref: '#/components/schemas/NativeHandle' }
+        metadata: { $ref: '#/components/schemas/WorkspaceMetadata' }
+        initialShell:
+          oneOf:
+            - $ref: '#/components/schemas/AasModelPayload'
+            - type: 'null'
+    WorkspaceImportRequest:
+      type: object
+      additionalProperties: false
+      required: [sourceHandle]
+      properties:
+        sourceHandle: { $ref: '#/components/schemas/NativeHandle' }
+        destinationHandle: { $ref: '#/components/schemas/NativeHandle' }
+        metadataOverrides: { $ref: '#/components/schemas/WorkspaceMetadataUpdate' }
+    WorkspaceDuplicateRequest:
+      type: object
+      additionalProperties: false
+      required: [destinationHandle, name]
+      properties:
+        destinationHandle: { $ref: '#/components/schemas/NativeHandle' }
+        name: { type: string, minLength: 1, maxLength: 200 }
+    WorkspaceSaveRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        validateBeforeSave: { type: boolean, default: true }
+    WorkspaceExportRequest:
+      type: object
+      additionalProperties: false
+      required: [destinationHandle]
+      properties:
+        destinationHandle: { $ref: '#/components/schemas/NativeHandle' }
+        representation:
+          type: string
+          enum: [preserve, json, xml]
+          default: preserve
+    WorkspaceSaveResult:
+      type: object
+      additionalProperties: false
+      required: [workspaceId, revision, savedAt, validation]
+      properties:
+        workspaceId: { $ref: '#/components/schemas/WorkspaceId' }
+        revision: { $ref: '#/components/schemas/Revision' }
+        savedAt: { $ref: '#/components/schemas/Timestamp' }
+        artifactName: { type: string, maxLength: 255 }
+        size: { type: integer, minimum: 0 }
+        sha256: { type: string, pattern: '^[a-f0-9]{64}$' }
+        validation: { $ref: '#/components/schemas/ValidationResult' }
+    CopyDependencySelection:
+      type: object
+      additionalProperties: false
+      required: [submodels, conceptDescriptions, supplementaryFiles]
+      properties:
+        submodels:
+          type: string
+          enum: [none, referenced, selected]
+        submodelKeys:
+          type: array
+          uniqueItems: true
+          maxItems: 10000
+          items: { $ref: '#/components/schemas/ResourceKey' }
+        conceptDescriptions:
+          type: string
+          enum: [none, referenced]
+        supplementaryFiles:
+          type: string
+          enum: [none, referenced]
+    CopyPlanRequest:
+      type: object
+      additionalProperties: false
+      required: [sourceTargetId, sourceShellKey, destinationTargetId, dependencies]
+      properties:
+        sourceTargetId: { $ref: '#/components/schemas/TargetId' }
+        sourceShellKey: { $ref: '#/components/schemas/ResourceKey' }
+        destinationTargetId: { $ref: '#/components/schemas/TargetId' }
+        dependencies: { $ref: '#/components/schemas/CopyDependencySelection' }
+    CollisionPolicy:
+      type: string
+      enum: [fail_without_changes, skip_existing, replace]
+      description: '`fail_without_changes` is the default. `replace` is available only when the destination capability and current permissions support it. Identifier remapping is intentionally not part of this first contract.'
+    CopyResourceType:
+      type: string
+      enum: [shell, submodel, conceptDescription, supplementaryFile]
+    CopyPlannedAction:
+      type: string
+      enum: [create, skip, replace, blocked]
+    CopyResourcePlan:
+      type: object
+      additionalProperties: false
+      required: [resourceType, sourceKey, identifier, plannedActions, findings]
+      properties:
+        resourceType: { $ref: '#/components/schemas/CopyResourceType' }
+        sourceKey: { $ref: '#/components/schemas/ResourceKey' }
+        identifier: { type: string, minLength: 1, maxLength: 4096 }
+        size: { type: integer, minimum: 0 }
+        collision:
+          oneOf:
+            - $ref: '#/components/schemas/CopyCollision'
+            - type: 'null'
+        plannedActions:
+          type: object
+          propertyNames:
+            enum: [fail_without_changes, skip_existing, replace]
+          additionalProperties: { $ref: '#/components/schemas/CopyPlannedAction' }
+        findings:
+          type: array
+          maxItems: 500
+          items: { $ref: '#/components/schemas/Diagnostic' }
+    CopyCollision:
+      type: object
+      additionalProperties: false
+      required: [kind, destinationResourceKey]
+      properties:
+        kind:
+          type: string
+          enum: [identifier_exists, incompatible_type, revision_unknown]
+        destinationResourceKey: { $ref: '#/components/schemas/ResourceKey' }
+        replaceSupported: { type: boolean }
+    TargetCopyFacts:
+      type: object
+      additionalProperties: false
+      required: [targetId, permissions, capabilities, authenticationState]
+      properties:
+        targetId: { $ref: '#/components/schemas/TargetId' }
+        displayName: { type: string, maxLength: 200 }
+        permissions: { $ref: '#/components/schemas/PermissionSet' }
+        capabilities: { $ref: '#/components/schemas/TargetCapabilities' }
+        authenticationState: { $ref: '#/components/schemas/TargetAuthenticationState' }
+        downstreamIdentityDisplay:
+          type: string
+          maxLength: 500
+          description: Sanitized identity class or display value for user understanding; never a token or credential.
+    CopyPlan:
+      type: object
+      additionalProperties: false
+      required: [id, revision, source, destination, dependencies, allowedCollisionPolicies, resources, validation, estimatedTransferBytes, executable, createdAt, expiresAt]
+      properties:
+        id: { $ref: '#/components/schemas/CopyPlanId' }
+        revision: { $ref: '#/components/schemas/Revision' }
+        source: { $ref: '#/components/schemas/TargetCopyFacts' }
+        destination: { $ref: '#/components/schemas/TargetCopyFacts' }
+        sourceShell: { $ref: '#/components/schemas/AasResourceSummary' }
+        dependencies: { $ref: '#/components/schemas/CopyDependencySelection' }
+        allowedCollisionPolicies:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { $ref: '#/components/schemas/CollisionPolicy' }
+        resources:
+          type: array
+          maxItems: 100000
+          items: { $ref: '#/components/schemas/CopyResourcePlan' }
+        validation: { $ref: '#/components/schemas/ValidationResult' }
+        estimatedTransferBytes: { type: integer, minimum: 0 }
+        executable: { type: boolean }
+        createdAt: { $ref: '#/components/schemas/Timestamp' }
+        expiresAt: { $ref: '#/components/schemas/Timestamp' }
+    CopyExecutionRequest:
+      type: object
+      additionalProperties: false
+      required: [collisionPolicy, confirmed]
+      properties:
+        collisionPolicy: { $ref: '#/components/schemas/CollisionPolicy' }
+        confirmed:
+          type: boolean
+          const: true
+          description: Confirms the visible source, destination, dependency closure, collisions, policy, and non-atomic partial-success semantics.
+    CopyRetryRequest:
+      type: object
+      additionalProperties: false
+      required: [confirmed]
+      properties:
+        confirmed: { type: boolean, const: true }
+        resourceOutcomeIds:
+          type: array
+          uniqueItems: true
+          maxItems: 100000
+          items: { $ref: '#/components/schemas/OpaqueId' }
+          description: Omit to retry every eligible failed/incomplete resource safely.
+    CopyOutcomeStatus:
+      type: string
+      enum: [created, skipped, replaced, failed]
+    CopyResourceOutcome:
+      type: object
+      additionalProperties: false
+      required: [id, resourceType, identifier, status, retryable]
+      properties:
+        id: { $ref: '#/components/schemas/OpaqueId' }
+        resourceType: { $ref: '#/components/schemas/CopyResourceType' }
+        identifier: { type: string, minLength: 1, maxLength: 4096 }
+        status: { $ref: '#/components/schemas/CopyOutcomeStatus' }
+        destinationResourceKey: { $ref: '#/components/schemas/ResourceKey' }
+        errorCode: { type: string, maxLength: 100 }
+        message: { type: string, maxLength: 1000 }
+        retryable: { type: boolean }
+    CopyReportStatus:
+      type: string
+      enum: [succeeded, partial_success, failed]
+    CopyReportCounts:
+      type: object
+      additionalProperties: false
+      required: [planned, created, skipped, replaced, failed]
+      properties:
+        planned: { type: integer, minimum: 0 }
+        created: { type: integer, minimum: 0 }
+        skipped: { type: integer, minimum: 0 }
+        replaced: { type: integer, minimum: 0 }
+        failed: { type: integer, minimum: 0 }
+    CopyReport:
+      type: object
+      additionalProperties: false
+      required: [operationId, status, sourceTargetId, destinationTargetId, collisionPolicy, sourceUnchanged, atomic, counts, outcomes, destinationValidation]
+      properties:
+        operationId: { $ref: '#/components/schemas/OperationId' }
+        status: { $ref: '#/components/schemas/CopyReportStatus' }
+        sourceTargetId: { $ref: '#/components/schemas/TargetId' }
+        destinationTargetId: { $ref: '#/components/schemas/TargetId' }
+        collisionPolicy: { $ref: '#/components/schemas/CollisionPolicy' }
+        sourceUnchanged: { type: boolean, const: true }
+        atomic: { type: boolean, const: false }
+        counts: { $ref: '#/components/schemas/CopyReportCounts' }
+        outcomes:
+          type: array
+          maxItems: 100000
+          items: { $ref: '#/components/schemas/CopyResourceOutcome' }
+        destinationValidation: { $ref: '#/components/schemas/ValidationResult' }
+        completedAt: { $ref: '#/components/schemas/Timestamp' }
+    PrincipalType:
+      type: string
+      enum: [user, group]
+    AccessLevel:
+      type: string
+      enum: [view, author, administer]
+    AccessRule:
+      type: object
+      additionalProperties: false
+      required: [principalType, principalId, access]
+      properties:
+        principalType: { $ref: '#/components/schemas/PrincipalType' }
+        principalId: { type: string, minLength: 1, maxLength: 500 }
+        access:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { $ref: '#/components/schemas/AccessLevel' }
+    AccessRuleSet:
+      type: object
+      additionalProperties: false
+      required: [rules]
+      properties:
+        rules:
+          type: array
+          maxItems: 10000
+          items: { $ref: '#/components/schemas/AccessRule' }
+        publicWithinDeployment: { type: boolean, default: false }
+        revision: { $ref: '#/components/schemas/Revision' }
+    ViewSchemaVersion:
+      type: string
+      const: '1-draft'
+      description: Bootstrap schema version. It remains explicitly unstable until a real builder/renderer vertical slice proves the contract.
+    LayoutItem:
+      type: object
+      additionalProperties: false
+      required: [widgetId, x, y, width, height]
+      properties:
+        widgetId: { type: string, minLength: 1, maxLength: 200 }
+        x: { type: integer, minimum: 0, maximum: 255 }
+        y: { type: integer, minimum: 0, maximum: 100000 }
+        width: { type: integer, minimum: 1, maximum: 256 }
+        height: { type: integer, minimum: 1, maximum: 10000 }
+        minWidth: { type: integer, minimum: 1, maximum: 256 }
+        minHeight: { type: integer, minimum: 1, maximum: 10000 }
+        breakpoint:
+          type: string
+          enum: [xs, sm, md, lg, xl]
+    ResponsiveGridLayout:
+      type: object
+      additionalProperties: false
+      required: [type, columns, items]
+      properties:
+        type: { type: string, const: responsive_grid }
+        columns: { type: integer, minimum: 1, maximum: 256 }
+        items:
+          type: array
+          maxItems: 1000
+          items: { $ref: '#/components/schemas/LayoutItem' }
+    BindingDirection:
+      type: string
+      enum: [read, write, invoke, observe]
+    BindingCardinality:
+      type: string
+      enum: [one, optional, many]
+    ViewContextKind:
+      type: string
+      enum: [selected_shell, selected_submodel, selected_element]
+    InstanceBinding:
+      type: object
+      additionalProperties: false
+      required: [kind, direction, targetId, resourceKey]
+      properties:
+        kind: { type: string, const: instance }
+        direction: { $ref: '#/components/schemas/BindingDirection' }
+        targetId: { $ref: '#/components/schemas/TargetId' }
+        resourceKey: { $ref: '#/components/schemas/ResourceKey' }
+        expectedModelType: { type: string, maxLength: 200 }
+        expectedValueType: { type: string, maxLength: 200 }
+        cardinality: { $ref: '#/components/schemas/BindingCardinality' }
+    SemanticBinding:
+      type: object
+      additionalProperties: false
+      required: [kind, direction, context, semanticIds, cardinality]
+      properties:
+        kind: { type: string, const: semantic }
+        direction: { $ref: '#/components/schemas/BindingDirection' }
+        context: { $ref: '#/components/schemas/ViewContextKind' }
+        semanticIds:
+          type: array
+          minItems: 1
+          maxItems: 100
+          uniqueItems: true
+          items: { type: string, maxLength: 4096 }
+        path:
+          type: array
+          maxItems: 100
+          items: { type: string, maxLength: 500 }
+        expectedModelType: { type: string, maxLength: 200 }
+        expectedValueType: { type: string, maxLength: 200 }
+        qualifiers:
+          type: array
+          maxItems: 100
+          items:
+            type: object
+            additionalProperties: false
+            required: [type, value]
+            properties:
+              type: { type: string, maxLength: 500 }
+              value: { type: string, maxLength: 2000 }
+        cardinality: { $ref: '#/components/schemas/BindingCardinality' }
+    BindingDescriptor:
+      oneOf:
+        - $ref: '#/components/schemas/InstanceBinding'
+        - $ref: '#/components/schemas/SemanticBinding'
+      discriminator:
+        propertyName: kind
+        mapping:
+          instance: '#/components/schemas/InstanceBinding'
+          semantic: '#/components/schemas/SemanticBinding'
+    WidgetInstance:
+      type: object
+      additionalProperties: false
+      required: [id, type, configuration, bindings]
+      properties:
+        id: { type: string, minLength: 1, maxLength: 200 }
+        type:
+          type: string
+          minLength: 3
+          maxLength: 300
+          pattern: '^[A-Za-z0-9._:-]+$'
+        configuration:
+          type: object
+          maxProperties: 1000
+          description: Untrusted JSON validated against the owning widget type's JSON Schema. Unknown app configuration is preserved across safe migrations.
+          unevaluatedProperties: true
+        bindings:
+          type: object
+          maxProperties: 100
+          propertyNames: { pattern: '^[A-Za-z][A-Za-z0-9_-]*$' }
+          additionalProperties: { $ref: '#/components/schemas/BindingDescriptor' }
+    ViewPresentation:
+      type: object
+      additionalProperties: false
+      properties:
+        theme: { type: string, enum: [inherit, light, dark] }
+        description: { type: string, maxLength: 5000 }
+    ViewDefinition:
+      type: object
+      additionalProperties: false
+      x-stability: experimental
+      x-validation: JSON Schema 2020-12 with Ajv before persistence and rendering
+      description: Declarative data only. It cannot contain JavaScript, Vue templates, HTML, credentials, service URLs, native paths, or serialized AAS values.
+      required: [schemaVersion, title, layout, widgets]
+      properties:
+        schemaVersion: { $ref: '#/components/schemas/ViewSchemaVersion' }
+        title: { type: string, minLength: 1, maxLength: 300 }
+        layout: { $ref: '#/components/schemas/ResponsiveGridLayout' }
+        widgets:
+          type: array
+          maxItems: 1000
+          items: { $ref: '#/components/schemas/WidgetInstance' }
+        presentation: { $ref: '#/components/schemas/ViewPresentation' }
+    ViewOwner:
+      type: object
+      additionalProperties: false
+      required: [type, id, displayName]
+      properties:
+        type: { $ref: '#/components/schemas/PrincipalType' }
+        id: { type: string, maxLength: 500 }
+        displayName: { type: string, maxLength: 300 }
+    View:
+      type: object
+      additionalProperties: false
+      required: [id, revision, definition, owner, permissions, createdAt, updatedAt]
+      properties:
+        id: { $ref: '#/components/schemas/ViewId' }
+        revision: { $ref: '#/components/schemas/Revision' }
+        definition: { $ref: '#/components/schemas/ViewDefinition' }
+        owner: { $ref: '#/components/schemas/ViewOwner' }
+        permissions: { $ref: '#/components/schemas/PermissionSet' }
+        accessRules: { $ref: '#/components/schemas/AccessRuleSet' }
+        createdAt: { $ref: '#/components/schemas/Timestamp' }
+        updatedAt: { $ref: '#/components/schemas/Timestamp' }
+    ViewSummary:
+      type: object
+      additionalProperties: false
+      required: [id, title, revision, owner, permissions, updatedAt]
+      properties:
+        id: { $ref: '#/components/schemas/ViewId' }
+        title: { type: string, maxLength: 300 }
+        revision: { $ref: '#/components/schemas/Revision' }
+        owner: { $ref: '#/components/schemas/ViewOwner' }
+        permissions: { $ref: '#/components/schemas/PermissionSet' }
+        updatedAt: { $ref: '#/components/schemas/Timestamp' }
+    ViewPage:
+      type: object
+      additionalProperties: false
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ViewSummary' }
+        page: { $ref: '#/components/schemas/PageInfo' }
+    ViewCreateRequest:
+      type: object
+      additionalProperties: false
+      required: [definition]
+      properties:
+        definition: { $ref: '#/components/schemas/ViewDefinition' }
+        accessRules: { $ref: '#/components/schemas/AccessRuleSet' }
+    ViewUpdateRequest:
+      type: object
+      additionalProperties: false
+      required: [definition]
+      properties:
+        definition: { $ref: '#/components/schemas/ViewDefinition' }
+    ViewContext:
+      type: object
+      additionalProperties: false
+      required: [targetId, contextKind, contextResourceKey, mode]
+      properties:
+        targetId: { $ref: '#/components/schemas/TargetId' }
+        contextKind: { $ref: '#/components/schemas/ViewContextKind' }
+        contextResourceKey: { $ref: '#/components/schemas/ResourceKey' }
+        mode: { type: string, enum: [authoring_preview, runtime] }
+    ViewValidationRequest:
+      type: object
+      additionalProperties: false
+      required: [definition, context]
+      properties:
+        definition: { $ref: '#/components/schemas/ViewDefinition' }
+        context: { $ref: '#/components/schemas/ViewContext' }
+    ViewValidationResult:
+      type: object
+      additionalProperties: false
+      required: [valid, diagnostics, bindingResolutions]
+      properties:
+        valid: { type: boolean }
+        diagnostics:
+          type: array
+          maxItems: 10000
+          items: { $ref: '#/components/schemas/Diagnostic' }
+        bindingResolutions:
+          type: array
+          maxItems: 10000
+          items: { $ref: '#/components/schemas/WidgetBindingResolution' }
+    ViewImportRequest:
+      type: object
+      additionalProperties: false
+      required: [definition]
+      properties:
+        definition: { $ref: '#/components/schemas/ViewDefinition' }
+        accessRules: { $ref: '#/components/schemas/AccessRuleSet' }
+    ViewImportResult:
+      type: object
+      additionalProperties: false
+      required: [view, diagnostics, activationReady]
+      properties:
+        view: { $ref: '#/components/schemas/View' }
+        diagnostics:
+          type: array
+          maxItems: 10000
+          items: { $ref: '#/components/schemas/Diagnostic' }
+        missingWidgetTypes:
+          type: array
+          uniqueItems: true
+          items: { type: string, maxLength: 300 }
+        activationReady: { type: boolean }
+    BindingResolutionStatus:
+      type: string
+      enum: [resolved, ambiguous, missing, incompatible, unauthorized]
+    BindingResolutionRequest:
+      type: object
+      additionalProperties: false
+      required: [binding, context]
+      properties:
+        binding: { $ref: '#/components/schemas/BindingDescriptor' }
+        context: { $ref: '#/components/schemas/ViewContext' }
+        widgetType: { type: string, maxLength: 300 }
+        bindingSlot: { type: string, maxLength: 100 }
+    BindingResolution:
+      type: object
+      additionalProperties: false
+      required: [status, candidates, diagnostics]
+      properties:
+        status: { $ref: '#/components/schemas/BindingResolutionStatus' }
+        resolvedResource: { $ref: '#/components/schemas/AasResourceSummary' }
+        candidates:
+          type: array
+          maxItems: 1000
+          items: { $ref: '#/components/schemas/AasResourceSummary' }
+        diagnostics:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/Diagnostic' }
+    WidgetBindingResolution:
+      type: object
+      additionalProperties: false
+      required: [widgetId, bindingSlot, resolution]
+      properties:
+        widgetId: { type: string, maxLength: 200 }
+        bindingSlot: { type: string, maxLength: 100 }
+        resolution: { $ref: '#/components/schemas/BindingResolution' }
+    WidgetGrant:
+      type: object
+      additionalProperties: false
+      required: [widgetId, widgetType, available, permissions]
+      properties:
+        widgetId: { type: string, maxLength: 200 }
+        widgetType: { type: string, maxLength: 300 }
+        available: { type: boolean }
+        sandboxed: { type: boolean }
+        appInstallationId: { $ref: '#/components/schemas/InstallationId' }
+        permissions: { $ref: '#/components/schemas/PermissionSet' }
+        diagnostics:
+          type: array
+          items: { $ref: '#/components/schemas/Diagnostic' }
+    ViewRuntimeContext:
+      type: object
+      additionalProperties: false
+      required: [view, context, widgetGrants, bindingResolutions]
+      properties:
+        view: { $ref: '#/components/schemas/View' }
+        context: { $ref: '#/components/schemas/ViewContext' }
+        widgetGrants:
+          type: array
+          maxItems: 1000
+          items: { $ref: '#/components/schemas/WidgetGrant' }
+        bindingResolutions:
+          type: array
+          maxItems: 10000
+          items: { $ref: '#/components/schemas/WidgetBindingResolution' }
+    BindingAction:
+      type: string
+      enum: [read, write, invoke]
+    BindingExecutionRequest:
+      type: object
+      additionalProperties: false
+      required: [viewId, viewRevision, widgetId, bindingSlot, action, context]
+      properties:
+        viewId: { $ref: '#/components/schemas/ViewId' }
+        viewRevision: { $ref: '#/components/schemas/Revision' }
+        widgetId: { type: string, maxLength: 200 }
+        bindingSlot: { type: string, maxLength: 100 }
+        action: { $ref: '#/components/schemas/BindingAction' }
+        context: { $ref: '#/components/schemas/ViewContext' }
+        expectedTargetRevision: { $ref: '#/components/schemas/Revision' }
+        value:
+          description: Present only for a write action and validated against the resolved AAS value type.
+        inputs:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/AasModelPayload' }
+        confirmed: { type: boolean, default: false }
+    BindingExecutionResult:
+      type: object
+      additionalProperties: false
+      required: [action, targetRevision, diagnostics]
+      properties:
+        action: { $ref: '#/components/schemas/BindingAction' }
+        value: {}
+        targetRevision: { $ref: '#/components/schemas/Revision' }
+        diagnostics:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/Diagnostic' }
+    BindingSlotDescriptor:
+      type: object
+      additionalProperties: false
+      required: [name, directions, cardinality]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 100 }
+        displayName: { type: string, maxLength: 200 }
+        directions:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { $ref: '#/components/schemas/BindingDirection' }
+        cardinality: { $ref: '#/components/schemas/BindingCardinality' }
+        valueType: { type: string, maxLength: 200 }
+        semanticRequirements:
+          type: array
+          maxItems: 100
+          items: { type: string, maxLength: 4096 }
+    LayoutConstraints:
+      type: object
+      additionalProperties: false
+      properties:
+        minWidth: { type: integer, minimum: 1, maximum: 256 }
+        minHeight: { type: integer, minimum: 1, maximum: 10000 }
+        preferredWidth: { type: integer, minimum: 1, maximum: 256 }
+        preferredHeight: { type: integer, minimum: 1, maximum: 10000 }
+        responsive: { type: boolean }
+    WidgetTypeDescriptor:
+      type: object
+      additionalProperties: false
+      required: [type, displayName, source, configurationSchema, bindingSlots, layout, compatibility, applicability, permissions]
+      properties:
+        type: { type: string, minLength: 3, maxLength: 300 }
+        displayName: { type: string, minLength: 1, maxLength: 200 }
+        description: { type: string, maxLength: 2000 }
+        source: { type: string, enum: [built_in, app] }
+        publisher: { type: string, maxLength: 500 }
+        appId: { $ref: '#/components/schemas/AppId' }
+        installationId: { $ref: '#/components/schemas/InstallationId' }
+        configurationSchema:
+          type: object
+          description: JSON Schema 2020-12 document validated and size-bounded by Studio.
+          unevaluatedProperties: true
+        bindingSlots:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/BindingSlotDescriptor' }
+        layout: { $ref: '#/components/schemas/LayoutConstraints' }
+        compatibility: { $ref: '#/components/schemas/CompatibilityResult' }
+        applicability: { $ref: '#/components/schemas/ApplicabilityResult' }
+        permissions: { $ref: '#/components/schemas/PermissionSet' }
+        sandboxed: { type: boolean }
+    WidgetTypePage:
+      type: object
+      additionalProperties: false
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/WidgetTypeDescriptor' }
+        page: { $ref: '#/components/schemas/PageInfo' }
+    CompatibilityStatus:
+      type: string
+      enum: [compatible, incompatible, unknown]
+    ApplicabilityStatus:
+      type: string
+      enum: [applicable, partially_applicable, not_applicable, unknown]
+    CompatibilityResult:
+      type: object
+      additionalProperties: false
+      required: [status, reasons]
+      properties:
+        status: { $ref: '#/components/schemas/CompatibilityStatus' }
+        reasons:
+          type: array
+          maxItems: 100
+          items: { type: string, maxLength: 1000 }
+        supportedStudioRange: { type: string, maxLength: 200 }
+        supportedApiRange: { type: string, maxLength: 200 }
+        supportedMetamodelVersions:
+          type: array
+          items: { type: string, maxLength: 100 }
+    ApplicabilityResult:
+      type: object
+      additionalProperties: false
+      required: [status, reasons]
+      properties:
+        status: { $ref: '#/components/schemas/ApplicabilityStatus' }
+        reasons:
+          type: array
+          maxItems: 100
+          items: { type: string, maxLength: 1000 }
+        matchedSemanticIds:
+          type: array
+          maxItems: 1000
+          items: { type: string, maxLength: 4096 }
+        missingSemanticIds:
+          type: array
+          maxItems: 1000
+          items: { type: string, maxLength: 4096 }
+    AppRuntimeCategory:
+      type: string
+      enum: [ui_only, standard_backend, privileged_native]
+    AppDeploymentTarget:
+      type: string
+      enum: [hosted, desktop]
+    AppCapabilityName:
+      type: string
+      enum:
+        - studio.aas.read
+        - studio.aas.write
+        - studio.aas.invoke
+        - studio.files.pick
+        - studio.files.read
+        - studio.files.write
+        - studio.http.request
+        - studio.ui.notifications
+        - studio.ui.commands
+        - studio.ui.panels
+        - studio.semantic.read
+        - studio.jobs.start
+        - studio.jobs.observe
+        - studio.views.widget
+        - studio.views.binding.read
+        - studio.views.binding.write
+        - studio.views.binding.invoke
+    AppCapabilityRequest:
+      type: object
+      additionalProperties: false
+      required: [name, required]
+      properties:
+        name: { $ref: '#/components/schemas/AppCapabilityName' }
+        required: { type: boolean }
+        rationale: { type: string, maxLength: 2000 }
+        networkOrigins:
+          type: array
+          uniqueItems: true
+          maxItems: 100
+          items:
+            type: string
+            format: uri
+            maxLength: 4096
+            pattern: '^https?://[^/?#]+$'
+            description: Declarative origin only; requests still pass redirect, DNS, address, timeout, and byte-limit enforcement.
+    AppCapabilityApproval:
+      type: object
+      additionalProperties: false
+      required: [name, approved]
+      properties:
+        name: { $ref: '#/components/schemas/AppCapabilityName' }
+        approved: { type: boolean }
+        limits:
+          type: object
+          maxProperties: 50
+          additionalProperties:
+            oneOf:
+              - { type: integer }
+              - { type: string, maxLength: 500 }
+              - { type: boolean }
+    AppProvenance:
+      type: object
+      additionalProperties: false
+      required: [digest, signatureStatus, revocationStatus]
+      properties:
+        digest: { type: string, pattern: '^sha256:[a-f0-9]{64}$' }
+        signatureStatus: { type: string, enum: [verified, invalid, unverified] }
+        revocationStatus: { type: string, enum: [active, revoked, unknown] }
+        publisherVerified: { type: boolean }
+        reviewStatus: { type: string, enum: [reviewed, automated_checks_only, unreviewed] }
+        sbomReference: { type: string, format: uri, maxLength: 4096 }
+        provenanceReference: { type: string, format: uri, maxLength: 4096 }
+        vulnerabilitySummary:
+          type: object
+          additionalProperties: false
+          properties:
+            critical: { type: integer, minimum: 0 }
+            high: { type: integer, minimum: 0 }
+            medium: { type: integer, minimum: 0 }
+            low: { type: integer, minimum: 0 }
+            scannedAt: { $ref: '#/components/schemas/Timestamp' }
+    AppVersion:
+      type: object
+      additionalProperties: false
+      required: [appId, publisher, version, displayName, runtimeCategory, deploymentTargets, provenance, requestedCapabilities, compatibility, applicability, widgetTypes]
+      properties:
+        appId: { $ref: '#/components/schemas/AppId' }
+        publisher: { type: string, minLength: 1, maxLength: 500 }
+        version: { type: string, minLength: 1, maxLength: 100 }
+        displayName: { type: string, minLength: 1, maxLength: 200 }
+        description: { type: string, maxLength: 10000 }
+        runtimeCategory: { $ref: '#/components/schemas/AppRuntimeCategory' }
+        deploymentTargets:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: { $ref: '#/components/schemas/AppDeploymentTarget' }
+        provenance: { $ref: '#/components/schemas/AppProvenance' }
+        requestedCapabilities:
+          type: array
+          maxItems: 200
+          items: { $ref: '#/components/schemas/AppCapabilityRequest' }
+        dataEgressWarning:
+          type: boolean
+          description: True when requested AAS-read and network capabilities could transmit AAS data externally.
+        compatibility: { $ref: '#/components/schemas/CompatibilityResult' }
+        applicability: { $ref: '#/components/schemas/ApplicabilityResult' }
+        widgetTypes:
+          type: array
+          maxItems: 100
+          items: { $ref: '#/components/schemas/WidgetTypeDescriptor' }
+    AppCatalogEntry:
+      type: object
+      additionalProperties: false
+      required: [appId, displayName, publisher, latestVersion, compatibility, applicability]
+      properties:
+        appId: { $ref: '#/components/schemas/AppId' }
+        displayName: { type: string, maxLength: 200 }
+        publisher: { type: string, maxLength: 500 }
+        summary: { type: string, maxLength: 2000 }
+        latestVersion: { type: string, maxLength: 100 }
+        compatibility: { $ref: '#/components/schemas/CompatibilityResult' }
+        applicability: { $ref: '#/components/schemas/ApplicabilityResult' }
+        installed: { type: boolean }
+        reviewStatus: { type: string, enum: [reviewed, automated_checks_only, unreviewed] }
+    AppCatalogPage:
+      type: object
+      additionalProperties: false
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/AppCatalogEntry' }
+        page: { $ref: '#/components/schemas/PageInfo' }
+    AppInstallRequest:
+      type: object
+      additionalProperties: false
+      required: [appId, version, digest, approvedCapabilities, confirmedWarnings]
+      properties:
+        appId: { $ref: '#/components/schemas/AppId' }
+        version: { type: string, maxLength: 100 }
+        digest: { type: string, pattern: '^sha256:[a-f0-9]{64}$' }
+        approvedCapabilities:
+          type: array
+          maxItems: 200
+          items: { $ref: '#/components/schemas/AppCapabilityApproval' }
+        confirmedWarnings:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            enum: [data_egress, privileged_full_trust, native_access]
+        visibility: { $ref: '#/components/schemas/AccessRuleSet' }
+    AppInstallScope:
+      type: string
+      enum: [deployment, local_machine_user]
+    AppInstallationStatus:
+      type: string
+      enum: [installing, installed, activating, active, inactive, failed, disabled, revoked, removing]
+    AppEvaluation:
+      type: object
+      additionalProperties: false
+      required: [compatibility, applicability, permissions]
+      properties:
+        compatibility: { $ref: '#/components/schemas/CompatibilityResult' }
+        applicability: { $ref: '#/components/schemas/ApplicabilityResult' }
+        permissions: { $ref: '#/components/schemas/PermissionSet' }
+        activatable: { type: boolean }
+    AppInstallation:
+      type: object
+      additionalProperties: false
+      required: [id, app, scope, status, approvedCapabilities, visibility, revision, installedAt]
+      properties:
+        id: { $ref: '#/components/schemas/InstallationId' }
+        app: { $ref: '#/components/schemas/AppVersion' }
+        scope: { $ref: '#/components/schemas/AppInstallScope' }
+        status: { $ref: '#/components/schemas/AppInstallationStatus' }
+        approvedCapabilities:
+          type: array
+          maxItems: 200
+          items: { $ref: '#/components/schemas/AppCapabilityApproval' }
+        visibility: { $ref: '#/components/schemas/AccessRuleSet' }
+        evaluation: { $ref: '#/components/schemas/AppEvaluation' }
+        activeTargetIds:
+          type: array
+          uniqueItems: true
+          items: { $ref: '#/components/schemas/TargetId' }
+        rollbackVersion: { type: string, maxLength: 100 }
+        revision: { $ref: '#/components/schemas/Revision' }
+        installedAt: { $ref: '#/components/schemas/Timestamp' }
+        updatedAt: { $ref: '#/components/schemas/Timestamp' }
+    AppInstallationPage:
+      type: object
+      additionalProperties: false
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/AppInstallation' }
+        page: { $ref: '#/components/schemas/PageInfo' }
+    AppActivationRequest:
+      type: object
+      additionalProperties: false
+      required: [targetId]
+      properties:
+        targetId: { $ref: '#/components/schemas/TargetId' }
+        contextResourceKey: { $ref: '#/components/schemas/ResourceKey' }
+    AppUpdateRequest:
+      type: object
+      additionalProperties: false
+      required: [version, digest, approvedCapabilities, confirmedWarnings]
+      properties:
+        version: { type: string, maxLength: 100 }
+        digest: { type: string, pattern: '^sha256:[a-f0-9]{64}$' }
+        approvedCapabilities:
+          type: array
+          maxItems: 200
+          items: { $ref: '#/components/schemas/AppCapabilityApproval' }
+        confirmedWarnings:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            enum: [data_egress, privileged_full_trust, native_access, capability_increase]
+    AppRollbackRequest:
+      type: object
+      additionalProperties: false
+      required: [version, confirmed]
+      properties:
+        version: { type: string, maxLength: 100 }
+        confirmed: { type: boolean, const: true }
+    OperationKind:
+      type: string
+      enum: [aas_operation, cross_target_copy, cross_target_copy_retry, app_install, app_update, app_rollback, app_remove, app_activate]
+    OperationStatus:
+      type: string
+      enum: [queued, running, succeeded, partial_success, failed]
+    OperationProgress:
+      type: object
+      additionalProperties: false
+      required: [completedUnits]
+      properties:
+        phase: { type: string, maxLength: 100 }
+        completedUnits: { type: integer, minimum: 0 }
+        totalUnits: { type: integer, minimum: 0 }
+        percentage: { type: number, minimum: 0, maximum: 100 }
+        message: { type: string, maxLength: 1000 }
+    OperationLinks:
+      type: object
+      additionalProperties: false
+      properties:
+        self: { type: string, format: uri-reference }
+        events: { type: string, format: uri-reference }
+        report: { type: string, format: uri-reference }
+        retry: { type: string, format: uri-reference }
+    Operation:
+      type: object
+      additionalProperties: false
+      required: [id, kind, status, progress, retryable, createdAt, requestId, correlationId, links]
+      properties:
+        id: { $ref: '#/components/schemas/OperationId' }
+        kind: { $ref: '#/components/schemas/OperationKind' }
+        status: { $ref: '#/components/schemas/OperationStatus' }
+        progress: { $ref: '#/components/schemas/OperationProgress' }
+        retryable: { type: boolean }
+        targetIds:
+          type: array
+          uniqueItems: true
+          maxItems: 2
+          items: { $ref: '#/components/schemas/TargetId' }
+        createdAt: { $ref: '#/components/schemas/Timestamp' }
+        startedAt: { $ref: '#/components/schemas/Timestamp' }
+        completedAt: { $ref: '#/components/schemas/Timestamp' }
+        error:
+          oneOf:
+            - $ref: '#/components/schemas/Problem'
+            - type: 'null'
+        requestId: { type: string, maxLength: 200 }
+        correlationId: { type: string, maxLength: 200 }
+        links: { $ref: '#/components/schemas/OperationLinks' }
+    OperationAccepted:
+      type: object
+      additionalProperties: false
+      required: [operation]
+      properties:
+        operation: { $ref: '#/components/schemas/Operation' }
+    OperationPage:
+      type: object
+      additionalProperties: false
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Operation' }
+        page: { $ref: '#/components/schemas/PageInfo' }
+    OperationEventType:
+      type: string
+      enum: [progress, resource_outcome, completed, failed, heartbeat]
+    OperationEvent:
+      type: object
+      additionalProperties: false
+      required: [id, type, operationId, occurredAt, data]
+      properties:
+        id: { type: string, maxLength: 200 }
+        type: { $ref: '#/components/schemas/OperationEventType' }
+        operationId: { $ref: '#/components/schemas/OperationId' }
+        occurredAt: { $ref: '#/components/schemas/Timestamp' }
+        data:
+          oneOf:
+            - $ref: '#/components/schemas/OperationProgress'
+            - $ref: '#/components/schemas/CopyResourceOutcome'
+            - $ref: '#/components/schemas/Operation'
+            - type: object
+              maxProperties: 0
+    StudioEventType:
+      type: string
+      enum: [target_changed, aas_invalidated, view_invalidated, app_changed, notification, heartbeat]
+    StudioEvent:
+      type: object
+      additionalProperties: false
+      required: [id, type, occurredAt, data]
+      properties:
+        id: { type: string, maxLength: 200 }
+        type: { $ref: '#/components/schemas/StudioEventType' }
+        occurredAt: { $ref: '#/components/schemas/Timestamp' }
+        targetId: { $ref: '#/components/schemas/TargetId' }
+        resourceKeys:
+          type: array
+          maxItems: 1000
+          items: { $ref: '#/components/schemas/ResourceKey' }
+        data:
+          type: object
+          maxProperties: 100
+          unevaluatedProperties: true
+    DiagnosticSeverity:
+      type: string
+      enum: [info, warning, error]
+    Diagnostic:
+      type: object
+      additionalProperties: false
+      required: [severity, code, message]
+      properties:
+        severity: { $ref: '#/components/schemas/DiagnosticSeverity' }
+        code: { type: string, minLength: 1, maxLength: 100 }
+        message: { type: string, minLength: 1, maxLength: 2000 }
+        jsonPointer: { type: string, maxLength: 2000 }
+        resourceKey: { $ref: '#/components/schemas/ResourceKey' }
+        remediation: { type: string, maxLength: 2000 }
+    ValidationResult:
+      type: object
+      additionalProperties: false
+      required: [valid, diagnostics]
+      properties:
+        valid: { type: boolean }
+        diagnostics:
+          type: array
+          maxItems: 10000
+          items: { $ref: '#/components/schemas/Diagnostic' }
+    ProblemViolation:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code: { type: string, maxLength: 100 }
+        message: { type: string, maxLength: 2000 }
+        field: { type: string, maxLength: 500 }
+        jsonPointer: { type: string, maxLength: 2000 }
+    Problem:
+      type: object
+      additionalProperties: false
+      required: [type, title, status, code, requestId, correlationId, retryable]
+      properties:
+        type: { type: string, format: uri-reference }
+        title: { type: string, maxLength: 200 }
+        status: { type: integer, minimum: 400, maximum: 599 }
+        detail: { type: string, maxLength: 4000 }
+        instance: { type: string, format: uri-reference }
+        code:
+          type: string
+          maxLength: 100
+          examples:
+            - target_authentication_required
+            - revision_conflict
+            - target_capability_unsupported
+            - aas_model_invalid
+            - package_archive_path_traversal
+            - binding_ambiguous
+            - app_signature_invalid
+        requestId: { type: string, maxLength: 200 }
+        correlationId: { type: string, maxLength: 200 }
+        retryable: { type: boolean }
+        targetId: { $ref: '#/components/schemas/TargetId' }
+        authenticationRequiredTargetIds:
+          type: array
+          uniqueItems: true
+          maxItems: 2
+          items: { $ref: '#/components/schemas/TargetId' }
+        currentRevision: { $ref: '#/components/schemas/Revision' }
+        violations:
+          type: array
+          maxItems: 1000
+          items: { $ref: '#/components/schemas/ProblemViolation' }
+    AuditEvent:
+      type: object
+      additionalProperties: false
+      required: [id, occurredAt, actor, action, outcome, requestId, correlationId]
+      properties:
+        id: { $ref: '#/components/schemas/OpaqueId' }
+        occurredAt: { $ref: '#/components/schemas/Timestamp' }
+        actor:
+          type: object
+          additionalProperties: false
+          required: [userId]
+          properties:
+            userId: { type: string, maxLength: 500 }
+            downstreamIdentity: { type: string, maxLength: 500 }
+            appId: { $ref: '#/components/schemas/AppId' }
+            appVersion: { type: string, maxLength: 100 }
+        action: { type: string, maxLength: 100 }
+        outcome: { type: string, enum: [allowed, denied, succeeded, failed, partial_success] }
+        targetIds:
+          type: array
+          uniqueItems: true
+          maxItems: 2
+          items: { $ref: '#/components/schemas/TargetId' }
+        operationId: { $ref: '#/components/schemas/OperationId' }
+        collisionPolicy: { $ref: '#/components/schemas/CollisionPolicy' }
+        resourceOutcomeCounts: { $ref: '#/components/schemas/CopyReportCounts' }
+        requestId: { type: string, maxLength: 200 }
+        correlationId: { type: string, maxLength: 200 }
+        errorCode: { type: string, maxLength: 100 }
+    AuditEventPage:
+      type: object
+      additionalProperties: false
+      required: [items, page]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/AuditEvent' }
+        page: { $ref: '#/components/schemas/PageInfo' }
