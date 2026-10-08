@@ -46,7 +46,7 @@
     "pinia": "^4.0.3",
     "undici": "^7.30.0",
     "vue": "^3.5.43",
-    "vuetify": "^4.2.3",
+    "vuetify": "^4.2.4",
     "vuetify-nuxt-module": "1.0.0-rc.6",
     "zod": "^4.6.5"
   },
