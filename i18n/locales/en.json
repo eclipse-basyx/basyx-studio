@@ -7,7 +7,9 @@
     "signIn": "Sign in",
     "signOut": "Sign out",
     "localUser": "Local user",
-    "administrator": "Administrator"
+    "administrator": "Administrator",
+    "apps": "Apps",
+    "appModules": "App modules"
   },
   "home": {
     "title": "AAS targets",
@@ -54,7 +56,8 @@
       "not_found": "Not found",
       "error": "Unavailable"
     },
-    "copyJson": "Copy JSON"
+    "copyJson": "Copy JSON",
+    "tree": "Tree"
   },
   "editor": {
     "title": "Value",
@@ -117,7 +120,15 @@
     "target_invalid_response": "The infrastructure returned an invalid response.",
     "network": "Studio could not be reached.",
     "requestId": "Request ID",
-    "retry": "Retry"
+    "retry": "Retry",
+    "app_package_rejected": "The app package is not valid.",
+    "app_incompatible": "The app is not compatible with this Studio.",
+    "app_already_installed": "This app is already installed.",
+    "app_unsigned_disabled": "Installing unsigned apps is disabled in this deployment.",
+    "app_not_found": "The app is not installed (anymore).",
+    "app_permission_not_declared": "The app did not declare the permission for this action.",
+    "app_backend_unavailable": "The app's backend is not available.",
+    "app_backend_failed": "The app's backend failed."
   },
   "admin": {
     "title": "Infrastructures",
@@ -158,5 +169,39 @@
     },
     "revision": "Revision",
     "noInfrastructures": "No infrastructures configured."
+  },
+  "apps": {
+    "title": "Apps",
+    "subtitle": "Apps add submodel views and modules to Studio. They run isolated from Studio and can only do what their permissions and your own rights allow.",
+    "install": "Install app",
+    "installHint": "Developer mode: an app package (.zip) with studio-app.json at its root.",
+    "package": "App package",
+    "installed": "Installed {name} {version}.",
+    "uninstall": "Uninstall",
+    "uninstallConfirm": "Uninstall \"{name}\"? Its views and modules disappear for all users. AAS data the app changed stays as it is.",
+    "cancel": "Cancel",
+    "noApps": "No apps are installed.",
+    "unsigned": "Unsigned",
+    "unsignedHint": "Installed in developer mode, without a marketplace signature or review.",
+    "unsignedDisabled": "Installing unsigned apps is disabled in this deployment (STUDIO_APPS_ALLOW_UNSIGNED).",
+    "disabled": "Apps are disabled because no apps origin is configured (STUDIO_APPS_URL).",
+    "permissions": "Permissions",
+    "backend": "Backend",
+    "submodelViews": "{count} submodel view | {count} submodel views",
+    "modules": "{count} module | {count} modules",
+    "by": "by {publisher}",
+    "findings": "Findings",
+    "matchReason": "Offered because the submodel's semantic ID is {semanticId}.",
+    "notInstalled": "This app module is not installed (anymore).",
+    "needsShell": "Open a shell to use this module.",
+    "connecting": "Starting the app…",
+    "frameTitle": "App: {name}",
+    "permission": {
+      "studio_aas_read": "Read AAS data you have access to",
+      "studio_aas_write": "Change AAS values you may change",
+      "studio_ui_notifications": "Show notifications",
+      "studio_ui_navigation": "Change its own page address",
+      "studio_backend": "Run server-side code (isolated)"
+    }
   }
 }

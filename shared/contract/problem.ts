@@ -32,6 +32,15 @@ export const problemCodes = [
   // Desktop workspaces
   'workspace_unsaved_changes',
   'package_rejected',
+  // Apps
+  'app_package_rejected',
+  'app_incompatible',
+  'app_already_installed',
+  'app_unsigned_disabled',
+  'app_not_found',
+  'app_permission_not_declared',
+  'app_backend_unavailable',
+  'app_backend_failed',
 ] as const
 
 export const problemCodeSchema = z.enum(problemCodes)

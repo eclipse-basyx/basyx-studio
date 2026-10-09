@@ -19,15 +19,28 @@ export interface OpenedTarget {
   auditWrite: (outcome: 'success' | 'failure', details: Record<string, unknown>) => Promise<void>
 }
 
+/** Who opens which target, for what; the audit records come from this. */
+export interface TargetAccess {
+  actor: Actor
+  targetId: string
+  requestId: string
+  /** The Studio route or capability method, for the audit log. */
+  operation: string
+  /** Reads of client-credentials targets are audited, because the target only sees Studio. */
+  read: boolean
+  /** Set when an app calls on the user's behalf (ADR 0018). */
+  appInstallationId?: string
+}
+
 /**
- * Resolves the `targetId` route parameter for the signed-in user: a live
- * infrastructure with the credentials of this user and target. Route
- * handlers only see the `AasTarget` interface.
+ * Opens a target for a user: a live infrastructure with the credentials of
+ * this user and target, or a desktop workspace. Callers only see the
+ * `AasTarget` interface.
  */
-export async function openTarget (event: RequestEvent): Promise<OpenedTarget> {
-  const actor = await requireActor(event)
+export async function openTargetFor (access: TargetAccess): Promise<OpenedTarget> {
+  const { actor, targetId, requestId } = access
   const studio = await useStudio()
-  const targetId = routeParam(event, 'targetId')
+  const appInstallationId = access.appInstallationId ?? null
 
   if (isWorkspaceId(targetId)) {
     return {
@@ -36,27 +49,29 @@ export async function openTarget (event: RequestEvent): Promise<OpenedTarget> {
       auditWrite: (outcome, details) => recordAudit(studio, {
         action: 'workspace.write',
         outcome,
-        requestId: requestIdOf(event),
+        requestId,
         actorSubject: actor.subject,
         targetId,
+        appInstallationId,
         details,
       }),
     }
   }
 
   const record = await getInfrastructure(studio, targetId)
-  const access = await studio.broker.access(record, actor.sessionId)
+  const grant = await studio.broker.access(record, actor.sessionId)
   const audit = (action: string, outcome: 'success' | 'failure', details: Record<string, unknown>) => recordAudit(studio, {
     action,
     outcome,
-    requestId: requestIdOf(event),
+    requestId,
     actorSubject: actor.subject,
     targetId: record.id,
-    downstreamIdentity: access.downstreamIdentity,
-    details: { route: event.url.pathname, ...details },
+    downstreamIdentity: grant.downstreamIdentity,
+    appInstallationId,
+    details: { route: access.operation, ...details },
   })
 
-  if (event.req.method === 'GET' && record.security.mode === 'deployment_client_credentials') {
+  if (access.read && record.security.mode === 'deployment_client_credentials') {
     // The target only sees Studio's identity, so Studio records who read.
     await audit('target.read', 'success', {})
   }
@@ -66,12 +81,23 @@ export async function openTarget (event: RequestEvent): Promise<OpenedTarget> {
     auditWrite: (outcome, details) => audit('target.write', outcome, details),
     target: new LiveAasTarget({
       record,
-      access,
+      access: grant,
       policy: targetPolicy(studio, record),
-      requestId: requestIdOf(event),
+      requestId,
       onUnauthorized: () => studio.broker.invalidate(record, actor.sessionId),
     }),
   }
+}
+
+/** Opens the target of the `targetId` route parameter for the signed-in user. */
+export async function openTarget (event: RequestEvent): Promise<OpenedTarget> {
+  return openTargetFor({
+    actor: await requireActor(event),
+    targetId: routeParam(event, 'targetId'),
+    requestId: requestIdOf(event),
+    operation: event.url.pathname,
+    read: event.req.method === 'GET',
+  })
 }
 
 export function toTarget (record: InfrastructureRecord, authenticationState: AuthenticationState): Target {

@@ -4,6 +4,14 @@ The app platform allows independent publishers to extend Studio at runtime witho
 
 Canonical publication, installation, and capability-call sequences are in [mechanisms.md](mechanisms.md).
 
+[MVP-3](../development/mvp-3-plan.md) implements developer-mode installation,
+UI apps (submodel views and modules) and Deno backend apps. Its decisions are
+[ADR 0016](../adr/0016-app-manifest-and-packages.md) (manifest and packages),
+[ADR 0017](../adr/0017-app-origin-and-content-security-policy.md) (app origin and CSP),
+[ADR 0018](../adr/0018-capability-bridge-and-authorization.md) (capability bridge) and
+[ADR 0019](../adr/0019-backend-app-runner.md) (backend runner). App authors use
+[`@basyx/studio-sdk`](../../packages/studio-sdk/README.md).
+
 ## Installation scope
 
 - Hosted: an app version is installed for one Studio deployment. Visibility and execution authorization are evaluated per user/group.

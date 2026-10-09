@@ -24,6 +24,10 @@ changes one, add a new ADR with `Supersedes` and mark the old record
 | [0013](0013-revision-tokens-and-conditional-writes.md) | Accepted | Element-hash revision tokens; conditional writes on the fresh downstream ETag |
 | [0014](0014-workspace-worker-and-package-engine.md) | Accepted | Supervised Workspace Worker process; aas-package3-typescript with archive checks |
 | [0015](0015-desktop-native-bridge-and-file-grants.md) | Accepted | Two-call preload bridge; single-use file grants from the Electron main process |
+| [0016](0016-app-manifest-and-packages.md) | Accepted | Versioned JSON Schema manifest; packages checked completely and stored content-addressed |
+| [0017](0017-app-origin-and-content-security-policy.md) | Accepted | Sandboxed frames on a separate apps origin or `studio-app:` protocol, strict CSP |
+| [0018](0018-capability-bridge-and-authorization.md) | Accepted | `studio-sdk/0` MessagePort bridge; manifest permissions plus the user's own rights |
+| [0019](0019-backend-app-runner.md) | Accepted | Deno process per backend, deny-by-default, short-lived capability tokens |
 
 ## Template
 

@@ -214,6 +214,9 @@ importers:
       pinia:
         specifier: ^4.0.3
         version: 4.0.3(@vue/devtools-api@8.2.1)(typescript@6.0.3)(vue@3.5.43(typescript@6.0.3))
+      semver:
+        specifier: ^7.8.5
+        version: 7.8.5
       undici:
         specifier: ^7.30.0
         version: 7.30.0
@@ -230,6 +233,9 @@ importers:
         specifier: ^4.6.5
         version: 4.6.5
     devDependencies:
+      '@basyx/studio-sdk':
+        specifier: workspace:*
+        version: link:packages/studio-sdk
       '@electric-sql/pglite-tools':
         specifier: ^0.4.8
         version: 0.4.8(@electric-sql/pglite@0.5.8)
@@ -248,9 +254,15 @@ importers:
       '@types/pg':
         specifier: ^8.23.1
         version: 8.23.1
+      '@types/semver':
+        specifier: ^7.7.1
+        version: 7.7.1
       '@vuetify/mcp':
         specifier: ^0.12.1
         version: 0.12.1(supports-color@10.2.2)
+      deno:
+        specifier: runtime:2.9.6
+        version: runtime:2.9.6
       drizzle-kit:
         specifier: ^0.31.11
         version: 0.31.11
@@ -293,6 +305,74 @@ importers:
       vue-tsc:
         specifier: ^3.3.12
         version: 3.3.12(typescript@6.0.3)
+
+  examples/apps/backend-demo:
+    dependencies:
+      '@basyx/studio-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/studio-sdk
+      '@mdi/font':
+        specifier: 7.4.47
+        version: 7.4.47
+      vue:
+        specifier: ^3.5.43
+        version: 3.5.43(typescript@6.0.3)
+      vuetify:
+        specifier: ^4.2.4
+        version: 4.2.4(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.43(typescript@6.0.3)))(vue@3.5.43(typescript@6.0.3))
+    devDependencies:
+      '@vitejs/plugin-vue':
+        specifier: ^6.0.9
+        version: 6.0.9(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.105.1)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))(vue@3.5.43(typescript@6.0.3))
+      vite:
+        specifier: ^8.3.2
+        version: 8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.105.1)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
+
+  examples/apps/nameplate:
+    dependencies:
+      '@basyx/studio-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/studio-sdk
+      '@mdi/font':
+        specifier: 7.4.47
+        version: 7.4.47
+      vue:
+        specifier: ^3.5.43
+        version: 3.5.43(typescript@6.0.3)
+      vuetify:
+        specifier: ^4.2.4
+        version: 4.2.4(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.43(typescript@6.0.3)))(vue@3.5.43(typescript@6.0.3))
+    devDependencies:
+      '@vitejs/plugin-vue':
+        specifier: ^6.0.9
+        version: 6.0.9(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.105.1)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))(vue@3.5.43(typescript@6.0.3))
+      vite:
+        specifier: ^8.3.2
+        version: 8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.105.1)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
+
+  examples/apps/shell-explorer:
+    dependencies:
+      '@basyx/studio-sdk':
+        specifier: workspace:*
+        version: link:../../../packages/studio-sdk
+      '@mdi/font':
+        specifier: 7.4.47
+        version: 7.4.47
+      vue:
+        specifier: ^3.5.43
+        version: 3.5.43(typescript@6.0.3)
+      vuetify:
+        specifier: ^4.2.4
+        version: 4.2.4(typescript@6.0.3)(vue-i18n@11.4.13(vue@3.5.43(typescript@6.0.3)))(vue@3.5.43(typescript@6.0.3))
+    devDependencies:
+      '@vitejs/plugin-vue':
+        specifier: ^6.0.9
+        version: 6.0.9(vite@8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.105.1)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))(vue@3.5.43(typescript@6.0.3))
+      vite:
+        specifier: ^8.3.2
+        version: 8.3.2(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.105.1)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)
+
+  packages/studio-sdk: {}
 
 packages:
 
@@ -2636,6 +2716,9 @@ packages:
   '@types/responselike@1.0.3':
     resolution: {integrity: sha512-H/+L+UkTV33uf49PH5pCAUBVPNj2nDBXTN+qS1dOwyyg24l3CcicicCA7ca+HMvJBZcFgl5r8e+RR6elsb4Lyw==}
 
+  '@types/semver@7.7.1':
+    resolution: {integrity: sha512-FmgJfu+MOcQ370SD0ev7EI8TlCAfKYU+B4m5T3yXc1CiRN94g/SZPtsCkk506aUDtlMnFZvasDwHHUcZUEaYuA==}
+
   '@typescript-eslint/eslint-plugin@8.71.1':
     resolution: {integrity: sha512-nNlBf6HuotqMgZvSkWD5hNdemiBIxQ2NmrlgfcUIeZRs+BbakjscCQRq/Hb74EFVnFiSWWdL12JruqwBy3ERDw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
@@ -3703,6 +3786,69 @@ packages:
   delayed-stream@1.0.0:
     resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
     engines: {node: '>=0.4.0'}
+
+  deno@runtime:2.9.6:
+    resolution:
+      type: variations
+      variants:
+        - resolution:
+            archive: zip
+            bin: deno
+            integrity: sha256-ITovME8E08nLUiBmmvrROPYKWqsf6Aliq96481gHpHI=
+            type: binary
+            url: https://github.com/denoland/deno/releases/download/v2.9.6/deno-aarch64-apple-darwin.zip
+          targets:
+            - cpu: arm64
+              os: darwin
+        - resolution:
+            archive: zip
+            bin: deno.exe
+            integrity: sha256-rLAUr+IpmEd2TiMrSZPhYuOUbN7sNmA+PxoLVIzR6lU=
+            type: binary
+            url: https://github.com/denoland/deno/releases/download/v2.9.6/deno-aarch64-pc-windows-msvc.zip
+          targets:
+            - cpu: arm64
+              os: win32
+        - resolution:
+            archive: zip
+            bin: deno
+            integrity: sha256-mkavxsOSx80v9xoxVYk1VFtGQI0Oh/eoaQjHEnIcBG4=
+            type: binary
+            url: https://github.com/denoland/deno/releases/download/v2.9.6/deno-aarch64-unknown-linux-gnu.zip
+          targets:
+            - cpu: arm64
+              os: linux
+        - resolution:
+            archive: zip
+            bin: deno
+            integrity: sha256-fUUkuCvMVX/gIKGltWlW7UK5kq5bKAJuitXRcylTP18=
+            type: binary
+            url: https://github.com/denoland/deno/releases/download/v2.9.6/deno-x86_64-apple-darwin.zip
+          targets:
+            - cpu: x64
+              os: darwin
+        - resolution:
+            archive: zip
+            bin: deno.exe
+            integrity: sha256-FeUwCwujw2ladiHZAWCnRuyecQIozuY5r6nVgPbjzRE=
+            type: binary
+            url: https://github.com/denoland/deno/releases/download/v2.9.6/deno-x86_64-pc-windows-msvc.zip
+          targets:
+            - cpu: x64
+              os: win32
+            - cpu: arm64
+              os: win32
+        - resolution:
+            archive: zip
+            bin: deno
+            integrity: sha256-OU8H9Nor6+bObx584PoWQpspsIw14/rD/iWXJnbf9LI=
+            type: binary
+            url: https://github.com/denoland/deno/releases/download/v2.9.6/deno-x86_64-unknown-linux-gnu.zip
+          targets:
+            - cpu: x64
+              os: linux
+    version: 2.9.6
+    hasBin: true
 
   denque@2.1.0:
     resolution: {integrity: sha512-HVQE3AAb/pxF8fQAoiqpvg9i3evqug3hoiwakOyZAwJm+6vZehbkYXZ0l4JxS+I3QxM97v5aaRNhj8v5oBhekw==}
@@ -9615,6 +9761,8 @@ snapshots:
     dependencies:
       '@types/node': 26.6.4
 
+  '@types/semver@7.7.1': {}
+
   '@typescript-eslint/eslint-plugin@8.71.1(@typescript-eslint/parser@8.71.1(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(eslint@10.12.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)':
     dependencies:
       '@eslint-community/regexpp': 4.12.2
@@ -10710,6 +10858,8 @@ snapshots:
 
   delayed-stream@1.0.0: {}
 
+  deno@runtime:2.9.6: {}
+
   denque@2.1.0: {}
 
   depd@2.0.0: {}
@@ -11748,7 +11898,7 @@ snapshots:
       es6-error: 4.1.1
       matcher: 3.0.0
       roarr: 2.15.4
-      semver: 7.7.4
+      semver: 7.8.5
       serialize-error: 7.0.1
     optional: true
 
@@ -12510,14 +12660,14 @@ snapshots:
 
   node-abi@4.36.0:
     dependencies:
-      semver: 7.7.4
+      semver: 7.8.5
 
   node-addon-api@7.1.1:
     optional: true
 
   node-api-version@0.2.1:
     dependencies:
-      semver: 7.7.4
+      semver: 7.8.5
 
   node-fetch-native@1.6.7: {}
 
@@ -12536,7 +12686,7 @@ snapshots:
       graceful-fs: 4.2.11
       nopt: 9.0.0
       proc-log: 6.1.0
-      semver: 7.7.4
+      semver: 7.8.5
       tar: 7.5.22
       tinyglobby: 0.2.17
       undici: 6.29.0

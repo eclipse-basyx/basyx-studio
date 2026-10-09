@@ -1,0 +1,19 @@
+{
+  "name": "@basyx/studio-sdk",
+  "version": "0.1.0",
+  "description": "Client SDK for BaSyx Studio apps: capability calls, context and theme over the studio-sdk/0 bridge",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./protocol": "./src/protocol.ts",
+    "./backend": "./src/backend.ts",
+    "./app-manifest.schema.json": "./app-manifest.schema.json"
+  },
+  "files": [
+    "src",
+    "app-manifest.schema.json",
+    "README.md"
+  ]
+}

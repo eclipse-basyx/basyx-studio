@@ -17,6 +17,16 @@ export interface ResolvedSession {
   session: SessionRecord
 }
 
+export function actorOf (session: SessionRecord, adminRole: string): Actor {
+  return {
+    subject: session.subject,
+    name: session.displayName,
+    roles: session.roles,
+    isAdmin: session.roles.includes(adminRole),
+    sessionId: session.id,
+  }
+}
+
 async function resolveSession (event: RequestEvent): Promise<ResolvedSession | null> {
   if (event.context.studioSession !== undefined) {
     return event.context.studioSession
@@ -30,18 +40,7 @@ async function resolveSession (event: RequestEvent): Promise<ResolvedSession | n
     const token = getCookie(event, sessionCookieName(studio.config.secureCookies))
     session = token ? await findSession(studio, token) : undefined
   }
-  const resolved = session
-    ? {
-        session,
-        actor: {
-          subject: session.subject,
-          name: session.displayName,
-          roles: session.roles,
-          isAdmin: session.roles.includes(studio.config.adminRole),
-          sessionId: session.id,
-        },
-      }
-    : null
+  const resolved = session ? { session, actor: actorOf(session, studio.config.adminRole) } : null
   event.context.studioSession = resolved
   return resolved
 }

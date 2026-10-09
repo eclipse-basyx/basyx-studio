@@ -46,3 +46,14 @@ export function targetIcon (target: Target): string {
 export function isEditableModelType (modelType: unknown): modelType is EditableModelType {
   return (editableModelTypes as readonly unknown[]).includes(modelType)
 }
+
+/** The AAS identifier behind a resource key (base64url), or `null` if malformed. */
+export function decodeResourceKey (key: string): string | null {
+  try {
+    const base64 = key.replaceAll('-', '+').replaceAll('_', '/')
+    const binary = atob(base64 + '='.repeat((4 - (base64.length % 4)) % 4))
+    return new TextDecoder('utf-8', { fatal: true }).decode(Uint8Array.from(binary, character => character.codePointAt(0)!))
+  } catch {
+    return null
+  }
+}

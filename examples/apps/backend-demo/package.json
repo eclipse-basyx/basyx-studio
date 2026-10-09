@@ -1,0 +1,19 @@
+{
+  "name": "@basyx/studio-example-backend-demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@basyx/studio-sdk": "workspace:*",
+    "@mdi/font": "7.4.47",
+    "vue": "^3.5.43",
+    "vuetify": "^4.2.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.9",
+    "vite": "^8.3.2"
+  }
+}

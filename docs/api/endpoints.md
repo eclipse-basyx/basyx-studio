@@ -133,9 +133,11 @@ Service-URLs und Dateisystempfade sind ausgeschlossen.
 | --- | --- |
 | `GET /apps/catalog` | Sanitisierte Marketplace-Projektion für die UI, inklusive Compatibility und Applicability. |
 | `GET /apps/catalog/{appId}/versions/{version}` | Immutable Version mit Digest, Signatur-/Revocation-Status, SBOM-/Review-Informationen und angeforderten Capabilities. |
-| `GET/POST /app-installations` | Installationen anzeigen bzw. digest-gepinnt und mit expliziten Permissions installieren. Installation läuft asynchron. |
+| `GET/POST /app-installations` | Installationen anzeigen bzw. digest-gepinnt und mit expliziten Permissions installieren. Installation läuft asynchron; ein Developer-Mode-Paket (`application/zip`) wird synchron geprüft und installiert (MVP-3). |
 | `GET/DELETE /app-installations/{installationId}` | Lifecycle und Berechtigungen anzeigen bzw. Installation entfernen. |
 | `GET /app-installations/{installationId}/compatibility` | Technische Compatibility und semantische Applicability getrennt bewerten. |
+| `GET /app-contributions` | Module der installierten Apps und, für eine Semantic ID, passende Submodell-Views mit Begründung (MVP-3). |
+| `POST /app-calls` | Capability-Aufruf für eine App: von der Host-Bridge per Session oder vom Backend per kurzlebigem Capability-Token; geprüft gegen Manifest und Benutzerrechte (MVP-3, ADR 0018). |
 | `POST/DELETE /app-installations/{installationId}/activations` | Für Target/Kontext aktivieren bzw. deaktivieren. |
 | `POST /app-installations/{installationId}/updates` | Signierte immutable Version prüfen und als Update bereitstellen. |
 | `POST /app-installations/{installationId}/rollbacks` | Auf eine verifizierte vorherige Version zurückrollen. |

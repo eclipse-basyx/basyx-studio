@@ -198,10 +198,13 @@ const securedEnvironment = {
     ]),
   ],
   submodels: [
+    // Digital Nameplate 3.0 (IDTA 02006), so the Nameplate example app matches it.
     submodel(securedIds.publicNameplate, 'Nameplate', [
       prop('ManufacturerName', 'xs:string', 'Secured Test Manufacturer'),
+      prop('ManufacturerProductType', 'xs:string', 'SEC-TYPE-1'),
       prop('SerialNumber', 'xs:string', 'SEC-0001'),
-    ]),
+      prop('YearOfConstruction', 'xs:string', '2026'),
+    ], { semanticId: externalRef('https://admin-shell.io/idta/nameplate/3/0/Nameplate') }),
     submodel(securedIds.restrictedCosts, 'Costs', [
       prop('UnitCost', 'xs:decimal', '1234.50'),
       prop('Currency', 'xs:string', 'EUR'),

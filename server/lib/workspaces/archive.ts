@@ -45,7 +45,12 @@ function reject (detail: string): never {
  * of an entry, so validating the declared sizes bounds memory; CPU time is
  * bounded by the Workspace Worker's time limit.
  */
-export function inspectArchive (bytes: Uint8Array, limits: ArchiveLimits = defaultArchiveLimits): { entries: number, totalBytes: number } {
+export function inspectArchive (
+  bytes: Uint8Array,
+  limits: ArchiveLimits = defaultArchiveLimits,
+  /** What the archive is, for the message when it is not a ZIP file. */
+  description = 'AASX (ZIP) package',
+): { entries: number, totalBytes: number } {
   if (bytes.length > limits.maxArchiveBytes) {
     reject(`The package is larger than ${Math.round(limits.maxArchiveBytes / MiB)} MiB.`)
   }
@@ -85,7 +90,7 @@ export function inspectArchive (bytes: Uint8Array, limits: ArchiveLimits = defau
     if (error instanceof StudioProblem) {
       throw error
     }
-    reject('The file is not a valid AASX (ZIP) package.')
+    reject(`The file is not a valid ${description}.`)
   }
   return { entries: names.size, totalBytes }
 }

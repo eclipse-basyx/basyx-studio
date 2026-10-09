@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eclipse.dev/basyx/studio/schemas/app-manifest-0.json",
+  "title": "BaSyx Studio app manifest, version 0",
+  "description": "studio-app.json at the root of an app package. Paths are relative to the package root.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["manifestVersion", "id", "version", "publisher", "title", "studioApi", "runtimes", "permissions", "contributes"],
+  "properties": {
+    "$schema": { "type": "string", "maxLength": 512 },
+    "manifestVersion": { "const": 0 },
+    "id": {
+      "description": "Reverse-DNS app ID, e.g. org.example.nameplate.",
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*){1,9}$"
+    },
+    "version": {
+      "description": "Semantic version of this app package.",
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(-[0-9A-Za-z.-]+)?(\\+[0-9A-Za-z.-]+)?$"
+    },
+    "publisher": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "url": { "type": "string", "format": "uri", "pattern": "^https://", "maxLength": 512 }
+      }
+    },
+    "title": { "$ref": "#/$defs/localizedLabel" },
+    "description": { "$ref": "#/$defs/localizedText" },
+    "studioApi": {
+      "description": "Semantic version range of the Studio app API the app works with, e.g. ^0.1.0.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "runtimes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "enum": ["hosted", "desktop"] }
+    },
+    "permissions": {
+      "description": "What the app may do. An administrator approves these at install; every call is additionally limited by the user's own rights.",
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "enum": ["studio.aas.read", "studio.aas.write", "studio.ui.notifications", "studio.ui.navigation", "studio.backend"] }
+    },
+    "backend": {
+      "description": "Server-side code, run in an isolated Deno process. Requires the studio.backend permission.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runtime", "entry"],
+      "properties": {
+        "runtime": { "const": "deno" },
+        "entry": { "$ref": "#/$defs/scriptPath" }
+      }
+    },
+    "contributes": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "submodelViews": {
+          "type": "array",
+          "maxItems": 32,
+          "items": { "$ref": "#/$defs/submodelView" }
+        },
+        "modules": {
+          "type": "array",
+          "maxItems": 16,
+          "items": { "$ref": "#/$defs/module" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "localizedLabel": {
+      "description": "Text per BCP 47 language tag, e.g. { \"en\": \"Nameplate\" }.",
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 32,
+      "propertyNames": { "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$" },
+      "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 80 }
+    },
+    "localizedText": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 32,
+      "propertyNames": { "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$" },
+      "additionalProperties": { "type": "string", "minLength": 1, "maxLength": 1000 }
+    },
+    "contributionId": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+    "htmlPath": {
+      "description": "Package-relative path of an HTML document.",
+      "type": "string",
+      "maxLength": 512,
+      "pattern": "^[A-Za-z0-9_-][A-Za-z0-9._/-]*\\.html$"
+    },
+    "scriptPath": {
+      "description": "Package-relative path of an ES module.",
+      "type": "string",
+      "maxLength": 512,
+      "pattern": "^[A-Za-z0-9_-][A-Za-z0-9._/-]*\\.(js|mjs)$"
+    },
+    "submodelView": {
+      "description": "A view offered next to the generic element tree for submodels with one of the semantic IDs (exact match).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "entry", "semanticIds"],
+      "properties": {
+        "id": { "$ref": "#/$defs/contributionId" },
+        "title": { "$ref": "#/$defs/localizedLabel" },
+        "entry": { "$ref": "#/$defs/htmlPath" },
+        "semanticIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 2048 }
+        }
+      }
+    },
+    "module": {
+      "description": "A page with its own route and navigation entry. context: global (always), target (a target is open), shell (a shell is selected).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "entry", "route", "context"],
+      "properties": {
+        "id": { "$ref": "#/$defs/contributionId" },
+        "title": { "$ref": "#/$defs/localizedLabel" },
+        "icon": { "type": "string", "pattern": "^mdi-[a-z0-9-]{1,64}$" },
+        "entry": { "$ref": "#/$defs/htmlPath" },
+        "route": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,63}$" },
+        "context": { "enum": ["global", "target", "shell"] }
+      }
+    }
+  }
+}

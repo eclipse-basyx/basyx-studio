@@ -55,6 +55,15 @@
       "idShort": "Nameplate",
       "id": "urn:studio:test:secured:sm:public-nameplate",
       "kind": "Instance",
+      "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+          {
+            "type": "GlobalReference",
+            "value": "https://admin-shell.io/idta/nameplate/3/0/Nameplate"
+          }
+        ]
+      },
       "submodelElements": [
         {
           "idShort": "ManufacturerName",
@@ -63,9 +72,21 @@
           "modelType": "Property"
         },
         {
+          "idShort": "ManufacturerProductType",
+          "valueType": "xs:string",
+          "value": "SEC-TYPE-1",
+          "modelType": "Property"
+        },
+        {
           "idShort": "SerialNumber",
           "valueType": "xs:string",
           "value": "SEC-0001",
+          "modelType": "Property"
+        },
+        {
+          "idShort": "YearOfConstruction",
+          "valueType": "xs:string",
+          "value": "2026",
           "modelType": "Property"
         }
       ],

@@ -71,6 +71,16 @@ Sign in at <http://localhost:3000> as `studio-admin` (password `studio-admin`,
 test realm only) and register the test targets under *Infrastructures*; see
 [test-setup/README.md](test-setup/README.md#targets-for-studio).
 
+Apps (MVP-3) are served from a separate origin, `http://apps.localhost:3000`
+in development (`STUDIO_APPS_URL` in `.env.example`). Build the example apps
+and install the packages from `examples/apps/dist/` under *Apps*:
+
+```sh
+pnpm apps:build
+```
+
+App authors start with [`@basyx/studio-sdk`](packages/studio-sdk/README.md).
+
 Run the current checks with:
 
 ```sh
@@ -78,6 +88,7 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm test:integration   # needs pnpm testenv:up
+pnpm build && pnpm apps:build && pnpm test:e2e:web   # needs pnpm testenv:up
 ```
 
 Desktop, container, PNPM, and supply-chain workflows are documented in

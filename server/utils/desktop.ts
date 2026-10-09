@@ -13,6 +13,18 @@ export function requireWorkspaces (studio: StudioRuntime): WorkspaceManager {
   return studio.workspaces
 }
 
+/** Whether the request comes from the Electron main process (broker secret). */
+export function hasBrokerSecret (event: RequestEvent): boolean {
+  const expected = process.env.STUDIO_BROKER_SECRET
+  const provided = getRequestHeader(event, 'x-studio-broker-secret') ?? ''
+  if (!expected) {
+    return false
+  }
+  const expectedBytes = Buffer.from(expected)
+  const providedBytes = Buffer.from(provided)
+  return expectedBytes.length === providedBytes.length && timingSafeEqual(expectedBytes, providedBytes)
+}
+
 /**
  * Authenticates the Electron main process, which alone may turn native paths
  * into file grants. The renderer's requests carry the launch secret, but

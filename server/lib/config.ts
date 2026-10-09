@@ -23,6 +23,9 @@ const envSchema = z.object({
   STUDIO_SESSION_TTL_HOURS: z.coerce.number().positive().max(24 * 30).default(12),
   STUDIO_PRIVATE_NETWORK_TARGETS: z.enum(['allow', 'deny']).optional(),
   STUDIO_LAUNCH_SECRET: z.string().optional(),
+  STUDIO_APPS_URL: z.url({ protocol: /^https?$/ }).optional(),
+  STUDIO_APPS_ALLOW_UNSIGNED: z.enum(['true', 'false']).optional(),
+  STUDIO_DENO_PATH: z.string().min(1).optional(),
   NITRO_HOST: z.string().optional(),
   NITRO_PORT: z.coerce.number().int().optional(),
   PORT: z.coerce.number().int().optional(),
@@ -33,6 +36,23 @@ export interface StudioOidcConfig {
   clientId: string
   clientSecret: string | undefined
   scopes: string[]
+}
+
+export interface StudioAppsConfig {
+  /**
+   * Base URL that app files are served under, ending in `/`: the separate
+   * apps origin when hosted, the `studio-app:` protocol on desktop. `null`
+   * when no apps origin is configured, which disables apps.
+   */
+  baseUrl: string | null
+  /** Whether unsigned (developer-mode) packages may be installed. */
+  allowUnsigned: boolean
+  /** The Deno executable for backend apps; resolved from node_modules when unset. */
+  denoPath: string | null
+  /** Loopback URL of this service, the only address backend apps may reach. */
+  capabilityUrl: string
+  /** Where backends are extracted and run. */
+  workDir: string
 }
 
 export interface StudioConfig {
@@ -48,6 +68,7 @@ export interface StudioConfig {
   sessionTtlMs: number
   allowPrivateNetworkTargets: boolean
   secureCookies: boolean
+  apps: StudioAppsConfig
 }
 
 export class ConfigurationError extends Error {}
@@ -111,6 +132,17 @@ export function loadStudioConfig (env: NodeJS.ProcessEnv, deploymentMode: Deploy
     }
   }
 
+  let appsBaseUrl: string | null = null
+  if (deploymentMode === 'desktop') {
+    appsBaseUrl = 'studio-app://'
+  } else if (values.STUDIO_APPS_URL) {
+    const appsOrigin = new URL(values.STUDIO_APPS_URL).origin
+    if (appsOrigin === publicUrl) {
+      throw new ConfigurationError('STUDIO_APPS_URL must be a different origin than STUDIO_PUBLIC_URL (ADR 0017).')
+    }
+    appsBaseUrl = `${appsOrigin}/app/`
+  }
+
   return {
     deploymentMode,
     publicUrl,
@@ -125,5 +157,13 @@ export function loadStudioConfig (env: NodeJS.ProcessEnv, deploymentMode: Deploy
     sessionTtlMs: values.STUDIO_SESSION_TTL_HOURS * 60 * 60 * 1000,
     allowPrivateNetworkTargets: (values.STUDIO_PRIVATE_NETWORK_TARGETS ?? (deploymentMode === 'desktop' ? 'allow' : 'deny')) === 'allow',
     secureCookies: publicUrl.startsWith('https://'),
+    apps: {
+      baseUrl: appsBaseUrl,
+      // Off by default for hosted deployments; the desktop user installs for themselves.
+      allowUnsigned: (values.STUDIO_APPS_ALLOW_UNSIGNED ?? (deploymentMode === 'desktop' ? 'true' : 'false')) === 'true',
+      denoPath: values.STUDIO_DENO_PATH ?? null,
+      capabilityUrl: `http://127.0.0.1:${port}`,
+      workDir: resolve(values.STUDIO_DATA_DIR, 'app-backends'),
+    },
   }
 }

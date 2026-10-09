@@ -23,6 +23,7 @@
     "testenv:down": "docker compose -f test-setup/docker-compose.yaml down -v",
     "testenv:smoke": "node test-setup/smoke-test.mjs",
     "testenv:fixtures": "node test-setup/fixtures/generate-fixtures.mjs",
+    "apps:build": "node scripts/build-example-apps.mjs",
     "typecheck": "nuxt typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -49,6 +50,7 @@
     "openid-client": "^6.8.8",
     "pg": "^8.23.1",
     "pinia": "^4.0.3",
+    "semver": "^7.8.5",
     "undici": "^7.30.0",
     "vue": "^3.5.43",
     "vuetify": "^4.2.4",
@@ -56,12 +58,14 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@basyx/studio-sdk": "workspace:*",
     "@electric-sql/pglite-tools": "^0.4.8",
     "@nuxt/eslint": "^1.17.0",
     "@nuxt/fonts": "^0.14.0",
     "@pinia/nuxt": "^1.0.2",
     "@playwright/test": "1.64.0",
     "@types/pg": "^8.23.1",
+    "@types/semver": "^7.7.1",
     "@vuetify/mcp": "^0.12.1",
     "drizzle-kit": "^0.31.11",
     "electron": "^44.7.0",
@@ -88,6 +92,16 @@
       ".output/**/*",
       "dist-electron/**/*",
       "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "node_modules/deno",
+        "to": "deno",
+        "filter": [
+          "deno",
+          "deno.exe"
+        ]
+      }
     ],
     "mac": {
       "icon": "build/icon.icns",
@@ -126,5 +140,12 @@
       ]
     }
   },
-  "packageManager": "pnpm@12.10.1+sha512.ba40a37eb1a370d60fea8c4cf1d364c13bcccef518e98ad2bcee954f539d38da37458e58261a3fa55e06523450ea0ffff9f497b135be41f2c15c1642bacace6c"
+  "packageManager": "pnpm@12.10.1+sha512.ba40a37eb1a370d60fea8c4cf1d364c13bcccef518e98ad2bcee954f539d38da37458e58261a3fa55e06523450ea0ffff9f497b135be41f2c15c1642bacace6c",
+  "devEngines": {
+    "runtime": {
+      "name": "deno",
+      "version": "2.9.6",
+      "onFail": "download"
+    }
+  }
 }

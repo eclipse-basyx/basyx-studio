@@ -47,12 +47,40 @@
         </v-card-pane>
       </v-col>
 
-      <v-col cols="12" lg="4" md="8">
+      <v-col cols="12" :lg="activeView ? 9 : 4" md="8">
         <v-card-pane>
           <v-card-title class="text-title-medium">{{ t('shell.elements') }}</v-card-title>
+
+          <v-tabs v-if="submodelKey && views.length > 0" v-model="viewKey" density="compact">
+            <v-tab prepend-icon="mdi-file-tree-outline" :text="t('shell.tree')" value="tree" />
+
+            <v-tab
+              v-for="item in views"
+              :key="viewIdOf(item)"
+              prepend-icon="mdi-puzzle-outline"
+              :text="label(item.title)"
+              :value="viewIdOf(item)"
+            />
+          </v-tabs>
+
           <v-divider />
 
-          <div class="flex-grow-1 overflow-auto">
+          <template v-if="activeView && selectedRef">
+            <div class="text-body-small text-medium-emphasis px-4 py-1">
+              {{ t('apps.matchReason', { semanticId: activeView.reason.semanticId }) }}
+              <v-chip v-if="activeView.unsigned" class="ms-2" color="warning" :text="t('apps.unsigned')" />
+            </div>
+
+            <AppFrame
+              :key="`${targetId}:${submodelKey}:${viewIdOf(activeView)}`"
+              :contribution="activeView"
+              :shell-id="shell.data.value ? String(shell.data.value.shell.id) : null"
+              :submodel="{ id: selectedRef.submodelId, semanticId: selectedRef.semanticId }"
+              :target="target.data.value ?? null"
+            />
+          </template>
+
+          <div v-else class="flex-grow-1 overflow-auto">
             <ElementTree
               v-if="submodelKey"
               :key="`${targetId}:${submodelKey}`"
@@ -67,7 +95,7 @@
         </v-card-pane>
       </v-col>
 
-      <v-col cols="12" lg="5">
+      <v-col v-if="!activeView" cols="12" lg="5">
         <v-card-pane>
           <v-card-title class="text-title-medium">{{ t('shell.details') }}</v-card-title>
           <v-divider />
@@ -99,7 +127,7 @@
 </template>
 
 <script lang="ts" setup>
-  import type { ElementDetail, ShellDetail, SubmodelDetail, SubmodelRef } from '#shared/contract'
+  import type { ElementDetail, ShellDetail, SubmodelDetail, SubmodelRef, SubmodelViewContributionInfo } from '#shared/contract'
   import { useQuery, useQueryCache } from '@pinia/colada'
   import { StudioApiError } from '~/composables/useStudioApi'
   import { isEditableModelType } from '~/utils/aas'
@@ -178,6 +206,18 @@
     const value = shell.data.value?.shell
     return value ? [{ title: String(value.idShort ?? value.id) }] : []
   })
+
+  // Submodel views of installed apps for the selected submodel (MVP-3).
+  const label = useLocalizedLabel()
+  const selectedRef = computed(() => refs.data.value?.items.find(ref => ref.key === submodelKey.value) ?? null)
+  const contributions = useAppContributions(() => selectedRef.value?.semanticId ?? null)
+  const views = computed(() => selectedRef.value?.semanticId ? (contributions.data.value?.submodelViews ?? []) : [])
+  const viewIdOf = (view: SubmodelViewContributionInfo) => `${view.installationId}:${view.id}`
+  const viewKey = computed({
+    get: () => typeof route.query.view === 'string' ? route.query.view : 'tree',
+    set: (key: string) => router.replace({ query: { ...route.query, view: key === 'tree' ? undefined : key } }),
+  })
+  const activeView = computed(() => views.value.find(view => viewIdOf(view) === viewKey.value) ?? null)
 
   function selectSubmodel (key: string) {
     router.replace({ query: { submodel: key } })

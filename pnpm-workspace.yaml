@@ -1,5 +1,8 @@
 packages:
   - "."
+  # The Studio SDK for app authors and the example apps (MVP-3).
+  - "packages/*"
+  - "examples/apps/*"
 
 storeDir: ../.pnpm-store
 minimumReleaseAge: 1440
@@ -21,6 +24,10 @@ allowBuilds:
   electron-winstaller: true
   esbuild: true
   unrs-resolver: true
+  # Reviewed and denied: its install script only replaces the JS launcher with
+  # the platform binary. Studio runs the binary of the matching @deno/* package
+  # directly (server/lib/apps/runner).
+  deno: false
   # Reviewed and denied: its install script only swaps the JS launcher for a
   # native binary. The devDependency exists for Dependabot version tracking;
   # the pnpm binary in use comes from Corepack (packageManager field).

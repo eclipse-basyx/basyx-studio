@@ -8,13 +8,22 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { join } from 'node:path'
 
-import { app, BrowserWindow, dialog, ipcMain, safeStorage, session, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, protocol, safeStorage, session, shell } from 'electron'
 
 const launchSecretHeader = 'X-Studio-Launch-Secret'
 const brokerSecretHeader = 'X-Studio-Broker-Secret'
 const loopbackHost = '127.0.0.1'
 const serviceStartupTimeoutMs = 15_000
 const aasxFilters = [{ name: 'AASX package', extensions: ['aasx'] }]
+
+// Installed apps run in sandboxed frames on their own origin (ADR 0017):
+// studio-app://<installation>/<path>. The scheme is standard and secure so
+// that module scripts, CORS and CSP work as on the hosted apps origin.
+const appScheme = 'studio-app'
+const installationIdPattern = /^app-[0-9a-f]{16}$/
+protocol.registerSchemesAsPrivileged([
+  { scheme: appScheme, privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } },
+])
 
 // Authenticates this process to the Studio Service when it turns a path the
 // user chose into a file grant. Unlike the launch secret, the renderer never
@@ -148,6 +157,8 @@ async function startStudioService (): Promise<{ launchSecret: string, url: strin
       STUDIO_DATA_KEY: dataKey,
       STUDIO_LAUNCH_SECRET: launchSecret,
       STUDIO_BROKER_SECRET: brokerSecret,
+      // Backend apps run in the bundled Deno (electron-builder extraResources).
+      STUDIO_DENO_PATH: join(process.resourcesPath, 'deno', process.platform === 'win32' ? 'deno.exe' : 'deno'),
     },
     stdio: ['ignore', 'inherit', 'inherit'],
   })
@@ -167,8 +178,65 @@ async function startStudioService (): Promise<{ launchSecret: string, url: strin
   return { launchSecret, url }
 }
 
+const isolatedSessions = new WeakSet<Electron.Session>()
+
+/**
+ * Serves app files under `studio-app:` from the Studio Service, which hands
+ * them only to this process (broker secret), and keeps apps contained:
+ * frames may only navigate within their own installation, and nothing but
+ * the Studio page may request device permissions.
+ */
+function isolateApps (rendererSession: Electron.Session, url: string, launchSecret?: string): void {
+  if (isolatedSessions.has(rendererSession)) {
+    return
+  }
+  isolatedSessions.add(rendererSession)
+  const rendererOrigin = new URL(url).origin
+
+  rendererSession.protocol.handle(appScheme, async request => {
+    const target = new URL(request.url)
+    if (request.method !== 'GET' || !installationIdPattern.test(target.hostname)) {
+      return new Response(null, { status: 404 })
+    }
+    const response = await fetch(new URL(`app/${target.hostname}${target.pathname}`, url), {
+      headers: {
+        [brokerSecretHeader]: brokerSecret,
+        ...(launchSecret ? { [launchSecretHeader]: launchSecret } : {}),
+      },
+    })
+    // fetch has already decoded the body.
+    const headers = new Headers(response.headers)
+    headers.delete('content-encoding')
+    headers.delete('content-length')
+    return new Response(response.body, { status: response.status, headers })
+  })
+
+  rendererSession.setPermissionRequestHandler((_contents, _permission, callback, details) => {
+    callback(new URL(details.requestingUrl).origin === rendererOrigin)
+  })
+  rendererSession.setPermissionCheckHandler((_contents, _permission, requestingOrigin) => requestingOrigin === rendererOrigin)
+}
+
+/** Subframes may load app entries and stay within their installation; nothing else. */
+function guardFrameNavigation (win: BrowserWindow, url: string): void {
+  const rendererOrigin = new URL(url).origin
+  win.webContents.on('will-frame-navigate', event => {
+    if (event.isMainFrame) {
+      return
+    }
+    const next = new URL(event.url)
+    const current = event.frame?.url ? new URL(event.frame.url) : null
+    const allowed = next.origin === rendererOrigin
+      || (next.protocol === `${appScheme}:` && (current?.protocol !== `${appScheme}:` || current.hostname === next.hostname))
+    if (!allowed) {
+      event.preventDefault()
+    }
+  })
+}
+
 async function createWindow (url: string, launchSecret?: string): Promise<void> {
   const rendererSession = session.fromPartition('studio')
+  isolateApps(rendererSession, url, launchSecret)
 
   if (launchSecret) {
     rendererSession.webRequest.onBeforeSendHeaders(
@@ -196,6 +264,7 @@ async function createWindow (url: string, launchSecret?: string): Promise<void> 
     },
   })
   guardUnsavedWorkspaces(win)
+  guardFrameNavigation(win, url)
 
   const allowedOrigin = new URL(url).origin
   win.webContents.on('will-navigate', (event, targetUrl) => {

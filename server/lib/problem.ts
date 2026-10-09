@@ -30,6 +30,14 @@ const definitions: Record<ProblemCode, ProblemDefinition> = {
   target_invalid_response: { status: 502, title: 'The target returned an invalid response', retryable: false },
   workspace_unsaved_changes: { status: 409, title: 'The workspace has unsaved changes', retryable: false },
   package_rejected: { status: 422, title: 'The package cannot be opened', retryable: false },
+  app_package_rejected: { status: 422, title: 'The app package is not valid', retryable: false },
+  app_incompatible: { status: 422, title: 'The app is not compatible with this Studio', retryable: false },
+  app_already_installed: { status: 409, title: 'This app version is already installed', retryable: false },
+  app_unsigned_disabled: { status: 403, title: 'Installing unsigned apps is disabled in this deployment', retryable: false },
+  app_not_found: { status: 404, title: 'The app is not installed', retryable: false },
+  app_permission_not_declared: { status: 403, title: 'The app did not declare the permission for this call', retryable: false },
+  app_backend_unavailable: { status: 503, title: 'The app backend is not available', retryable: true },
+  app_backend_failed: { status: 502, title: 'The app backend failed', retryable: false },
 }
 
 export interface Violation {

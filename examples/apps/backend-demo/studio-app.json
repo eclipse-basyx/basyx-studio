@@ -1,0 +1,25 @@
+{
+  "$schema": "../../../packages/studio-sdk/app-manifest.schema.json",
+  "manifestVersion": 0,
+  "id": "org.eclipse.basyx.examples.backend-demo",
+  "version": "0.1.0",
+  "publisher": { "name": "Eclipse BaSyx" },
+  "title": { "en": "Target Summary" },
+  "description": { "en": "Summarizes the active target in an isolated backend (Deno) on behalf of the signed-in user." },
+  "studioApi": "^0.1.0",
+  "runtimes": ["hosted", "desktop"],
+  "permissions": ["studio.aas.read", "studio.backend"],
+  "backend": { "runtime": "deno", "entry": "backend/main.js" },
+  "contributes": {
+    "modules": [
+      {
+        "id": "summary",
+        "title": { "en": "Target Summary" },
+        "icon": "mdi-chart-box-outline",
+        "entry": "ui/index.html",
+        "route": "summary",
+        "context": "target"
+      }
+    ]
+  }
+}

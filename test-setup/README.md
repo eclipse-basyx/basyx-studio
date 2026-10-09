@@ -68,7 +68,7 @@ configuration and the environment variables these secret references point to.
 | Open | `IESEDriveMotorDM3000.aasx` (realistic nameplate, technical data, documentation) |
 | Open | `EdgeCasesShell`: every submodel element kind, collections nested 5 levels deep, list of collections, list of lists (`NestedLists[1][0]`), an operation with in/out/inout variables, a hyphenated idShort, an empty value, a 300-element submodel, and a dangling submodel reference that returns 404 |
 | Open | 60 `PagingShell…` shells for cursor paging (62 shells in total) |
-| Secured | `SecuredPublicShell` (with `Nameplate` and the restricted `Costs` submodel) and `SecuredInternalShell` |
+| Secured | `SecuredPublicShell` (with `Nameplate`, which has the Digital Nameplate 3.0 semantic ID, and the restricted `Costs` submodel) and `SecuredInternalShell` |
 
 The JSON fixtures are generated and checked with AAS Core 3.1 by
 `fixtures/generate-fixtures.mjs` (`pnpm testenv:fixtures`). BaSyx loads them at

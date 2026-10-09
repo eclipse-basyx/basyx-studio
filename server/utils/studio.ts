@@ -3,6 +3,8 @@ import type { StudioDeps } from '../lib/deps'
 import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { useRuntimeConfig } from 'nuxt/server'
+import { BackendRunner } from '../lib/apps/runner'
+import { capabilityTokenKey } from '../lib/apps/tokens'
 import { loadStudioConfig } from '../lib/config'
 import { SecretCipher } from '../lib/crypto/cipher'
 import { openDatabase } from '../lib/database/client'
@@ -17,7 +19,16 @@ export interface StudioRuntime extends StudioDeps {
   broker: CredentialBroker
   /** Desktop AASX workspaces; `null` when hosted or the worker is missing. */
   workspaces: WorkspaceManager | null
+  /** Backend apps in Deno; `null` when apps are disabled. */
+  backends: BackendRunner | null
+  /** Signs the capability tokens of backend app calls. */
+  capabilityKey: Buffer
   close: () => Promise<void>
+}
+
+/** The Deno executable: configured, else the pnpm-managed runtime (`devEngines.runtime`). */
+function denoExecutable (configured: string | null): string {
+  return configured ?? join(process.cwd(), 'node_modules', 'deno', process.platform === 'win32' ? 'deno.exe' : 'deno')
 }
 
 /** The bundled Workspace Worker: configured for `nuxt dev`, else next to the server entry. */
@@ -51,12 +62,22 @@ async function initialize (): Promise<StudioRuntime> {
         console.warn('[studio] the Workspace Worker was not found; AASX workspaces are unavailable')
       }
     }
+    const backends = config.apps.baseUrl
+      ? new BackendRunner({
+          denoPath: denoExecutable(config.apps.denoPath),
+          workDir: config.apps.workDir,
+          capabilityUrl: config.apps.capabilityUrl,
+        })
+      : null
     console.info(`[studio] ${config.deploymentMode} mode, ${config.database.kind} database, public URL ${config.publicUrl}`)
     return {
       ...deps,
       broker: new CredentialBroker(deps),
       workspaces,
+      backends,
+      capabilityKey: capabilityTokenKey(config.dataKey),
       close: async () => {
+        backends?.dispose()
         workspaces?.dispose()
         await handle.close()
       },

@@ -20,6 +20,29 @@
           :text="t('app.infrastructures')"
           to="/admin/infrastructures"
         />
+
+        <v-btn
+          v-if="session.isAdmin"
+          prepend-icon="mdi-puzzle-outline"
+          :text="t('app.apps')"
+          to="/admin/apps"
+        />
+
+        <v-menu v-if="moduleLinks.length > 0">
+          <template #activator="{ props }">
+            <v-btn v-bind="props" append-icon="mdi-menu-down" prepend-icon="mdi-view-grid-plus-outline" :text="t('app.appModules')" />
+          </template>
+
+          <v-list density="compact" min-width="220">
+            <v-list-item
+              v-for="link in moduleLinks"
+              :key="link.key"
+              :prepend-icon="link.icon"
+              :title="link.title"
+              :to="link.to"
+            />
+          </v-list>
+        </v-menu>
       </div>
 
       <template #append>
@@ -53,6 +76,8 @@
     <v-main>
       <slot />
     </v-main>
+
+    <v-snackbar-queue v-model="notifications.queue" />
   </v-app>
 </template>
 
@@ -63,6 +88,31 @@
   const { t } = useI18n()
   const theme = useTheme()
   const session = useSessionStore()
+  const notifications = useNotificationsStore()
+  const route = useRoute()
+  const label = useLocalizedLabel()
+
+  // Modules of installed apps, for the current context (MVP-3): global ones
+  // always, target ones inside a target, shell ones while a shell is open.
+  const contributions = useAppContributions()
+  const moduleLinks = computed(() => {
+    const targetId = typeof route.params.targetId === 'string' ? route.params.targetId : null
+    const shellKey = typeof route.params.shellKey === 'string'
+      ? route.params.shellKey
+      : (typeof route.query.shell === 'string' ? route.query.shell : null)
+    return (contributions.data.value?.modules ?? []).flatMap(module => {
+      const path = `apps/${module.installationId}/${module.route}`
+      let to: string | { path: string, query: Record<string, string> }
+      if (module.context === 'global') {
+        to = `/${path}`
+      } else if (targetId && (module.context === 'target' || shellKey)) {
+        to = module.context === 'shell' ? { path: `/targets/${targetId}/${path}`, query: { shell: shellKey! } } : `/targets/${targetId}/${path}`
+      } else {
+        return []
+      }
+      return [{ key: `${module.installationId}:${module.id}`, title: label(module.title), icon: module.icon ?? 'mdi-puzzle-outline', to }]
+    })
+  })
 
   const initials = computed(() => {
     const name = session.isDesktop ? t('app.localUser') : (session.session?.user.name ?? '')

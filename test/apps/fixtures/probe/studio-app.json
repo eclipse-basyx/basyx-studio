@@ -1,0 +1,15 @@
+{
+  "manifestVersion": 0,
+  "id": "org.example.isolation-probe",
+  "version": "1.0.0",
+  "publisher": { "name": "Studio tests" },
+  "title": { "en": "Isolation probe" },
+  "studioApi": "^0.1.0",
+  "runtimes": ["hosted", "desktop"],
+  "permissions": ["studio.aas.read"],
+  "contributes": {
+    "modules": [
+      { "id": "probe", "title": { "en": "Isolation probe" }, "entry": "ui/index.html", "route": "probe", "context": "target" }
+    ]
+  }
+}

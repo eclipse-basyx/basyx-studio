@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../packages/studio-sdk/app-manifest.schema.json",
+  "manifestVersion": 0,
+  "id": "org.eclipse.basyx.examples.shell-explorer",
+  "version": "0.1.0",
+  "publisher": { "name": "Eclipse BaSyx" },
+  "title": { "en": "Shell Explorer" },
+  "description": { "en": "Lists the shells of the active target and their submodels, with a page per shell." },
+  "studioApi": "^0.1.0",
+  "runtimes": ["hosted", "desktop"],
+  "permissions": ["studio.aas.read", "studio.ui.navigation"],
+  "contributes": {
+    "modules": [
+      {
+        "id": "explorer",
+        "title": { "en": "Shell Explorer" },
+        "icon": "mdi-compass-outline",
+        "entry": "ui/index.html",
+        "route": "explorer",
+        "context": "target"
+      },
+      {
+        "id": "shell-summary",
+        "title": { "en": "Shell summary" },
+        "icon": "mdi-text-box-search-outline",
+        "entry": "ui/index.html",
+        "route": "shell-summary",
+        "context": "shell"
+      }
+    ]
+  }
+}

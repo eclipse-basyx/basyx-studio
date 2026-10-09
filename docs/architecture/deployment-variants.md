@@ -117,6 +117,25 @@ flowchart LR
     AASRepo -.->|"BaSyx telemetry"| Observability
 ```
 
+### Apps origin and backend runtime (MVP-3)
+
+Until the App Asset Service and App Runner exist as separate services, the
+Studio Service serves both roles ([ADR 0017](../adr/0017-app-origin-and-content-security-policy.md),
+[ADR 0019](../adr/0019-backend-app-runner.md)):
+
+| Setting | Purpose |
+| --- | --- |
+| `STUDIO_APPS_URL` | Origin app files are served from, e.g. `https://apps.studio.example`. Route it to the same Studio Service; it must differ from `STUDIO_PUBLIC_URL`. Without it, apps are disabled. |
+| `STUDIO_APPS_ALLOW_UNSIGNED` | `true` allows developer-mode installs of unsigned packages. Defaults to `false` when hosted. |
+| `STUDIO_DENO_PATH` | Deno executable for backend apps. Defaults to the pnpm-managed runtime in `node_modules/deno`. |
+
+The reverse proxy must pass the original `Host` header, because the service
+tells Studio and app requests apart by host. Backend apps run as Deno child
+processes in the Studio container and reach it on `127.0.0.1`; hosted
+production needs the container isolation described in
+[app-platform.md](app-platform.md#isolation-rules) before third-party backends
+are allowed.
+
 ## 2. Desktop Studio with live AAS infrastructure
 
 There is no hosted Studio backend. The local Studio Service connects to one or

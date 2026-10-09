@@ -1,0 +1,25 @@
+{
+  "$schema": "../../../packages/studio-sdk/app-manifest.schema.json",
+  "manifestVersion": 0,
+  "id": "org.eclipse.basyx.examples.nameplate",
+  "version": "0.1.0",
+  "publisher": { "name": "Eclipse BaSyx" },
+  "title": { "en": "Digital Nameplate" },
+  "description": { "en": "Shows the Digital Nameplate (IDTA 02006) of an asset and edits its properties." },
+  "studioApi": "^0.1.0",
+  "runtimes": ["hosted", "desktop"],
+  "permissions": ["studio.aas.read", "studio.aas.write", "studio.ui.notifications"],
+  "contributes": {
+    "submodelViews": [
+      {
+        "id": "nameplate",
+        "title": { "en": "Nameplate" },
+        "entry": "ui/index.html",
+        "semanticIds": [
+          "https://admin-shell.io/idta/nameplate/3/0/Nameplate",
+          "https://admin-shell.io/zvei/nameplate/2/0/Nameplate"
+        ]
+      }
+    ]
+  }
+}

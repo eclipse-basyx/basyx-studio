@@ -22,7 +22,7 @@ export function requestIdOf (event: RequestEvent): string {
 
 const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
-function allowedOrigins (publicUrl: string, desktop: boolean): Set<string> {
+export function allowedOrigins (publicUrl: string, desktop: boolean): Set<string> {
   const origins = new Set([new URL(publicUrl).origin])
   if (desktop) {
     // The desktop renderer may address the loopback service by either name.
@@ -38,7 +38,7 @@ function allowedOrigins (publicUrl: string, desktop: boolean): Set<string> {
  * send Origin on these methods; handlers acting on a session additionally
  * check the CSRF token.
  */
-async function rejectCrossOrigin (event: RequestEvent): Promise<void> {
+export async function rejectCrossOrigin (event: RequestEvent): Promise<void> {
   if (!unsafeMethods.has(event.req.method)) {
     return
   }

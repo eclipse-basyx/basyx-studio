@@ -1577,7 +1577,20 @@ paths:
         content:
           application/json:
             schema: { $ref: '#/components/schemas/AppInstallRequest' }
+          application/zip:
+            schema: { type: string, format: binary, maxLength: 20971520 }
+            description: |
+              Developer mode (APP-015, implemented in MVP-3): the app package itself.
+              Validated completely and installed synchronously; refused with
+              `app_unsigned_disabled` unless the deployment allows unsigned apps.
+              Findings are returned as `violations` of `app_package_rejected` or
+              `app_incompatible` (ADR 0016).
       responses:
+        '201':
+          description: Developer-mode package installed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppDeveloperInstallation' }
         '202':
           description: Installation operation accepted
           headers:
@@ -1775,6 +1788,52 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/AccessRuleSet' }
         '412': { $ref: '#/components/responses/PreconditionFailed' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /app-contributions:
+    get:
+      tags: [Apps]
+      operationId: listAppContributions
+      summary: Modules of the installed apps, and the submodel views for a submodel's semantic ID, with the reason for each match
+      x-requirements: [APP-003]
+      parameters:
+        - name: semanticId
+          in: query
+          schema: { type: string, maxLength: 2048 }
+      responses:
+        '200':
+          description: Applicable contributions
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppContributions' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /app-calls:
+    post:
+      tags: [Apps]
+      operationId: callAppCapability
+      summary: Capability call on behalf of an installed app (ADR 0018)
+      description: |
+        Called by the host bridge for an app frame (session cookie, Origin and
+        CSRF checks) or by a backend app with a short-lived capability token
+        (`Authorization: Bearer sct.…`, ADR 0019). Studio checks the method
+        against the installed manifest's permissions and opens the target with
+        the calling user's rights. Refusals and writes are audited with the
+        installation.
+      x-requirements: [APP-006, APP-009, APP-010, SEC-005]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AppCallRequest' }
+      responses:
+        '200':
+          description: Result of the method
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AppCallResult' }
         default: { $ref: '#/components/responses/Problem' }
 
   /operations:
@@ -3440,6 +3499,7 @@ components:
         - studio.files.write
         - studio.http.request
         - studio.ui.notifications
+        - studio.ui.navigation
         - studio.ui.commands
         - studio.ui.panels
         - studio.semantic.read
@@ -3449,6 +3509,7 @@ components:
         - studio.views.binding.read
         - studio.views.binding.write
         - studio.views.binding.invoke
+        - studio.backend
     AppCapabilityRequest:
       type: object
       additionalProperties: false
@@ -3613,6 +3674,113 @@ components:
         revision: { $ref: '#/components/schemas/Revision' }
         installedAt: { $ref: '#/components/schemas/Timestamp' }
         updatedAt: { $ref: '#/components/schemas/Timestamp' }
+    LocalizedText:
+      type: object
+      additionalProperties: { type: string, maxLength: 1000 }
+    AppDeveloperInstallation:
+      description: An installation from a developer-mode package (MVP-3).
+      type: object
+      additionalProperties: false
+      required: [id, appId, version, title, description, publisher, digest, unsigned, permissions, submodelViews, modules, backend, installedAt, installedBy]
+      properties:
+        id: { type: string, pattern: '^app-[0-9a-f]{16}$' }
+        appId: { $ref: '#/components/schemas/AppId' }
+        version: { type: string, maxLength: 64 }
+        title: { $ref: '#/components/schemas/LocalizedText' }
+        description:
+          oneOf:
+            - { $ref: '#/components/schemas/LocalizedText' }
+            - { type: 'null' }
+        publisher: { type: string, maxLength: 128 }
+        digest: { type: string, pattern: '^sha256:[0-9a-f]{64}$' }
+        unsigned: { type: boolean }
+        permissions:
+          type: array
+          items: { $ref: '#/components/schemas/AppCapabilityName' }
+        submodelViews: { type: integer, minimum: 0 }
+        modules: { type: integer, minimum: 0 }
+        backend: { type: boolean }
+        installedAt: { type: string, format: date-time }
+        installedBy: { type: string }
+    AppContributionBase:
+      type: object
+      required: [installationId, appId, appTitle, id, title, entryUrl, permissions, unsigned]
+      properties:
+        installationId: { type: string }
+        appId: { $ref: '#/components/schemas/AppId' }
+        appTitle: { $ref: '#/components/schemas/LocalizedText' }
+        id: { type: string, pattern: '^[a-z][a-z0-9-]{0,63}$' }
+        title: { $ref: '#/components/schemas/LocalizedText' }
+        entryUrl:
+          type: string
+          description: Entry document on the apps origin, or `studio-app://…` on desktop (ADR 0017).
+        permissions:
+          type: array
+          items: { $ref: '#/components/schemas/AppCapabilityName' }
+        unsigned: { type: boolean }
+    AppContributions:
+      type: object
+      additionalProperties: false
+      required: [submodelViews, modules]
+      properties:
+        submodelViews:
+          type: array
+          items:
+            allOf:
+              - { $ref: '#/components/schemas/AppContributionBase' }
+              - type: object
+                required: [kind, reason]
+                properties:
+                  kind: { const: submodelView }
+                  reason:
+                    type: object
+                    required: [semanticId]
+                    properties:
+                      semanticId: { type: string }
+        modules:
+          type: array
+          items:
+            allOf:
+              - { $ref: '#/components/schemas/AppContributionBase' }
+              - type: object
+                required: [kind, icon, route, context]
+                properties:
+                  kind: { const: module }
+                  icon: { type: [string, 'null'] }
+                  route: { type: string, pattern: '^[a-z][a-z0-9-]{0,63}$' }
+                  context: { enum: [global, target, shell] }
+    AppCallRequest:
+      type: object
+      additionalProperties: false
+      required: [method, params]
+      properties:
+        installationId:
+          type: string
+          description: Required for host calls; implied by the capability token for backend calls.
+        targetId:
+          oneOf:
+            - { $ref: '#/components/schemas/TargetId' }
+            - { type: 'null' }
+        method:
+          enum:
+            - studio.ui.getContext
+            - studio.ui.notify
+            - studio.ui.navigate
+            - studio.aas.listShells
+            - studio.aas.getShell
+            - studio.aas.listSubmodels
+            - studio.aas.getSubmodel
+            - studio.aas.getElement
+            - studio.aas.setElementValue
+            - studio.backend.call
+        params:
+          description: Method parameters as defined by `@basyx/studio-sdk` (`studio-sdk/0`).
+    AppCallResult:
+      type: object
+      additionalProperties: false
+      required: [result]
+      properties:
+        result: {}
     AppInstallationPage:
       type: object
       additionalProperties: false

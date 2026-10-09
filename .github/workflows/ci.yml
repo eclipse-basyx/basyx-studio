@@ -124,6 +124,10 @@ jobs:
       - name: Build hosted Studio
         run: pnpm build
 
+      # Installable packages of the example apps, used by the app tests (MVP-3).
+      - name: Build example apps
+        run: pnpm apps:build
+
       - name: Install Playwright browser
         run: pnpm exec playwright install --with-deps chromium
 
@@ -194,6 +198,9 @@ jobs:
 
       - name: Build the unpacked desktop app
         run: pnpm build:electron:dir --linux --x64
+
+      - name: Build example apps
+        run: pnpm apps:build
 
       - name: End-to-end tests (packaged desktop)
         run: |

@@ -30,7 +30,28 @@ export async function studioApi (page: Page) {
     get: (path: string) => request.get(`/api/studio/v1${path}`),
     post: (path: string, data: unknown) => request.post(`/api/studio/v1${path}`, { headers, data }),
     delete: (path: string) => request.delete(`/api/studio/v1${path}`, { headers }),
+    /** Uploads an app package (developer mode). */
+    install: (bytes: Uint8Array) => request.post('/api/studio/v1/app-installations', {
+      headers: { ...headers, 'Content-Type': 'application/zip' },
+      data: Buffer.from(bytes),
+    }),
   }
+}
+
+/** Removes every installed app, so each test starts from a known state. */
+export async function uninstallAllApps (page: Page): Promise<void> {
+  const api = await studioApi(page)
+  const list = await (await api.get('/app-installations')).json() as { items: Array<{ id: string }> }
+  for (const item of list.items) {
+    expect((await api.delete(`/app-installations/${item.id}`)).status()).toBe(204)
+  }
+}
+
+/** Installs an app package and returns the installation ID. */
+export async function installApp (page: Page, bytes: Uint8Array): Promise<string> {
+  const response = await (await studioApi(page)).install(bytes)
+  expect(response.status(), await response.text()).toBe(201)
+  return (await response.json() as { id: string }).id
 }
 
 /** Registers a target, replacing one with the same name left over from an earlier run. */
@@ -62,6 +83,17 @@ export function registerSecuredServiceTarget (page: Page, name: string): Promise
     clientId: 'studio-service',
     scopes: ['basyx-api'],
     clientSecret: { ref: 'env:STUDIO_TESTENV_SERVICE_SECRET' },
+  })
+}
+
+/** The secured target, accessed with each user's own account (authorization code with PKCE). */
+export function registerSecuredUserTarget (page: Page, name: string): Promise<string> {
+  return registerTarget(page, name, securedTargetUrl, {
+    mode: 'delegated_user',
+    issuer: 'http://keycloak.localhost:18080/realms/basyx-studio',
+    clientId: 'studio-web',
+    scopes: ['openid', 'basyx-api'],
+    clientSecret: { ref: 'env:STUDIO_OIDC_CLIENT_SECRET' },
   })
 }
 

@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
 // End-to-end tests of the hosted production build against the test
-// environment (pnpm testenv:up). Run `pnpm build` first.
+// environment (pnpm testenv:up). Run `pnpm build` and `pnpm apps:build` first.
 // All values are the test-only values of test-setup/ and .env.example.
 const baseURL = 'http://localhost:3000'
 
@@ -33,6 +33,9 @@ export default defineConfig({
       STUDIO_OIDC_SCOPES: 'openid profile email',
       STUDIO_PRIVATE_NETWORK_TARGETS: 'allow',
       STUDIO_TESTENV_SERVICE_SECRET: 'studio-service-test-secret',
+      // Apps (MVP-3): run `pnpm apps:build` first.
+      STUDIO_APPS_URL: 'http://apps.localhost:3000',
+      STUDIO_APPS_ALLOW_UNSIGNED: 'true',
     },
   },
 })

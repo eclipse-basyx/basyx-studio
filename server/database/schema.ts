@@ -1,5 +1,6 @@
 import type { EndpointInput, SecuritySummary } from '#shared/contract'
-import { boolean, index, integer, jsonb, pgTable, primaryKey, text, timestamp } from 'drizzle-orm/pg-core'
+import type { AppManifest } from '@basyx/studio-sdk/protocol'
+import { boolean, customType, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 
 const timestamps = {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -69,4 +70,43 @@ export const auditEvents = pgTable('audit_events', {
   downstreamIdentity: text('downstream_identity'),
   outcome: text('outcome', { enum: ['success', 'failure'] }).notNull(),
   details: jsonb('details').$type<Record<string, unknown>>().notNull().default({}),
+  /** The app installation that made the call, if any. No foreign key: audit outlives uninstalls. */
+  appInstallationId: text('app_installation_id'),
 }, table => [index('audit_events_occurred_at_idx').on(table.occurredAt)])
+
+const bytea = customType<{ data: Uint8Array, driverData: Uint8Array }>({
+  dataType: () => 'bytea',
+  // node-postgres returns a Buffer, PGlite a Uint8Array.
+  fromDriver: value => new Uint8Array(value.buffer, value.byteOffset, value.byteLength),
+})
+
+/**
+ * Installed apps (developer mode, MVP-3). One version per app ID; updates come
+ * with the marketplace. Installing or uninstalling changes only these rows.
+ */
+export const appInstallations = pgTable('app_installations', {
+  id: text('id').primaryKey(),
+  appId: text('app_id').notNull(),
+  version: text('version').notNull(),
+  /** `sha256:<hex>` of the uploaded package. */
+  digest: text('digest').notNull(),
+  /** The validated manifest, as installed. */
+  manifest: jsonb('manifest').$type<AppManifest>().notNull(),
+  unsigned: boolean('unsigned').notNull(),
+  installedBy: text('installed_by').notNull(),
+  installedAt: timestamp('installed_at', { withTimezone: true }).notNull().defaultNow(),
+}, table => [uniqueIndex('app_installations_app_id_idx').on(table.appId)])
+
+/** App file contents, addressed by their SHA-256 digest and shared between installations. */
+export const appBlobs = pgTable('app_blobs', {
+  digest: text('digest').primaryKey(),
+  size: integer('size').notNull(),
+  content: bytea('content').notNull(),
+})
+
+export const appFiles = pgTable('app_files', {
+  installationId: text('installation_id').notNull().references(() => appInstallations.id, { onDelete: 'cascade' }),
+  path: text('path').notNull(),
+  digest: text('digest').notNull().references(() => appBlobs.digest),
+  contentType: text('content_type').notNull(),
+}, table => [primaryKey({ columns: [table.installationId, table.path] }), index('app_files_digest_idx').on(table.digest)])

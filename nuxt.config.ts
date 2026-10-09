@@ -73,6 +73,12 @@ export default defineNuxtConfig({
     },
   },
 
+  routeRules: {
+    // Only Studio may frame Studio pages; app frames run on other origins
+    // (ADR 0017). App files set their own policy.
+    '/**': { headers: { 'Content-Security-Policy': 'frame-ancestors \'self\'' } },
+  },
+
   nitro: {
     // The ESM build of aas-core3.1-typescript uses extensionless relative
     // imports that plain Node ESM cannot load, so it must be bundled.

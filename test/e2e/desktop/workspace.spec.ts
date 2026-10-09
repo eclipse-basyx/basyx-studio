@@ -1,34 +1,13 @@
 import type { ElectronApplication, Page } from '@playwright/test'
-import { copyFile, mkdtemp, readFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { copyFile, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { _electron as electron, expect, test } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import { strFromU8, unzipSync } from 'fflate'
+import { chooseFiles as chooseNativeFiles, closeStudio, fixture, launchStudio, openPackage as openNativePackage } from './support'
 
 // MVP-2 definition of done 5 in the packaged desktop app: open a local AASX
 // package, edit, save, save as, and be asked before losing unsaved changes.
 // Native dialogs are replaced in the main process; everything else is real.
-
-const root = fileURLToPath(new URL('../../..', import.meta.url))
-const fixture = join(root, 'test-setup/fixtures/open/IESEDriveMotorDM3000.aasx')
-
-function executablePath (): string {
-  if (process.env.STUDIO_E2E_EXECUTABLE) {
-    return process.env.STUDIO_E2E_EXECUTABLE
-  }
-  switch (process.platform) {
-    case 'darwin': {
-      return join(root, `dist/mac${process.arch === 'arm64' ? '-arm64' : ''}/BaSyx Studio.app/Contents/MacOS/BaSyx Studio`)
-    }
-    case 'win32': {
-      return join(root, 'dist/win-unpacked/BaSyx Studio.exe')
-    }
-    default: {
-      return join(root, 'dist/linux-unpacked/studio')
-    }
-  }
-}
 
 async function contentXml (path: string): Promise<string> {
   const entries = unzipSync(new Uint8Array(await readFile(path)), { filter: entry => entry.name.endsWith('.xml') && entry.name.startsWith('aasx/') })
@@ -40,33 +19,15 @@ let window: Page
 let directory: string
 
 test.beforeEach(async () => {
-  directory = await mkdtemp(join(tmpdir(), 'studio-e2e-'))
-  app = await electron.launch({
-    executablePath: executablePath(),
-    // macOS: an in-memory keychain, so test runs never prompt for Keychain access.
-    // Linux: the Secret Service (CI unlocks a gnome-keyring), never plain text.
-    args: process.platform === 'darwin' ? ['--use-mock-keychain'] : (process.platform === 'linux' ? ['--password-store=gnome-libsecret'] : []),
-    env: { ...process.env, STUDIO_USER_DATA_DIR: join(directory, 'user-data') },
-  })
-  window = await app.firstWindow()
-  await expect(window.getByRole('heading', { name: 'AAS targets' })).toBeVisible({ timeout: 30_000 })
+  ({ app, window, directory } = await launchStudio())
 })
 
 test.afterEach(async () => {
-  // Discard whatever a test left unsaved, so quitting is never blocked by a dialog.
-  await app.evaluate(({ dialog }) => {
-    dialog.showMessageBox = (async () => ({ response: 1, checkboxChecked: false })) as typeof dialog.showMessageBox
-  })
-  await app.close()
+  await closeStudio(app)
 })
 
 async function chooseFiles (open: string, save?: string) {
-  await app.evaluate(({ dialog }, paths) => {
-    dialog.showOpenDialog = (async () => ({ canceled: false, filePaths: [paths.open] })) as typeof dialog.showOpenDialog
-    if (paths.save) {
-      dialog.showSaveDialog = (async () => ({ canceled: false, filePath: paths.save })) as typeof dialog.showSaveDialog
-    }
-  }, { open, save })
+  await chooseNativeFiles(app, open, save)
 }
 
 /** Edits SerialNumber; `select` clicks it in the tree (a second click would deselect it). */
@@ -82,11 +43,7 @@ async function editSerialNumber (value: string, select = true) {
 }
 
 async function openPackage (path: string) {
-  await window.getByRole('button', { name: 'Open AASX file' }).click()
-  await expect(window).toHaveURL(/\/targets\/ws-/)
-  await window.getByText('Servo Motor DM-3000 (Fraunhofer IESE)').click()
-  await window.getByText('Nameplate', { exact: true }).click()
-  await expect(window.getByRole('tree').getByText('SerialNumber', { exact: true })).toBeVisible()
+  await openNativePackage(window)
   return path
 }
 

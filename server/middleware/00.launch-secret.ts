@@ -1,8 +1,11 @@
 import { timingSafeEqual } from 'node:crypto'
 import { createError, defineEventHandler, getRequestHeader } from 'nuxt/server'
+import { apiBasePath } from '#shared/contract'
+import { capabilityTokenPrefix } from '../lib/apps/tokens'
 import { callbackPath } from '../lib/urls'
 
 const launchSecretHeader = 'x-studio-launch-secret'
+const appCallsPath = `${apiBasePath}/app-calls`
 
 export default defineEventHandler(event => {
   const expected = process.env.STUDIO_LAUNCH_SECRET
@@ -14,6 +17,13 @@ export default defineEventHandler(event => {
   // which cannot know the launch secret. It is authenticated by its
   // single-use, server-side `state` instead.
   if (event.req.method === 'GET' && event.url.pathname === callbackPath) {
+    return
+  }
+
+  // Backend apps run in Deno and know only their capability token, which the
+  // handler verifies (ADR 0019).
+  if (event.req.method === 'POST' && event.url.pathname === appCallsPath
+    && getRequestHeader(event, 'authorization')?.startsWith(`Bearer ${capabilityTokenPrefix}`)) {
     return
   }
 
