@@ -64,7 +64,7 @@
     "@types/pg": "^8.23.1",
     "@vuetify/mcp": "^0.12.1",
     "drizzle-kit": "^0.31.11",
-    "electron": "^44.6.0",
+    "electron": "^44.7.0",
     "electron-builder": "^26.15.3",
     "esbuild": "0.28.2",
     "eslint": "^10.12.0",
