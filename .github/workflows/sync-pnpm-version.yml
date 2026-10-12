@@ -41,10 +41,13 @@ jobs:
 
       - name: Fetch sha512 integrity for new pnpm version
         id: pnpm-integrity
+        # Query the registry outside the checkout: npm validates the project's
+        # devEngines (runtime: deno) and refuses to run under Node.
+        working-directory: ${{ runner.temp }}
         env:
           VERSION: ${{ steps.pnpm-version.outputs.version }}
         run: |
-          INTEGRITY=$(npm view "pnpm@${VERSION}" dist.integrity 2>/dev/null)
+          INTEGRITY=$(npm view "pnpm@${VERSION}" dist.integrity || true)
           if [ -z "$INTEGRITY" ]; then
             echo "Could not fetch integrity for pnpm@${VERSION}" >&2
             exit 1
