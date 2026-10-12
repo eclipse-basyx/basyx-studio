@@ -127,8 +127,9 @@ operation variables.
 **Tooling**
 - `vue-tsc` does not support TypeScript 7, so TypeScript 6 is pinned for type
   checking.
-- undici stays on major 7: the guarded fetch passes an undici dispatcher to
-  Node's built-in fetch, which bundles undici 7.
+- The guarded fetch uses the fetch of the undici package together with its
+  dispatcher, not Node's built-in fetch: a dispatcher only works with the fetch
+  of the same undici major, and Node bundles its own undici.
 
 **Nuxt 5 readiness**
 - Route handlers, server middleware and `server/utils` use the portable

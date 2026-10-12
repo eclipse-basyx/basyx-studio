@@ -1,7 +1,8 @@
 import type { AddressPolicy } from './address-policy'
 import type { LookupAddress } from 'node:dns'
+import type { Response as UndiciResponse } from 'undici'
 import { lookup } from 'node:dns/promises'
-import { Agent } from 'undici'
+import { Agent, fetch as undiciFetch } from 'undici'
 import { rejectAddress, rejectUrl } from './address-policy'
 
 export interface OutboundPolicy extends AddressPolicy {
@@ -88,16 +89,19 @@ export async function checkHost (url: URL, policy: AddressPolicy): Promise<void>
   }
 }
 
-function limitBody (response: Response, maxBytes: number, onExceeded: (failure: NetworkFailure) => void): Response {
+// Returns a built-in Response, because callers such as openid-client and the
+// BaSyx SDK expect Node's fetch types rather than those of the undici package.
+function limitBody (response: UndiciResponse, maxBytes: number, onExceeded: (failure: NetworkFailure) => void): Response {
   const declared = Number(response.headers.get('content-length'))
   if (Number.isFinite(declared) && declared > maxBytes) {
     throw new NetworkFailure('too_large', `response exceeds ${maxBytes} bytes`)
   }
+  const init = { status: response.status, statusText: response.statusText, headers: new Headers([...response.headers]) }
   if (!response.body) {
-    return response
+    return new Response(null, init)
   }
   let received = 0
-  const limited = response.body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
+  const limited = (response.body as ReadableStream<Uint8Array>).pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
     transform (chunk, controller) {
       received += chunk.byteLength
       if (received > maxBytes) {
@@ -109,7 +113,7 @@ function limitBody (response: Response, maxBytes: number, onExceeded: (failure: 
       controller.enqueue(chunk)
     },
   }))
-  return new Response(limited, { status: response.status, statusText: response.statusText, headers: response.headers })
+  return new Response(limited, init)
 }
 
 /**
@@ -149,15 +153,17 @@ export function createGuardedFetch (
       signals.push(init.signal)
     }
 
-    let response: Response
+    // The fetch of the undici package, not Node's built-in one: a dispatcher
+    // only works with the fetch of the same undici major, and Node bundles its
+    // own undici independently of the one installed here.
+    let response: UndiciResponse
     try {
-      response = await fetch(request.url, {
+      response = await undiciFetch(request.url, {
         method: request.method,
-        headers,
+        headers: [...headers],
         body: request.body,
         redirect: 'manual',
         signal: AbortSignal.any(signals),
-        // @ts-expect-error `dispatcher` is an undici extension of Node's fetch.
         dispatcher: agentFor(policy, url.protocol),
         duplex: request.body ? 'half' : undefined,
       })
