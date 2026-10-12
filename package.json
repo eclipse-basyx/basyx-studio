@@ -51,7 +51,7 @@
     "pg": "^8.23.1",
     "pinia": "^4.0.3",
     "semver": "^7.8.5",
-    "undici": "^7.30.0",
+    "undici": "^8.11.2",
     "vue": "^3.5.43",
     "vuetify": "^4.2.4",
     "vuetify-nuxt-module": "1.0.0-rc.6",
