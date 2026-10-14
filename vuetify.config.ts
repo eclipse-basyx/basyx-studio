@@ -61,6 +61,25 @@ export default defineVuetifyConfiguration({
           'dialog-header': '#282828',
         },
       },
+      // Easter egg: the Konami code (default layout) applies it to the app for
+      // the session, scoped through <v-app :theme>, so the color-scheme cookie
+      // and the stored theme stay as they are.
+      arcade: {
+        dark: true,
+        colors: {
+          ...withOnColors({
+            background: '#0B0B1A',
+            surface: '#14142B',
+            primary: '#39FF14',
+            secondary: '#FF2BD6',
+            error: '#FF3B3B',
+            info: '#00E5FF',
+            success: '#39FF14',
+            warning: '#FFE600',
+          }),
+          'dialog-header': '#1E1E3A',
+        },
+      },
     },
   },
 

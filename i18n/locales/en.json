@@ -15,7 +15,9 @@
     "targetNamed": "Target: {name}",
     "view": "View",
     "edit": "Edit",
-    "account": "Account"
+    "account": "Account",
+    "arcadeOn": "Arcade mode: +30 lives",
+    "arcadeOff": "Arcade mode off. Back to work."
   },
   "qr": {
     "title": "QR code of the asset",
@@ -365,7 +367,6 @@
     "unsignedHint": "Installed in developer mode, without a marketplace signature or review.",
     "unsignedDisabled": "Installing unsigned apps is disabled in this deployment (STUDIO_APPS_ALLOW_UNSIGNED).",
     "disabled": "Apps are disabled because no apps origin is configured (STUDIO_APPS_URL).",
-    "permissions": "Permissions",
     "backend": "Backend",
     "submodelViews": "{count} submodel view | {count} submodel views",
     "modules": "{count} module | {count} modules",
@@ -719,6 +720,9 @@
     "light": "Light",
     "dark": "Dark",
     "system": "System",
+    "uiLanguage": "Language",
+    "browserLanguage": "Browser default",
+    "dialectsUnlocked": "Hidden dialects unlocked",
     "valueLanguage": "Language of multi-language values",
     "refresh": "Auto-refresh",
     "refreshSubtitle": "Values are re-read; infrastructures do not push changes",

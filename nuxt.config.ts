@@ -1,4 +1,5 @@
 import type { ElectronOptions } from 'nuxt-electron'
+import { locales } from './shared/i18n/locales'
 
 // nuxt-electron does not augment the Nuxt config type itself.
 declare module '@nuxt/schema' {
@@ -123,10 +124,23 @@ export default defineNuxtConfig({
     },
   },
 
+  // UI locales (ADR 0026): lazy-loaded Studio and Vuetify messages per
+  // locale. The server renders in the locale from the i18n_redirected cookie
+  // or Accept-Language, so the client hydrates in the same one.
   i18n: {
     defaultLocale: 'en',
     strategy: 'no_prefix',
-    locales: [{ code: 'en', name: 'English', file: 'en.json' }],
+    locales: locales.filter(locale => locale.available).map(({ code, language, name, base, hidden }) => ({
+      code,
+      // Detection falls back to the primary subtag (`de`), so a hidden dialect
+      // gets a private-use tag no browser sends; `<html lang>` and Intl use
+      // its real tag (app.vue, i18n.config.ts).
+      language: hidden ? `x-${code}` : language,
+      name,
+      // A dialect loads its base locale first and overrides some of its messages.
+      files: [...(base ? [`${base}.json`] : []), `${code}.json`, `vuetify/${base ?? code}.ts`],
+    })),
+    detectBrowserLanguage: { useCookie: true, cookieKey: 'i18n_redirected', fallbackLocale: 'en' },
     vueI18n: './i18n.config.ts',
   },
 })

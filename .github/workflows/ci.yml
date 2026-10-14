@@ -47,6 +47,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Translations
+        run: pnpm i18n:check
+
       - name: Typecheck
         run: pnpm typecheck
 

@@ -1,5 +1,5 @@
 <template>
-  <v-app>
+  <v-app :theme="ui.arcade ? 'arcade' : undefined">
     <v-app-bar>
       <v-app-bar-nav-icon
         v-if="inShellBrowser"
@@ -330,5 +330,10 @@
     if (targetId.value) {
       ui.toggleMode()
     }
+  })
+  // Easter egg: the Konami code toggles the arcade theme (vuetify.config.ts).
+  useKeySequence(['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'], () => {
+    ui.arcade = !ui.arcade
+    notifications.notify({ text: t(ui.arcade ? 'app.arcadeOn' : 'app.arcadeOff'), color: 'success' })
   })
 </script>

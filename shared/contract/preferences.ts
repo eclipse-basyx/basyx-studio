@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { localeCodes } from '../i18n/locales'
 import { syncModes } from './infrastructure'
 
 const shellKey = z.string().regex(/^[\w-]{1,4000}$/)
@@ -19,6 +20,11 @@ export type RecentShell = z.infer<typeof recentShell>
 export const preferencesSchema = z.object({
   recent: z.record(z.string().max(100), z.array(recentShell).max(50)).default({}),
   /** Preferred language of multi-language values, e.g. `en` or `de`. */
+  /**
+   * UI language (ADR 0026); `null` follows the browser. A code that is no
+   * longer known falls back to `null` instead of invalidating every setting.
+   */
+  uiLanguage: z.enum(localeCodes).nullable().default(null).catch(null),
   valueLanguage: z.string().regex(/^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})?$/).default('en'),
   theme: z.enum(['system', 'light', 'dark']).default('system'),
   /** Off by default, as auto-sync in the BaSyx Web UI: every open shell would poll its infrastructure. */

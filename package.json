@@ -19,6 +19,7 @@
     "postinstall": "nuxt prepare",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
+    "i18n:check": "node scripts/check-i18n.mjs",
     "testenv:up": "docker compose -f test-setup/docker-compose.yaml up -d --wait --wait-timeout 300",
     "testenv:down": "docker compose -f test-setup/docker-compose.yaml --profile large down -v",
     "testenv:smoke": "node test-setup/smoke-test.mjs",
@@ -67,6 +68,7 @@
   "devDependencies": {
     "@basyx/studio-sdk": "workspace:*",
     "@electric-sql/pglite-tools": "^0.4.8",
+    "@intlify/message-compiler": "^11.4.13",
     "@nuxt/eslint": "^1.17.0",
     "@nuxt/fonts": "^1.0.1",
     "@pinia/nuxt": "^1.0.2",

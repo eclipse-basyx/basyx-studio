@@ -34,6 +34,7 @@ changes one, add a new ADR with `Supersedes` and mark the old record
 | [0023](0023-bundled-first-party-apps.md) | Accepted | Four first-party apps shipped with Studio on the app platform |
 | [0024](0024-aas-query-language-through-the-bff.md) | Accepted | Web UI search syntax and checked raw queries, run through the BFF |
 | [0025](0025-client-certificates-for-infrastructures.md) | Accepted | PKCS#12 client certificates per infrastructure, presented by the Studio Service on every HTTPS request |
+| [0026](0026-ui-translation.md) | Proposed | Seven UI locales, lazy-loaded; UI language separate from content language; CI key checks |
 
 ## Template
 

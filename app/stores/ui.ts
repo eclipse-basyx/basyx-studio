@@ -11,6 +11,8 @@ export const useUiStore = defineStore('ui', () => {
   /** `null` lets the drawer decide by screen size. */
   const listDrawer = ref<boolean | null>(null)
   const detailsDrawer = ref(false)
+  /** Easter egg: the arcade theme, toggled with the Konami code until the next reload. */
+  const arcade = ref(false)
 
   const editing = computed(() => mode.value === 'edit')
 
@@ -18,5 +20,5 @@ export const useUiStore = defineStore('ui', () => {
     mode.value = mode.value === 'edit' ? 'view' : 'edit'
   }
 
-  return { mode, editing, commandOpen, listDrawer, detailsDrawer, toggleMode }
+  return { mode, editing, commandOpen, listDrawer, detailsDrawer, arcade, toggleMode }
 })

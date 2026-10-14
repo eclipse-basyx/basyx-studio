@@ -24,6 +24,15 @@
             </v-btn-toggle>
 
             <v-select
+              class="mb-4"
+              :items="uiLanguages"
+              :label="t('settings.uiLanguage')"
+              :model-value="preferences.uiLanguage"
+              prepend-inner-icon="mdi-earth"
+              @update:model-value="(value: LocaleCode | null) => saveUiLanguage(value)"
+            />
+
+            <v-select
               :items="languages"
               :label="t('settings.valueLanguage')"
               :model-value="preferences.valueLanguage"
@@ -110,12 +119,42 @@
 
 <script lang="ts" setup>
   import type { Preferences, SyncMode, Target } from '#shared/contract'
+  import type { LocaleCode } from '#shared/i18n/locales'
   import { useQuery } from '@pinia/colada'
+  import { locales } from '#shared/i18n/locales'
 
-  const { t } = useI18n()
+  const { t, locale, localeCodes, setLocale } = useI18n()
   const session = useSessionStore()
+  const notifications = useNotificationsStore()
   const store = usePreferences()
   const preferences = computed(() => store.preferences.value)
+
+  // Easter egg: typing "basyx" on this page (outside a field) reveals the
+  // hidden German dialects (shared/i18n/locales.ts) until the next reload.
+  const dialectsRevealed = useState('settings-dialects-revealed', () => false)
+  useKeySequence([...'basyx'], () => {
+    if (dialectsRevealed.value) {
+      dialectsRevealed.value = false
+    } else {
+      dialectsRevealed.value = true
+      notifications.notify({ text: t('settings.dialectsUnlocked'), color: 'success' })
+    }
+  })
+
+  // A hidden locale stays listed while it is chosen, so the select can show it.
+  const uiLanguages = computed(() => [
+    { title: t('settings.browserLanguage'), value: null },
+    ...locales
+      .filter(entry => entry.available && (!entry.hidden || dialectsRevealed.value || entry.code === locale.value || entry.code === preferences.value.uiLanguage))
+      .map(entry => ({ title: entry.name, value: entry.code })),
+  ])
+  const browserLocale = useBrowserLocale()
+
+  async function saveUiLanguage (code: LocaleCode | null) {
+    // "Browser default" switches to the locale detection would pick.
+    await setLocale(localeCodes.value.find(candidate => candidate === (code ?? browserLocale)) ?? 'en')
+    return save({ uiLanguage: code })
+  }
 
   const languages = [
     { title: 'English', value: 'en' },
