@@ -48,15 +48,24 @@
     "subtitle": "Choose an infrastructure to browse its Asset Administration Shells.",
     "search": "Search targets",
     "filters": {
-      "access": "Access",
-      "state": "State"
+      "state": "State",
+      "all": "All",
+      "ready": "Ready",
+      "required": "Needs authorization"
     },
     "signInTitle": "Sign in to BaSyx Studio",
     "signInText": "Studio accesses your AAS infrastructures on your behalf. Sign in with your organization's account to continue.",
     "noTargets": "No infrastructures are configured yet.",
     "noTargetsAdmin": "Add an infrastructure to get started.",
     "noTargetsUser": "Ask a Studio administrator to add one.",
-    "addInfrastructure": "Add infrastructure"
+    "addInfrastructure": "Add infrastructure",
+    "subtitleCount": "Choose one of {n} infrastructures to browse its Asset Administration Shells.",
+    "resetFilters": "Reset search and filters",
+    "view": {
+      "label": "View",
+      "grid": "Cards",
+      "list": "List"
+    }
   },
   "security": {
     "unsecured": "Unsecured",
@@ -409,11 +418,11 @@
   },
   "palette": {
     "search": "Search targets and actions…",
-    "searchTarget": "Search shells, elements, actions…",
-    "placeholder": "Search actions…",
-    "placeholderTarget": "Search shells, elements, asset IDs, actions…",
+    "searchTarget": "Search shells, elements, targets…",
+    "placeholder": "Search targets and actions…",
+    "placeholderTarget": "Search shells, elements, asset IDs, targets, actions…",
     "empty": "No results for “{query}”",
-    "emptyText": "Try an idShort, an identifier or an action like “theme”.",
+    "emptyText": "Try a target name, an idShort, an identifier or an action like “theme”.",
     "navigate": "navigate",
     "open": "open",
     "results": "no results | {count} result | {count} results",
@@ -423,7 +432,8 @@
       "shells": "Shells",
       "elements": "Submodel elements",
       "recent": "Recently opened",
-      "discovery": "Asset ID"
+      "discovery": "Asset ID",
+      "targets": "Targets"
     },
     "actions": {
       "theme": "Switch between light and dark theme",

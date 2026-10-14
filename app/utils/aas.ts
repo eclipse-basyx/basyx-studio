@@ -1,4 +1,4 @@
-import type { EditableModelType, LangString, Target } from '#shared/contract'
+import type { EditableModelType, LangString, Target, TargetCapabilities } from '#shared/contract'
 import { editableModelTypes } from '#shared/contract'
 
 const modelTypeIcons: Record<string, string> = {
@@ -41,6 +41,25 @@ export const securityModeIcons: Record<string, string> = {
 /** Icon of a target: its security mode, or a package for local workspaces. */
 export function targetIcon (target: Target): string {
   return target.securityMode ? securityModeIcons[target.securityMode]! : 'mdi-package-variant-closed'
+}
+
+/** The line under a target's name: its description, the package file, or `fallback`. */
+export function targetSubtitle (target: Target, fallback: string): string {
+  return target.description ?? target.workspace?.fileName ?? fallback
+}
+
+/** The optional features users notice, in display order; basic browsing is always there. */
+export function targetFeatures (c: TargetCapabilities): Array<{ key: string, icon: string, on: boolean }> {
+  return [
+    { key: 'export', icon: 'mdi-download', on: c.export },
+    { key: 'upload', icon: 'mdi-upload', on: c.upload },
+    { key: 'search', icon: 'mdi-database-search-outline', on: c.search !== 'filter' },
+    { key: 'elementSearch', icon: 'mdi-text-search', on: c.elementSearch },
+    { key: 'discovery', icon: 'mdi-barcode-scan', on: c.discovery },
+    { key: 'history', icon: 'mdi-history', on: c.history },
+    { key: 'changeFeed', icon: 'mdi-timeline-clock-outline', on: c.changeFeed },
+    { key: 'sharing', icon: 'mdi-account-multiple-plus-outline', on: c.sharing },
+  ]
 }
 
 export function isEditableModelType (modelType: unknown): modelType is EditableModelType {
