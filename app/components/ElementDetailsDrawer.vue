@@ -21,6 +21,7 @@
         <ElementForm
           :create="creating"
           :explicit-save="capabilities.persistence === 'explicit_save'"
+          :link-concepts="capabilities.conceptDescriptions"
           :submodel-key="creating.submodelKey"
           :target-id="targetId"
           @cancel="emit('cancel-create')"
@@ -182,6 +183,7 @@
           <ElementForm
             :detail="detail"
             :explicit-save="capabilities.persistence === 'explicit_save'"
+            :link-concepts="capabilities.conceptDescriptions"
             :submodel-key="item.submodelKey"
             :target-id="targetId"
             @changed="onChanged"
@@ -217,10 +219,17 @@
 
         <v-divider />
 
-        <v-expansion-panels :model-value="['description']" multiple>
+        <v-expansion-panels :model-value="['description', 'concept']" multiple>
           <v-expansion-panel :title="t('details.description')" value="description">
             <v-expansion-panel-text class="text-body-medium text-medium-emphasis">
               {{ description ?? t('details.noDescription') }}
+            </v-expansion-panel-text>
+          </v-expansion-panel>
+
+          <!-- What the semantic ID means (MVP-6 plan, E1). -->
+          <v-expansion-panel v-if="showConcept" :title="t('cd.semanticsCard')" value="concept">
+            <v-expansion-panel-text>
+              <ConceptDescriptionCard :can-create="canCreateConcept" :node="value" :target-id="targetId" />
             </v-expansion-panel-text>
           </v-expansion-panel>
 
@@ -273,6 +282,11 @@
       :text="t('details.nothingText')"
       :title="t('details.nothing')"
     />
+
+    <!-- Apply and Discard of the open form, always in view (FormActions). -->
+    <template #append>
+      <div id="details-form-actions" />
+    </template>
   </v-navigation-drawer>
 </template>
 
@@ -285,6 +299,7 @@
   import { useDisplay } from 'vuetify'
   import { isElementModelType } from '#shared/aas/defaults'
   import { decodeResourceKey, langText, modelTypeIcon } from '~/utils/aas'
+  import { formActionsFooterKey } from '~/utils/editor'
 
   // The details drawer (MVP-4 plan, T2): the selected submodel or element in
   // the modes of the Web UI's right pane. The mode and the app view are in the
@@ -319,6 +334,7 @@
     'changed': [detail: ElementDetail]
   }>()
   const mode = defineModel<DetailsMode>('mode', { required: true })
+  provide(formActionsFooterKey, '#details-form-actions')
   const view = defineModel<string | null>('view', { required: true })
 
   const { t } = useI18n()
@@ -429,6 +445,10 @@
     && detail.value?.revision !== null && detail.value?.revision !== undefined
     && (props.item?.elementKey ? isElementModelType(value.value.modelType) : true))
   const keepsView = computed(() => ['File', 'Blob', 'Operation'].includes(String(value.value.modelType)))
+
+  // The concept description behind the semantic ID, where the target has a repository for them.
+  const showConcept = computed(() => props.capabilities.conceptDescriptions && typeof value.value.semanticId?.keys?.[0]?.value === 'string' && value.value.semanticId.keys[0].value !== '')
+  const canCreateConcept = computed(() => props.canWrite && props.capabilities.writeStructure && props.capabilities.createResources && !props.at)
 
   const description = computed(() => langText(Array.isArray(value.value.description) ? value.value.description : [], preferences.value.valueLanguage))
 

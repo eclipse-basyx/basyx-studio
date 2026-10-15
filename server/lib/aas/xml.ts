@@ -7,10 +7,12 @@ import { StudioProblem } from '../problem'
  * from its JSON form, for the details drawer's XML mode (MVP-4 plan, T2).
  * Data that does not deserialize is reported as an invalid target response.
  */
-export function toAasXml (value: JsonObject, kind: 'submodel' | 'element'): string {
+export function toAasXml (value: JsonObject, kind: 'submodel' | 'element' | 'concept description'): string {
   const parsed = kind === 'submodel'
     ? jsonization.submodelFromJsonable(value as jsonization.JsonValue)
-    : jsonization.submodelElementFromJsonable(value as jsonization.JsonValue)
+    : (kind === 'element'
+        ? jsonization.submodelElementFromJsonable(value as jsonization.JsonValue)
+        : jsonization.conceptDescriptionFromJsonable(value as jsonization.JsonValue))
   if (parsed.error !== null) {
     throw new StudioProblem('target_invalid_response', `The ${kind} cannot be serialized as XML: ${parsed.error.path.toString()}: ${parsed.error.message}`)
   }

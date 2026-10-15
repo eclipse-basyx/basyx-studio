@@ -75,8 +75,9 @@ serverseitig den BaSyx-TypeScript-SDK-Client oder den Workspace Worker.
 | `GET/PUT /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/attachment` | Inhalt eines File-Elements streamen bzw. mit `If-Match` ersetzen. |
 | `POST /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/invocations` | Eine Operation synchron oder asynchron aufrufen; asynchrone Aufrufe liefern ein Handle. |
 | `GET /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/invocations/{handle}` | Zustand und Outputs eines asynchronen Aufrufs abfragen. |
-| `GET/POST /targets/{targetId}/concept-descriptions` | Concept Descriptions auflisten bzw. – wenn vom Target unterstützt – anlegen. |
-| `GET/PUT/DELETE /targets/{targetId}/concept-descriptions/{resourceKey}` | Concept Description lesen, ersetzen oder löschen. |
+| `GET/POST /targets/{targetId}/concept-descriptions` | Concept Descriptions auflisten bzw. anlegen (ohne ID erzeugt Studio eine nach dem Schema der Infrastruktur; `identifier_conflict` bei vorhandener ID). |
+| `GET/PUT/DELETE /targets/{targetId}/concept-descriptions/{resourceKey}` | Concept Description als JSON mit Revision oder als AAS-XML lesen (`format`), mit `If-Match` ersetzen oder löschen. |
+| `GET /targets/{targetId}/concept-descriptions/{resourceKey}/usages` | Submodelle und Elemente zählen, deren Semantic ID die Concept Description nennt (für die Löschbestätigung). |
 | `GET /targets/{targetId}/changes` | Änderungsereignisse von Shells, Submodellen und Assets lesen, wo der Server seinen Event-Feed ankündigt. |
 | `POST /targets/{targetId}/uploads` | Inhalt einer AASX-, JSON- oder XML-Datei hinzufügen; liefert die neuen Shells und die Registry- und Discovery-Schritte (`sync`). |
 | `POST /targets/{targetId}/operation-invocations` | Eine explizit ausgewählte AAS-Operation mit validierten Inputs und ggf. Bestätigung ausführen. |
@@ -110,6 +111,13 @@ pflegt und der wirksame Sync-Modus `autoCreate` ist
 Neue Problem-Codes: `descriptor_endpoint_blocked`, `query_invalid` und
 `query_unsupported`. Details stehen im
 [MVP-4-Plan](../development/mvp-4-plan.md#studio-api).
+
+Stand MVP-6: Concept Descriptions werden angelegt, ersetzt und gelöscht, auf
+Live-Targets wie in Workspaces, geprüft mit AAS Core und mit denselben
+Revisionen wie Submodelle; `validations` nimmt auch `conceptDescription`.
+Shells, Submodelle und Elemente schreiben ihre `embeddedDataSpecifications`
+(IEC 61360) mit den bestehenden Routen. Details stehen im
+[MVP-6-Plan](../development/mvp-6-plan.md#implementation-status).
 
 Infrastrukturen können ein TLS-Client-Zertifikat (mTLS) haben, unabhängig vom
 Zugriffsmodus ([ADR 0025](../adr/0025-client-certificates-for-infrastructures.md)).

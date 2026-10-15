@@ -229,19 +229,48 @@ export function verifyShell (shell: JsonObject): JsonObject {
   return jsonization.toJsonable(instance) as JsonObject
 }
 
+/** Parses and verifies a concept description, including its IEC 61360 content; returns it normalized. */
+export function verifyConceptDescription (conceptDescription: JsonObject): JsonObject {
+  const parsed = jsonization.conceptDescriptionFromJsonable(conceptDescription as jsonization.JsonValue)
+  if (parsed.error) {
+    throw new StudioProblem('validation_failed', parsed.error.message, {
+      violations: [{ path: parsed.error.path.toString(), message: parsed.error.message }],
+    })
+  }
+  const instance = parsed.mustValue()
+  const violations = violationsOf(verification.verify(instance))
+  if (violations.length > 0) {
+    throw new StudioProblem('validation_failed', violations[0]!.message, { violations })
+  }
+  return jsonization.toJsonable(instance) as JsonObject
+}
+
 /** Findings of AAS Core for a value without writing it (the insert dialog, MVP-5 plan, C3). */
-export function findings (kind: 'element' | 'submodel' | 'shell', value: unknown): Array<{ path: string, message: string }> {
+export function findings (kind: 'element' | 'submodel' | 'shell' | 'conceptDescription', value: unknown): Array<{ path: string, message: string }> {
   try {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
       return [{ path: '', message: 'Expected a JSON object.' }]
     }
     const json = value as JsonObject
-    if (kind === 'element') {
-      verifyElement(json)
-    } else if (kind === 'submodel') {
-      verifySubmodel(json)
-    } else {
-      verifyShell(json)
+    switch (kind) {
+      case 'element': {
+        verifyElement(json)
+
+        break
+      }
+      case 'submodel': {
+        verifySubmodel(json)
+
+        break
+      }
+      case 'conceptDescription': {
+        verifyConceptDescription(json)
+
+        break
+      }
+      default: {
+        verifyShell(json)
+      }
     }
     return []
   } catch (error) {
@@ -261,4 +290,38 @@ export function shellMetadata (shell: JsonObject): JsonObject {
 /** A model reference to a submodel. */
 export function submodelReference (submodelId: string): JsonObject {
   return { type: 'ModelReference', keys: [{ type: 'Submodel', value: submodelId }] }
+}
+
+/** The first key value of a semantic ID: the identifier of its concept description (MVP-6 plan, E1). */
+export function semanticKey (node: JsonObject): string | null {
+  const keys = (node.semanticId as { keys?: Array<{ value?: unknown }> } | undefined)?.keys
+  const value = Array.isArray(keys) ? keys[0]?.value : undefined
+  return typeof value === 'string' && value !== '' ? value : null
+}
+
+/** Elements of a submodel, at any depth, whose semantic ID names `id` (operation variables included). */
+export function countSemanticUses (submodel: JsonObject, id: string): number {
+  let count = 0
+  const visit = (value: unknown) => {
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        visit(item)
+      }
+      return
+    }
+    if (typeof value !== 'object' || value === null) {
+      return
+    }
+    const node = value as JsonObject
+    if (typeof node.modelType === 'string' && semanticKey(node) === id) {
+      count++
+    }
+    for (const field of ['submodelElements', 'value', 'statements', 'annotations', 'inputVariables', 'outputVariables', 'inoutputVariables']) {
+      if (field in node) {
+        visit(node[field])
+      }
+    }
+  }
+  visit(submodel.submodelElements)
+  return count
 }

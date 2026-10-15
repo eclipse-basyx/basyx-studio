@@ -1,3 +1,5 @@
+import type { InjectionKey } from 'vue'
+
 /** Choices of the element forms (MVP-5 plan, U2). */
 
 export const valueTypes: readonly string[] = [
@@ -58,3 +60,9 @@ export function referenceIsEmpty (reference: unknown): boolean {
   const keys = (reference as { keys?: Array<{ value?: string }> } | null)?.keys
   return !Array.isArray(keys) || keys.every(key => !key.value)
 }
+
+/**
+ * Provided by a drawer with a fixed footer: the selector `FormActions`
+ * teleports Apply and Discard to, so they stay in view while the form scrolls.
+ */
+export const formActionsFooterKey: InjectionKey<string> = Symbol('formActionsFooter')

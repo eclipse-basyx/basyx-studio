@@ -46,6 +46,9 @@
       :text="strings.length === 0 ? t('editor.addText') : t('editor.addTranslation')"
       @click="add"
     />
+
+    <div v-for="message in errorMessages ?? []" :key="message" class="text-body-small text-error">{{ message }}</div>
+    <div v-if="hint && !errorMessages?.length" class="text-body-small text-medium-emphasis">{{ hint }}</div>
   </div>
 </template>
 
@@ -57,7 +60,7 @@
   // oriented at the BaSyx Web UI: a language per line with a searchable list,
   // a growing text field and a remove button. A new line gets the first
   // language that is not used yet, so the common case needs no typing.
-  defineProps<{ label?: string }>()
+  defineProps<{ label?: string, hint?: string, errorMessages?: string[] }>()
   const strings = defineModel<LangString[]>({ required: true })
 
   const { t } = useI18n()

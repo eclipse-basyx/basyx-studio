@@ -107,6 +107,13 @@ class WorkspaceAasTarget implements AasTarget {
     this.#call('replaceAttachment', submodelId, idShortPath, file, revision)
 
   conceptDescriptions = (limit: number, cursor: string | undefined) => this.#call('conceptDescriptions', limit, cursor)
+  conceptDescription = (id: string) => this.#call('conceptDescription', id)
+  createConceptDescription = (conceptDescription: JsonObject) => this.#call('createConceptDescription', conceptDescription)
+  replaceConceptDescription = (id: string, conceptDescription: JsonObject, revision: string) =>
+    this.#call('replaceConceptDescription', id, conceptDescription, revision)
+
+  deleteConceptDescription = (id: string, revision: string) => this.#call('deleteConceptDescription', id, revision)
+  conceptDescriptionUsages = (id: string) => this.#call('conceptDescriptionUsages', id)
   /** Workspaces have no query endpoint; raw queries are not offered (`search: expression`). */
   searchShells: AasTarget['searchShells'] = async (search, limit, cursor) => {
     if (!('expression' in search)) {

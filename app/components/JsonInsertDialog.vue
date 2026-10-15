@@ -42,7 +42,7 @@
   // Core on the server while the user types; only valid JSON can be inserted.
   const props = defineProps<{
     targetId: string
-    kind: 'element' | 'submodel'
+    kind: 'element' | 'submodel' | 'conceptDescription'
     title: string
     /** Runs the write with the parsed JSON; rejects with the problem to show. */
     submit: (value: Record<string, unknown>) => Promise<void>

@@ -83,6 +83,13 @@
       />
     </FormSection>
 
+    <DataSpecificationsInput
+      :findings="findings"
+      :model-value="list('embeddedDataSpecifications')"
+      :name="String(submodel.idShort ?? '')"
+      @update:model-value="specifications => set('embeddedDataSpecifications', specifications)"
+    />
+
     <FormSection v-model:open="openAdmin" collapsible :title="t('shell.administration')">
       <div class="d-flex align-start ga-3">
         <v-text-field :label="t('details.version')" :model-value="String(administration.version ?? '')" @update:model-value="text => set('administration', withField(administration, 'version', text))" />
@@ -135,6 +142,11 @@
   const openSupplemental = ref(supplemental.value.length > 0)
   const openAdmin = ref(Boolean(submodel.value.administration))
   const openQualifiers = ref(qualifiers.value.length > 0)
+
+  function list (field: string): Json[] {
+    const value = submodel.value[field]
+    return Array.isArray(value) ? value as Json[] : []
+  }
 
   function setSupplemental (index: number, value: unknown) {
     const next = supplemental.value.map((entry, position) => position === index ? value : entry).filter(entry => entry !== null)

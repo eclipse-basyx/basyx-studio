@@ -45,6 +45,7 @@ ADRs are normative for architecture. If a later decision changes an accepted ADR
 - [MVP-3 plan](development/mvp-3-plan.md): runtime-installable apps (submodel views, modules, backend apps)
 - [MVP-4 plan](development/mvp-4-plan.md): AAS viewer, registries, discovery and query search
 - [MVP-5 plan](development/mvp-5-plan.md): AAS and submodel editor
+- [MVP-6 plan](development/mvp-6-plan.md): concept descriptions and IEC 61360 data specifications
 - [Test environment](../test-setup/README.md): local IdP and BaSyx targets for dev, build, and Electron testing
 
 ## Document authority

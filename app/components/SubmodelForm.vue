@@ -68,7 +68,7 @@
   const working = computed<Json>(() => draft.value?.value ?? source.value)
   const dirty = computed(() => draft.value !== undefined)
   const idShortInvalid = computed(() => !idShortPattern.test(String(working.value.idShort ?? '')))
-  const leftover = computed(() => unclaimed(findings.value, ['idShort', 'semanticId']))
+  const leftover = computed(() => unclaimed(findings.value, ['idShort', 'semanticId', 'embeddedDataSpecifications']))
 
   const applying = ref(false)
   const error = ref<unknown>(null)

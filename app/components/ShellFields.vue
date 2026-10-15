@@ -113,6 +113,13 @@
       />
     </FormSection>
 
+    <DataSpecificationsInput
+      :findings="findings"
+      :model-value="list('embeddedDataSpecifications')"
+      :name="String(shell.idShort ?? '')"
+      @update:model-value="specifications => set('embeddedDataSpecifications', specifications)"
+    />
+
     <FormSection v-model:open="openAdmin" collapsible :title="t('shell.administration')">
       <div class="d-flex align-start ga-3">
         <v-text-field :label="t('details.version')" :model-value="String(administration.version ?? '')" @update:model-value="text => setAdministration('version', text)" />
@@ -162,6 +169,11 @@
   const openNames = ref(hasNames.value)
   const openDerived = ref(Boolean(shell.value.derivedFrom))
   const openAdmin = ref(Boolean(shell.value.administration))
+
+  function list (field: string): Json[] {
+    const value = shell.value[field]
+    return Array.isArray(value) ? value as Json[] : []
+  }
 
   function set (field: string, value: unknown) {
     shell.value = withField(shell.value, field, value)

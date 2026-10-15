@@ -325,20 +325,20 @@ Web UI editor, wizard and importer features:
 | Web UI feature | Status |
 | --- | --- |
 | Create and edit shell: ID (generated or custom), idShort, display name, description, category, administration, `derivedFrom`, asset kind, global and specific asset IDs, asset type, thumbnail | Done |
-| Shell embedded data specifications | Later: shown in the JSON mode; no form |
+| Shell embedded data specifications | Done in [MVP-6](mvp-6-plan.md) (shared IEC 61360 section) |
 | Delete shell, download | Done earlier (MVP-4) |
 | Create and edit submodel: ID, idShort, display name, description, category, kind, semantic ID | Done |
-| Submodel supplemental semantic IDs, administration, qualifiers, embedded data specifications | Later: no form (elements have qualifiers) |
+| Submodel supplemental semantic IDs, administration, qualifiers, embedded data specifications | Done; embedded data specifications in [MVP-6](mvp-6-plan.md) |
 | Delete submodel reference or submodel; insert from JSON; paste | Done |
 | Element forms for Property, MultiLanguageProperty, Range, File, Blob, ReferenceElement, (Annotated)RelationshipElement, Entity, SubmodelElementCollection, SubmodelElementList, BasicEventElement, Capability, Operation | Done (identity, semantics, value, qualifiers) |
 | Operation variables via JSON and reordering | Later |
-| Element supplemental semantic IDs, embedded data specifications, extensions | Later (extensions read-only by plan) |
+| Element supplemental semantic IDs, embedded data specifications, extensions | Supplemental semantic IDs and embedded data specifications done in [MVP-6](mvp-6-plan.md); extensions later (read-only by plan) |
 | Insert element from JSON; copy, copy as reference, paste; delete | Done |
 | Create instance from type; convert submodel to instance | Done |
 | Creation wizard with template steps | Done as one generic form; the template-specific steps are dropped (T3) |
 | File uploads in the wizard | Later: files are added to File elements after creation |
 | Importer (copy a shell with submodels and concept descriptions between infrastructures) | Later: a Transfer MVP (settled question 2) |
-| Concept description editing | Out of scope (settled question 6) |
+| Concept description editing | Done in [MVP-6](mvp-6-plan.md) |
 
 ## Settled questions
 
@@ -359,5 +359,5 @@ Decided on 2026-10-14; each follows the plan's recommendation.
   descriptions and attachments (DATA-012 to DATA-015), replacing the Web UI's
   importer.
 - Concept description editing, including creating one from an element's
-  semantic ID.
+  semantic ID: done in [MVP-6](mvp-6-plan.md).
 - Structural writes for apps (P6), when an app needs them.

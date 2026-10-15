@@ -364,7 +364,9 @@
                     <v-chip v-if="mdAndUp && item.semanticId" size="x-small" :text="semanticLabel(item.semanticId)" />
                   </template>
 
-                  <span v-else-if="item.preview" class="text-body-small text-medium-emphasis text-truncate ms-2">{{ item.preview }}</span>
+                  <span v-else-if="item.preview" class="text-body-small text-medium-emphasis text-truncate ms-2">
+                    {{ item.preview }}<template v-if="unitTypes.has(item.modelType) && unitOf(item.semanticId)">&nbsp;{{ unitOf(item.semanticId) }}</template>
+                  </span>
 
                   <v-icon
                     v-if="hasDraft(item)"
@@ -770,6 +772,10 @@
     opened: () => opened.value,
     unpaged: () => Boolean(treeSearch.value),
   })
+  // Units of linked concept descriptions, shown beside values in the tree and on the Overview (MVP-6 plan, E6).
+  const unitOf = useConceptUnits(targetId, () => capabilities.value.conceptDescriptions)
+  const unitTypes = new Set(['Property', 'Range'])
+
   // The Overview's live values: numeric properties whose value changed while auto-refresh re-read them.
   const liveSignals = computed<LiveSignal[]>(() => {
     if (!refreshSeconds.value) {
@@ -780,7 +786,7 @@
       const item = new Set(values).size > 1 ? trees.lookup(id) : null
       if (item) {
         const submodel = trees.items.value.find(entry => entry.id === item.submodelKey)?.title ?? item.submodelKey
-        signals.push({ id, title: item.title, submodel, value: item.preview, history: values })
+        signals.push({ id, title: item.title, submodel, value: item.preview, unit: unitOf(item.semanticId), history: values })
       }
     }
     return signals.slice(0, liveSignalLimit)

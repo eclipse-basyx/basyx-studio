@@ -1,7 +1,7 @@
 // Identifier generation (MVP-5 plan, W5). The scheme is set per
 // infrastructure; users may replace a generated ID per resource.
 
-export type IdKind = 'aas' | 'sm' | 'asset'
+export type IdKind = 'aas' | 'sm' | 'asset' | 'cd'
 
 export interface IdScheme {
   /** `iri`: `<prefix><kind>/<uuid>`; `uuid`: `urn:uuid:<uuid>`. */

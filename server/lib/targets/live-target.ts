@@ -4,6 +4,7 @@ import type {
   ChangeEvent,
   ChangePage,
   ConceptDescriptionSummary,
+  ConceptDescriptionUsages,
   EffectiveRights,
   ElementHit,
 
@@ -38,7 +39,7 @@ import {
   toConceptDescriptionSummary,
   toEffectiveRights,
 } from '../aas/basyx-go'
-import { containerChildren, insertChild, moveChild, removeChild, replaceChild, shellMetadata, submodelReference, verifyShell, verifySubmodelMetadata, withChildren } from '../aas/edits'
+import { containerChildren, countSemanticUses, insertChild, moveChild, removeChild, replaceChild, semanticKey, shellMetadata, submodelReference, verifyConceptDescription, verifyShell, verifySubmodelMetadata, withChildren } from '../aas/edits'
 import { formatLocator, parseLocator } from '../aas/keys'
 import { checkRawQuery, toSdkQuery } from '../aas/query'
 import { descriptorSummary, submodelIdOf, toShellSummary } from '../aas/shells'
@@ -609,6 +610,62 @@ export class LiveAasTarget implements AasTarget {
     }
   }
 
+  async conceptDescription (id: string): Promise<JsonObject> {
+    return toJson(await this.#call('conceptDescriptionRepository', configuration =>
+      this.#cdClient.getConceptDescriptionById({ configuration, cdIdentifier: id })))
+  }
+
+  async createConceptDescription (conceptDescription: JsonObject): Promise<void> {
+    const instance = jsonization.conceptDescriptionFromJsonable(conceptDescription as Parameters<typeof jsonization.conceptDescriptionFromJsonable>[0]).mustValue()
+    await this.#create('conceptDescriptionRepository', configuration =>
+      this.#cdClient.postConceptDescription({ configuration, conceptDescription: instance }))
+  }
+
+  async replaceConceptDescription (id: string, conceptDescription: JsonObject, revision: string): Promise<JsonObject> {
+    if (conceptDescription.id !== id) {
+      throw new StudioProblem('validation_failed', 'The identifier of a concept description cannot be changed.', {
+        violations: [{ path: 'id', message: 'The identifier of a concept description cannot be changed.' }],
+      })
+    }
+    const next = verifyConceptDescription(conceptDescription)
+    const instance = jsonization.conceptDescriptionFromJsonable(next as Parameters<typeof jsonization.conceptDescriptionFromJsonable>[0]).mustValue()
+    await this.#conditionalCd(id, revision, (etag, configuration) =>
+      this.#cdClient.putConceptDescriptionById({ configuration, cdIdentifier: id, conceptDescription: instance, ifMatch: etag }))
+    return this.conceptDescription(id)
+  }
+
+  async deleteConceptDescription (id: string, revision: string): Promise<void> {
+    await this.#conditionalCd(id, revision, (etag, configuration) =>
+      this.#cdClient.deleteConceptDescriptionById({ configuration, cdIdentifier: id, ifMatch: etag }))
+  }
+
+  /**
+   * Counts through the submodel repository's query endpoint: submodels whose
+   * own semantic ID or one of whose elements' names the concept description.
+   * Without query support the usages are unknown.
+   */
+  async conceptDescriptionUsages (id: string): Promise<ConceptDescriptionUsages> {
+    if (!this.capabilities.elementSearch) {
+      return { checked: false, submodels: 0, elements: 0, truncated: false }
+    }
+    const limit = 100
+    const data = await this.#call('submodelRepository', configuration => this.#submodelClient.querySubmodels({
+      configuration,
+      query: toSdkQuery({ $condition: { $or: [
+        { $eq: [{ $field: '$sm#semanticId' }, { $strVal: id }] },
+        { $eq: [{ $field: '$sme#semanticId' }, { $strVal: id }] },
+      ] } }),
+      limit,
+    }))
+    const submodels = data.resultType === 'Identifier' ? [] : data.result.map(submodel => toJson(submodel))
+    return {
+      checked: true,
+      submodels: submodels.filter(submodel => semanticKey(submodel) === id).length,
+      elements: submodels.reduce((sum, submodel) => sum + countSemanticUses(submodel, id), 0),
+      truncated: Boolean(data.pagedResult?.cursor),
+    }
+  }
+
   /**
    * Shells matching a search, through the AAS Query Language on the service
    * the capabilities name (`queryTarget`): an expression of the search field
@@ -954,6 +1011,31 @@ export class LiveAasTarget implements AasTarget {
       }
       if (attempt === writeAttempts) {
         throw new StudioProblem('revision_conflict', 'The submodel kept changing while saving. Try again.')
+      }
+    }
+  }
+
+  /** A write of a concept description based on the revision the user saw, retried when only the downstream tag moved. */
+  async #conditionalCd (id: string, revision: string, write: (etag: string | undefined, configuration: Configuration) => Promise<SdkResult<unknown>>): Promise<void> {
+    const token = parseRevision(revision)
+    for (let attempt = 1; ; attempt++) {
+      const read = await this.#send('conceptDescriptionRepository', configuration =>
+        this.#cdClient.getConceptDescriptionById({ configuration, cdIdentifier: id }))
+      if (!read.success) {
+        throw await this.#http.problem(read.statusCode, read.recorder)
+      }
+      if (contentHash(toJson(read.data)) !== token.hash) {
+        throw new StudioProblem('revision_conflict')
+      }
+      const result = await this.#send('conceptDescriptionRepository', configuration => write(read.etag, configuration))
+      if (result.success) {
+        return
+      }
+      if (!result.preconditionFailed) {
+        throw await this.#http.problem(result.statusCode, result.recorder)
+      }
+      if (attempt === writeAttempts) {
+        throw new StudioProblem('revision_conflict', 'The concept description kept changing while saving. Try again.')
       }
     }
   }

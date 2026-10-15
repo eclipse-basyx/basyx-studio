@@ -12,7 +12,11 @@
       >
         <v-card-item>
           <v-card-subtitle class="text-label-medium">{{ signal.title }}</v-card-subtitle>
-          <v-card-title class="text-headline-small font-weight-medium">{{ signal.value }}</v-card-title>
+
+          <v-card-title class="text-headline-small font-weight-medium">
+            {{ signal.value }}
+            <span v-if="signal.unit && signal.value !== null" class="text-body-large text-medium-emphasis">{{ signal.unit }}</span>
+          </v-card-title>
 
           <template #append>
             <v-icon v-tooltip="t('overview.liveHint', { submodel: signal.submodel, count: signal.history.length })" color="success" icon="mdi-refresh-auto" size="small" />
@@ -76,6 +80,8 @@
     title: string
     submodel: string
     value: string | null
+    /** The unit of its concept description, if any (MVP-6 plan, E6). */
+    unit: string | null
     history: number[]
   }
 

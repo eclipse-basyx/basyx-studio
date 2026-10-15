@@ -340,6 +340,37 @@ export const conceptDescriptionSummarySchema = z.object({
 })
 export type ConceptDescriptionSummary = z.infer<typeof conceptDescriptionSummarySchema>
 
+/** One concept description with the revision a write must be based on (MVP-6 plan, W1). */
+export const conceptDescriptionDetailSchema = z.object({
+  key: z.string(),
+  conceptDescription: z.record(z.string(), z.unknown()),
+  revision: z.string().nullable(),
+})
+export type ConceptDescriptionDetail = z.infer<typeof conceptDescriptionDetailSchema>
+
+/** A new or edited concept description; AAS Core checks it on the server. */
+export const conceptDescriptionInputSchema = z.object({
+  conceptDescription: z.record(z.string(), z.unknown()),
+})
+export type ConceptDescriptionInput = z.infer<typeof conceptDescriptionInputSchema>
+
+/** A concept description as JSON (`ConceptDescriptionDetail`) or as AAS XML. */
+export const conceptDescriptionQuerySchema = z.object({
+  format: z.enum(['json', 'xml']).default('json'),
+})
+
+/**
+ * How many submodels and elements reference a concept description by their
+ * semantic ID (MVP-6 plan, L5). `checked` is false where the target cannot
+ * search for it; `truncated` where it stopped counting.
+ */
+export interface ConceptDescriptionUsages {
+  checked: boolean
+  submodels: number
+  elements: number
+  truncated: boolean
+}
+
 /** A submodel element that matched a search, with where to find it. */
 export interface ElementHit {
   shellKey: string | null
@@ -565,7 +596,7 @@ export type InstanceCreateInput = z.infer<typeof instanceCreateSchema>
 
 /** A dry run: AAS Core findings for a JSON value, nothing is written. */
 export const validationInputSchema = z.object({
-  kind: z.enum(['element', 'submodel', 'shell']),
+  kind: z.enum(['element', 'submodel', 'shell', 'conceptDescription']),
   value: z.unknown(),
 })
 export type ValidationInput = z.infer<typeof validationInputSchema>

@@ -1,10 +1,10 @@
-import type { ConceptDescriptionSummary, ElementHit, ElementValueInput, Page, ShellSummary } from '#shared/contract'
+import type { ConceptDescriptionSummary, ConceptDescriptionUsages, ElementHit, ElementValueInput, Page, ShellSummary } from '#shared/contract'
 import type { LocatorStep } from '../aas/keys'
 import type { JsonObject } from '../aas/outline'
 import type { BinaryContent, ElementSnapshot, StructureResult } from '../targets/aas-target'
 import { matchesShell, parseSearch } from '#shared/search/expression'
 import { toConceptDescriptionSummary } from '../aas/basyx-go'
-import { containerChildren, insertChild, moveChild, removeChild, replaceChild, shellMetadata, submodelReference, verifyShell, verifySubmodelMetadata, withChildren } from '../aas/edits'
+import { containerChildren, countSemanticUses, insertChild, moveChild, removeChild, replaceChild, semanticKey, shellMetadata, submodelReference, verifyConceptDescription, verifyShell, verifySubmodelMetadata, withChildren } from '../aas/edits'
 import { formatLocator, parseLocator } from '../aas/keys'
 import { submodelIdOf, toShellSummary } from '../aas/shells'
 import { elementHits } from '../aas/tree'
@@ -400,6 +400,58 @@ export class WorkspaceModel {
   conceptDescriptions (limit: number, cursor: string | undefined): Page<ConceptDescriptionSummary> {
     const page = paged(objects(this.environment.conceptDescriptions), limit, cursor)
     return { items: page.items.map(cd => toConceptDescriptionSummary(cd)), page: page.page }
+  }
+
+  conceptDescription (id: string): JsonObject {
+    return objects(this.environment.conceptDescriptions).find(cd => cd.id === id) ?? notFound()
+  }
+
+  createConceptDescription (conceptDescription: JsonObject): void {
+    if (objects(this.environment.conceptDescriptions).some(candidate => candidate.id === conceptDescription.id)) {
+      throw new StudioProblem('identifier_conflict')
+    }
+    this.environment.conceptDescriptions = [...objects(this.environment.conceptDescriptions), conceptDescription]
+    this.revision = ++this.#latest
+  }
+
+  replaceConceptDescription (id: string, conceptDescription: JsonObject, revision: string): JsonObject {
+    const token = parseRevision(revision)
+    const current = this.conceptDescription(id)
+    if (contentHash(current) !== token.hash) {
+      throw new StudioProblem('revision_conflict')
+    }
+    if (conceptDescription.id !== id) {
+      throw new StudioProblem('validation_failed', 'The identifier of a concept description cannot be changed.', {
+        violations: [{ path: 'id', message: 'The identifier of a concept description cannot be changed.' }],
+      })
+    }
+    const next = verifyConceptDescription(conceptDescription)
+    const all = objects(this.environment.conceptDescriptions)
+    all[all.indexOf(current)] = next
+    this.environment.conceptDescriptions = all
+    this.revision = ++this.#latest
+    return next
+  }
+
+  deleteConceptDescription (id: string, revision: string): void {
+    const token = parseRevision(revision)
+    const current = this.conceptDescription(id)
+    if (contentHash(current) !== token.hash) {
+      throw new StudioProblem('revision_conflict')
+    }
+    this.environment.conceptDescriptions = objects(this.environment.conceptDescriptions).filter(cd => cd !== current)
+    this.revision = ++this.#latest
+  }
+
+  /** The whole package is at hand, so every usage is counted. */
+  conceptDescriptionUsages (id: string): ConceptDescriptionUsages {
+    const submodels = objects(this.environment.submodels)
+    return {
+      checked: true,
+      submodels: submodels.filter(submodel => semanticKey(submodel) === id).length,
+      elements: submodels.reduce((sum, submodel) => sum + countSemanticUses(submodel, id), 0),
+      truncated: false,
+    }
   }
 
   /**

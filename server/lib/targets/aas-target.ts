@@ -3,6 +3,7 @@ import type {
   AccessGrant,
   ChangePage,
   ConceptDescriptionSummary,
+  ConceptDescriptionUsages,
   ConcurrencyMode,
   EffectiveRights,
   ElementHit,
@@ -125,6 +126,16 @@ export interface AasTarget {
   invoke: (submodelId: string, idShortPath: string, args: Array<{ idShort: string, value: string | null }>, async: boolean) => Promise<Invocation>
   invocation: (submodelId: string, idShortPath: string, handle: string) => Promise<Invocation>
   conceptDescriptions: (limit: number, cursor: string | undefined) => Promise<Page<ConceptDescriptionSummary>>
+  /** One concept description as stored (MVP-6 plan, W2). */
+  conceptDescription: (id: string) => Promise<JsonObject>
+  /** Creates a concept description (verified by the caller). Fails with `identifier_conflict` if its ID exists. */
+  createConceptDescription: (conceptDescription: JsonObject) => Promise<void>
+  /** Replaces a concept description, based on the `revision` of it as read; its ID cannot change. */
+  replaceConceptDescription: (id: string, conceptDescription: JsonObject, revision: string) => Promise<JsonObject>
+  /** Deletes a concept description, based on the `revision` of it as read; referencing elements stay as they are. */
+  deleteConceptDescription: (id: string, revision: string) => Promise<void>
+  /** Submodels and elements whose semantic ID names the concept description, where the target can search for them (L5). */
+  conceptDescriptionUsages: (id: string) => Promise<ConceptDescriptionUsages>
   /** Shells matching the search field's expression or a raw query (MVP-4 plan, S2). */
   searchShells: (search: ShellSearch, limit: number, cursor: string | undefined) => Promise<ShellSearchPage>
   /** Submodel elements whose idShort matches a text, with the shell they belong to where it is known. */

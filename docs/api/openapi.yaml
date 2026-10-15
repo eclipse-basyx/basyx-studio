@@ -1227,7 +1227,12 @@ paths:
       tags: [AAS]
       operationId: getConceptDescription
       summary: Read one concept description
+      description: As JSON with its revision (`ETag`), or with `format=xml` as AAS XML (MVP-6 plan, L2).
       x-requirements: [DATA-003, DATA-009]
+      parameters:
+        - name: format
+          in: query
+          schema: { type: string, enum: [json, xml], default: json }
       responses:
         '200': { $ref: '#/components/responses/AasResource' }
         default: { $ref: '#/components/responses/Problem' }
@@ -1253,13 +1258,47 @@ paths:
       tags: [AAS]
       operationId: deleteConceptDescription
       summary: Delete one concept description
+      description: Elements that reference it keep their semantic ID.
       x-requirements: [DATA-009, UX-003]
       parameters:
         - $ref: '#/components/parameters/CsrfToken'
         - $ref: '#/components/parameters/IfMatch'
       responses:
-        '204': { description: Concept description deleted }
+        '200':
+          description: Concept description deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deleted]
+                properties:
+                  deleted: { type: boolean, const: true }
         '412': { $ref: '#/components/responses/PreconditionFailed' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/concept-descriptions/{resourceKey}/usages:
+    get:
+      tags: [AAS]
+      operationId: getConceptDescriptionUsages
+      summary: Count the submodels and elements whose semantic ID names the concept description
+      description: For the delete confirmation (MVP-6 plan, L5). Live targets count through the submodel repository's query endpoint; `checked` is false without it, `truncated` when counting stopped.
+      x-requirements: [UX-003]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/ResourceKey'
+      responses:
+        '200':
+          description: Usages
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [checked, submodels, elements, truncated]
+                properties:
+                  checked: { type: boolean }
+                  submodels: { type: integer, minimum: 0 }
+                  elements: { type: integer, minimum: 0 }
+                  truncated: { type: boolean }
         default: { $ref: '#/components/responses/Problem' }
 
   /targets/{targetId}/changes:

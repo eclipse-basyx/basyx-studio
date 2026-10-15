@@ -16,6 +16,14 @@ export function newElementDraftKey (parentKey: string | null): string {
 }
 
 /**
+ * The slot of a concept description's draft in place of a submodel key
+ * (MVP-6 plan, W5). Resource keys are base64url, so the colon never collides.
+ */
+export function conceptDescriptionDraftSlot (key: string): string {
+  return `cd:${key}`
+}
+
+/**
  * Editor drafts per target, submodel and element (ADR 0006). They stay here
  * until applied or discarded, so a failed apply or a navigation never loses
  * the user's input. Drafts are never mixed with cached target data.
