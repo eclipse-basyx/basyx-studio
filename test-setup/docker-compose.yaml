@@ -41,7 +41,7 @@ services:
   # BFF on the host and the BaSyx containers, hence keycloak.localhost (resolves
   # to loopback on the host; mapped to the host gateway inside containers).
   keycloak:
-    image: keycloak/keycloak:26.8.0
+    image: keycloak/keycloak:26.8.1
     command: ["start-dev", "--import-realm"]
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
