@@ -1,6 +1,6 @@
 {
   "name": "studio",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "private": true,
   "productName": "BaSyx Studio",
   "type": "module",
