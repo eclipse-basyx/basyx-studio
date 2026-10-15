@@ -3,6 +3,13 @@
     <PageHeader :subtitle="t('admin.subtitle')" :title="t('admin.title')">
       <template #actions>
         <v-btn-primary prepend-icon="mdi-plus" :text="t('admin.add')" @click="edit(null)" />
+
+        <v-btn
+          v-tooltip="t('common.close')"
+          :aria-label="t('common.close')"
+          icon="mdi-close"
+          @click="panel.close()"
+        />
       </template>
     </PageHeader>
 
@@ -125,6 +132,7 @@
   const api = useStudioApi()
   const invalidate = useInvalidate()
   const notifications = useNotificationsStore()
+  const panel = usePanel()
 
   const featureIcons: Record<keyof Infrastructure['announced'], string> = {
     history: 'mdi-history',

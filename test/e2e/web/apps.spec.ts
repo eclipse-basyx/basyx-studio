@@ -76,7 +76,7 @@ test('installs and uninstalls an app while another user has Studio open (DoD 1, 
   await expect(alice.locator('iframe[title="App: Digital Nameplate"]')).toBeVisible()
   await expect(alice.locator('iframe[title="App: Test view"]')).toHaveCount(0)
 
-  await page.goto('/admin/apps')
+  await page.goto('/?panel=apps')
   await page.locator('input[type="file"]').setInputFiles({ name: 'view.zip', mimeType: 'application/zip', buffer: Buffer.from(await testView()) })
   await page.getByRole('button', { name: 'Install app' }).click()
   await expect(page.getByText('Installed Nameplate test view 0.1.0.')).toBeVisible()

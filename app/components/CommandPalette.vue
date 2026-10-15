@@ -102,6 +102,7 @@
   const api = useStudioApi()
   const session = useSessionStore()
   const ui = useUiStore()
+  const panel = usePanel()
   const preferences = usePreferences()
   const target = useTarget(() => props.targetId ?? '')
 
@@ -146,7 +147,7 @@
     const items: PaletteItem[] = [
       { key: 'theme', group: '', title: t('palette.actions.theme'), icon: 'mdi-theme-light-dark', run: () => preferences.update(current => ({ ...current, theme: theme.current.value.dark ? 'light' : 'dark' })) },
       { key: 'targets', group: '', title: t('palette.actions.targets'), icon: 'mdi-server-network', run: () => router.push('/') },
-      { key: 'settings', group: '', title: t('palette.actions.settings'), icon: 'mdi-cog-outline', run: () => router.push('/settings') },
+      { key: 'settings', group: '', title: t('palette.actions.settings'), icon: 'mdi-cog-outline', run: () => panel.open('settings') },
     ]
     if (base) {
       items.push(
@@ -163,7 +164,7 @@
       items.push(...structureActions.actions.map(action => ({ ...action, group: '' })))
     }
     if (session.isAdmin) {
-      items.push({ key: 'infrastructures', group: '', title: t('palette.actions.infrastructures'), icon: 'mdi-server-plus-outline', run: () => router.push('/admin/infrastructures') })
+      items.push({ key: 'infrastructures', group: '', title: t('palette.actions.infrastructures'), icon: 'mdi-server-plus-outline', run: () => panel.open('infrastructures') })
     }
     return items.map(item => ({ ...item, group: t('palette.groups.actions') }))
   })

@@ -2,12 +2,11 @@
   <v-container max-width="960">
     <PageHeader :subtitle="t('settings.subtitle')" :title="t('settings.title')">
       <template #actions>
-        <!-- Back to where Settings was opened (default layout). -->
         <v-btn
           v-tooltip="t('settings.close')"
           :aria-label="t('settings.close')"
           icon="mdi-close"
-          :to="ui.settingsReturn ?? '/'"
+          @click="panel.close()"
         />
       </template>
     </PageHeader>
@@ -113,7 +112,7 @@
       </v-col>
 
       <v-col v-if="session.isAdmin" cols="12">
-        <v-card :subtitle="t('settings.infrastructuresSubtitle')" :title="t('app.infrastructures')" to="/admin/infrastructures">
+        <v-card :subtitle="t('settings.infrastructuresSubtitle')" :title="t('app.infrastructures')" @click="panel.open('infrastructures')">
           <template #prepend>
             <v-icon icon="mdi-server-network" />
           </template>
@@ -135,7 +134,7 @@
 
   const { t, locale, localeCodes, setLocale } = useI18n()
   const session = useSessionStore()
-  const ui = useUiStore()
+  const panel = usePanel()
   const notifications = useNotificationsStore()
   const store = usePreferences()
   const preferences = computed(() => store.preferences.value)

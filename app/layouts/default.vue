@@ -2,7 +2,7 @@
   <v-app :theme="ui.arcade ? 'arcade' : undefined">
     <v-app-bar>
       <v-app-bar-nav-icon
-        v-if="inShellBrowser"
+        v-if="inShellBrowser && !panel.current.value"
         :aria-label="t('app.toggleShellList')"
         @click="ui.listDrawer = !(ui.listDrawer ?? mdAndUp)"
       />
@@ -147,14 +147,15 @@
             />
 
             <v-divider class="my-1" />
-            <!-- Without the rail (phones), the administration pages are reached from here. -->
+            <!-- Without the rail (phones), the administration panels are reached from here. -->
             <template v-if="!mdAndUp">
               <v-list-item
                 v-for="item in adminItems"
                 :key="item.key"
+                :active="item.active"
                 :prepend-icon="item.icon"
                 :title="item.title"
-                :to="item.to"
+                @click="togglePanel(item.key)"
               />
             </template>
 
@@ -165,7 +166,12 @@
               @click="toggleTheme"
             />
 
-            <v-list-item prepend-icon="mdi-cog-outline" :title="t('settings.title')" to="/settings" />
+            <v-list-item
+              :active="panel.current.value === 'settings'"
+              prepend-icon="mdi-cog-outline"
+              :title="t('settings.title')"
+              @click="togglePanel('settings')"
+            />
 
             <v-list-item
               v-if="!session.isDesktop"
@@ -185,10 +191,13 @@
       rail
     >
       <v-list class="pt-3" nav>
+        <!-- An open panel covers the page, so no page item is active then;
+             clicking one leaves the panel for that page. -->
         <v-list-item
           v-for="item in navItems"
           :key="item.key"
           v-tooltip:end="item.title"
+          :active="pageActive"
           :aria-label="item.title"
           :exact="item.exact"
           :prepend-icon="item.icon"
@@ -205,20 +214,26 @@
             :active="item.active"
             :aria-label="item.title"
             :prepend-icon="item.icon"
-            :to="item.to"
+            @click="togglePanel(item.key)"
           />
         </v-list>
       </template>
     </v-navigation-drawer>
 
+    <!-- Settings and administration open in place of the page, without
+         leaving its route (usePanel), so the rail stays as it is. -->
     <v-main>
-      <slot />
+      <SettingsPanel v-if="panel.current.value === 'settings'" />
+      <InfrastructuresPanel v-else-if="panel.current.value === 'infrastructures'" />
+      <AppsPanel v-else-if="panel.current.value === 'apps'" />
+      <slot v-else />
     </v-main>
 
     <v-bottom-navigation v-if="!mdAndUp && !session.needsLogin" color="primary" grow>
       <v-btn
         v-for="item in navItems.slice(0, 4)"
         :key="item.key"
+        :active="pageActive"
         :exact="item.exact"
         :prepend-icon="item.icon"
         stacked
@@ -235,6 +250,7 @@
 
 <script lang="ts" setup>
   import type { Target } from '#shared/contract'
+  import type { PanelName } from '~/composables/usePanel'
   import { useQuery } from '@pinia/colada'
   import { useDisplay, useHotkey, useTheme } from 'vuetify'
   import basyxLogo from '~/assets/basyx-logo.svg'
@@ -275,8 +291,6 @@
     icon: string
     to: string | { path: string, query: Record<string, string> }
     exact?: boolean
-    /** Set where `to` is not the page the item stands for. */
-    active?: boolean
   }
 
   // Modules of installed apps, for the current context (MVP-3): global ones
@@ -316,27 +330,40 @@
     return [...items, ...moduleItems.value]
   })
 
-  // Settings is a detour: remember where it was opened from, so that closing
-  // it (its close button, or the rail item again) returns there.
-  const inSettings = computed(() => route.path === '/settings')
-  watch(() => route.fullPath, (_, from) => {
-    if (inSettings.value && from && !from.startsWith('/settings')) {
-      ui.settingsReturn = from
+  // Settings and administration are panels over the current page: their
+  // items open and close them instead of navigating.
+  const panel = usePanel()
+  // `false` overrides the router link's own active state; `undefined` keeps it.
+  const pageActive = computed(() => panel.current.value ? false : undefined)
+  function togglePanel (name: PanelName) {
+    if (panel.current.value === name) {
+      panel.close()
+    } else {
+      panel.open(name)
     }
-  })
+  }
 
-  const adminItems = computed<NavItem[]>(() => session.isAdmin
+  interface PanelItem {
+    key: PanelName
+    title: string
+    icon: string
+    active: boolean
+  }
+
+  function panelItem (key: PanelName, title: string, icon: string): PanelItem {
+    return { key, title, icon, active: panel.current.value === key }
+  }
+
+  const adminItems = computed<PanelItem[]>(() => session.isAdmin
     ? [
-      { key: 'infrastructures', title: t('app.infrastructures'), short: t('app.infrastructures'), icon: 'mdi-server-plus-outline', to: '/admin/infrastructures' },
-      { key: 'apps', title: t('app.apps'), short: t('app.apps'), icon: 'mdi-puzzle-outline', to: '/admin/apps' },
+      panelItem('infrastructures', t('app.infrastructures'), 'mdi-server-plus-outline'),
+      panelItem('apps', t('app.apps'), 'mdi-puzzle-outline'),
     ]
     : [])
-  const footerItems = computed<NavItem[]>(() => [
+  const footerItems = computed<PanelItem[]>(() => [
     ...adminItems.value,
-    // On the settings page, the item closes it again.
-    inSettings.value
-      ? { key: 'settings', title: t('settings.close'), short: t('settings.title'), icon: 'mdi-cog-outline', to: ui.settingsReturn ?? '/', active: true }
-      : { key: 'settings', title: t('settings.title'), short: t('settings.title'), icon: 'mdi-cog-outline', to: '/settings' },
+    // While Settings is open, the item closes it again.
+    { ...panelItem('settings', t('settings.title'), 'mdi-cog-outline'), ...(panel.current.value === 'settings' && { title: t('settings.close') }) },
   ])
 
   const preferences = usePreferences()

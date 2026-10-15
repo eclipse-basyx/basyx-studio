@@ -1,6 +1,15 @@
 <template>
   <v-container>
-    <PageHeader :subtitle="t('apps.subtitle')" :title="t('apps.title')" />
+    <PageHeader :subtitle="t('apps.subtitle')" :title="t('apps.title')">
+      <template #actions>
+        <v-btn
+          v-tooltip="t('common.close')"
+          :aria-label="t('common.close')"
+          icon="mdi-close"
+          @click="panel.close()"
+        />
+      </template>
+    </PageHeader>
 
     <ProblemAlert
       v-if="list.error.value"
@@ -172,6 +181,7 @@
   const api = useStudioApi()
   const invalidate = useInvalidate()
   const label = useLocalizedLabel()
+  const panel = usePanel()
 
   const list = useQuery({
     key: ['admin', 'apps'],

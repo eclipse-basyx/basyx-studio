@@ -121,7 +121,7 @@ test('lists concept descriptions and saves settings per user', async ({ page }) 
   await expect(page.getByRole('heading', { name: 'Concept descriptions' })).toBeVisible()
   await expect(page.locator('tbody tr').first()).toBeVisible()
 
-  await page.goto('/settings')
+  await page.goto(`/targets/${targetId}/concepts?panel=settings`)
   await page.getByRole('button', { name: 'Dark' }).click()
   await page.reload()
   await expect(page.locator('.v-application')).toHaveClass(/v-theme--dark/)
