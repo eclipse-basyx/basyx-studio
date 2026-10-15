@@ -391,7 +391,14 @@
           </v-tabs-window-item>
 
           <v-tabs-window-item value="overview">
-            <ShellOverview v-if="tab === 'overview'" :refs="submodelRefs" :shell-id="shellId" :target="target.data.value" />
+            <ShellOverview
+              v-if="tab === 'overview'"
+              :refs="submodelRefs"
+              :shell-id="shellId"
+              :signals="liveSignals"
+              :target="target.data.value"
+              @select="select"
+            />
           </v-tabs-window-item>
 
           <v-tabs-window-item value="changes">
@@ -628,6 +635,7 @@
 <script lang="ts" setup>
   import type { ElementModelType } from '#shared/aas/defaults'
   import type { DeleteResult, EffectiveRights, ElementDetail, ShellCreateResult, ShellDetail, SubmodelRef, Target, TargetCapabilities } from '#shared/contract'
+  import type { LiveSignal } from '~/components/ShellOverview.vue'
   import type { ShellTreeItem } from '~/composables/useShellTrees'
   import type { StructureAction } from '~/stores/structureActions'
   import type { DetailsMode } from '~/utils/aas'
@@ -653,6 +661,8 @@
   const notifications = useNotificationsStore()
   const { smAndUp, mdAndUp } = useDisplay()
   const draftSuffix = '#draft'
+  /** Live value cards on the Overview, so a large submodel cannot fill it. */
+  const liveSignalLimit = 8
 
   const targetId = computed(() => String(route.params.targetId))
   const shellKey = computed(() => String(route.params.shellKey))
@@ -759,6 +769,21 @@
     refreshSeconds: () => refreshSeconds.value,
     opened: () => opened.value,
     unpaged: () => Boolean(treeSearch.value),
+  })
+  // The Overview's live values: numeric properties whose value changed while auto-refresh re-read them.
+  const liveSignals = computed<LiveSignal[]>(() => {
+    if (!refreshSeconds.value) {
+      return []
+    }
+    const signals: LiveSignal[] = []
+    for (const [id, values] of trees.history.value) {
+      const item = new Set(values).size > 1 ? trees.lookup(id) : null
+      if (item) {
+        const submodel = trees.items.value.find(entry => entry.id === item.submodelKey)?.title ?? item.submodelKey
+        signals.push({ id, title: item.title, submodel, value: item.preview, history: values })
+      }
+    }
+    return signals.slice(0, liveSignalLimit)
   })
   const treeItems = computed(() => {
     const items = trees.items.value.map(item => item.unavailable ? { ...item, disabled: true } : item)

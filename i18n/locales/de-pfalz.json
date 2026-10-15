@@ -652,7 +652,8 @@
   "overview": {
     "none": "Do gebt's kä Oosicht",
     "noneText": "Kä App, wo drin is, hot e Oosicht fer die Teilmodelle vun dere Verwaltungsschal. Guck halt im Reiter „Teilmodelle“.",
-    "reason": "{app} · {submodel}"
+    "reason": "{app} · {submodel}",
+    "liveHint": "Aus {submodel} nei gelese · die letschte {count} Werte vun heit"
   },
   "changes": {
     "title": "Was sich geännert hot",

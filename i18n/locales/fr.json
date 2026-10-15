@@ -653,7 +653,8 @@
   "overview": {
     "none": "Aucune vue pour cette AAS",
     "noneText": "Aucune application installée ne propose de vue pour les sous-modèles de cette AAS. Utilisez l'onglet Sous-modèles pour parcourir la structure.",
-    "reason": "{app} · {submodel}"
+    "reason": "{app} · {submodel}",
+    "liveHint": "Relu depuis {submodel} · {count} dernières valeurs de cette session"
   },
   "changes": {
     "title": "Modifications",

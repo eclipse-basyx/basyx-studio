@@ -653,7 +653,8 @@
   "overview": {
     "none": "この管理シェルのビューはありません",
     "noneText": "この管理シェルのサブモデル向けのビューを提供するアプリはインストールされていません。構造を参照するには「サブモデル」タブを使用してください。",
-    "reason": "{app} · {submodel}"
+    "reason": "{app} · {submodel}",
+    "liveHint": "{submodel} から再読み込み · このセッションの直近 {count} 件の値"
   },
   "changes": {
     "title": "変更履歴",

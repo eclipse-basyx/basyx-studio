@@ -748,7 +748,8 @@
   "overview": {
     "none": "No views for this shell",
     "noneText": "No installed app offers a view for this shell's submodels. Use the Submodels tab to browse the structure.",
-    "reason": "{app} · {submodel}"
+    "reason": "{app} · {submodel}",
+    "liveHint": "Re-read from {submodel} · last {count} values of this session"
   },
   "changes": {
     "title": "Changes",

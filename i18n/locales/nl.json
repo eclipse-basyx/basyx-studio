@@ -653,7 +653,8 @@
   "overview": {
     "none": "Geen weergaven voor deze AAS",
     "noneText": "Geen geïnstalleerde app biedt een weergave voor de submodellen van deze AAS. Gebruik het tabblad Submodellen om de structuur te doorzoeken.",
-    "reason": "{app} · {submodel}"
+    "reason": "{app} · {submodel}",
+    "liveHint": "Opnieuw gelezen uit {submodel} · laatste {count} waarden van deze sessie"
   },
   "changes": {
     "title": "Wijzigingen",

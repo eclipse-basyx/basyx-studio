@@ -652,7 +652,8 @@
   "overview": {
     "none": "Do gebbt's kenn Ansicht",
     "noneText": "Kenn App, wo drin is, hat e Ansicht fer die Teilmodelle vun dere Verwaltungsschal. Gugg halt im Reiter „Teilmodelle“.",
-    "reason": "{app} · {submodel}"
+    "reason": "{app} · {submodel}",
+    "liveHint": "Aus {submodel} nei gelees · die letschde {count} Werte vun heit"
   },
   "changes": {
     "title": "Was sich geännert hat",

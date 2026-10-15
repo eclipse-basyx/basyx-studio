@@ -653,7 +653,8 @@
   "overview": {
     "none": "No hay vistas para esta AAS",
     "noneText": "Ninguna aplicación instalada ofrece una vista para los submodelos de esta AAS. Usa la pestaña Submodelos para explorar la estructura.",
-    "reason": "{app} · {submodel}"
+    "reason": "{app} · {submodel}",
+    "liveHint": "Releído de {submodel} · últimos {count} valores de esta sesión"
   },
   "changes": {
     "title": "Cambios",

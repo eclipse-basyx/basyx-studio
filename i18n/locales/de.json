@@ -748,7 +748,8 @@
   "overview": {
     "none": "Keine Ansichten für diese Verwaltungsschale",
     "noneText": "Keine installierte App bietet eine Ansicht für die Teilmodelle dieser Verwaltungsschale. Nutzen Sie den Tab „Teilmodelle“, um die Struktur zu durchsuchen.",
-    "reason": "{app} · {submodel}"
+    "reason": "{app} · {submodel}",
+    "liveHint": "Aus {submodel} neu gelesen · letzte {count} Werte dieser Sitzung"
   },
   "changes": {
     "title": "Änderungen",

@@ -653,7 +653,8 @@
   "overview": {
     "none": "此管理壳没有视图",
     "noneText": "没有已安装的应用为此管理壳的子模型提供视图。请使用“子模型”选项卡浏览结构。",
-    "reason": "{app} · {submodel}"
+    "reason": "{app} · {submodel}",
+    "liveHint": "从 {submodel} 重新读取 · 本次会话的最近 {count} 个值"
   },
   "changes": {
     "title": "变更",

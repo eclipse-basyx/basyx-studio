@@ -652,7 +652,8 @@
   "overview": {
     "none": "Hier jibt's keene Ansicht",
     "noneText": "Keene App, die drin is, hat 'ne Ansicht für die Teilmodelle von dieser Verwaltungsschale. Kiek halt im Reiter „Teilmodelle“.",
-    "reason": "{app} · {submodel}"
+    "reason": "{app} · {submodel}",
+    "liveHint": "Aus {submodel} neu jelesen · die letzten {count} Werte von heute"
   },
   "changes": {
     "title": "Wat sich jeändert hat",
