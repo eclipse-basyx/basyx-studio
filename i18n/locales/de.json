@@ -203,7 +203,6 @@
     "keyValue": "Schlüsselwert",
     "addKey": "Schlüssel hinzufügen",
     "addReference": "Referenz hinzufügen",
-    "clear": "Entfernen",
     "pasteReference": "Kopierte Referenz einfügen",
     "min": "Minimum",
     "max": "Maximum",
@@ -229,8 +228,10 @@
     "unapplied": "Nicht angewendete Änderungen",
     "addText": "Text hinzufügen",
     "addTranslation": "Übersetzung hinzufügen",
+    "referenceKeys": "Typ und Schlüssel",
+    "removeReference": "Referenz entfernen",
+    "removeKey": "Schlüssel entfernen",
     "referenceValue": "Referenzwert (IRI, IRDI)",
-    "referenceAdvanced": "Referenztyp und Schlüssel",
     "kinds": {
       "Instance": "Instanz",
       "Template": "Template"

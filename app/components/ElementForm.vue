@@ -230,6 +230,7 @@
             :error-messages="errorsFor(violations, `supplementalSemanticIds[${index}]`)"
             :label="`${t('editor.supplementalSemanticId')} ${index + 1}`"
             :model-value="reference"
+            removable
             required
             @update:model-value="value => setSupplemental(index, value)"
           />

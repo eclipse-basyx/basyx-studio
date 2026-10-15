@@ -63,6 +63,7 @@
           :error-messages="errorsFor(findings, `isCaseOf[${index}]`)"
           :label="`${t('cd.isCaseOf')} ${index + 1}`"
           :model-value="reference"
+          removable
           required
           @update:model-value="value => setCaseOf(index, value)"
         />

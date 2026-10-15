@@ -203,7 +203,6 @@
     "keyValue": "Key value",
     "addKey": "Add key",
     "addReference": "Add reference",
-    "clear": "Clear",
     "pasteReference": "Paste copied reference",
     "min": "Minimum",
     "max": "Maximum",
@@ -229,8 +228,10 @@
     "unapplied": "Unapplied changes",
     "addText": "Add text",
     "addTranslation": "Add translation",
+    "referenceKeys": "Type and keys",
+    "removeReference": "Remove reference",
+    "removeKey": "Remove key",
     "referenceValue": "Reference value (IRI, IRDI)",
-    "referenceAdvanced": "Reference type and keys",
     "kinds": {
       "Instance": "Instance",
       "Template": "Template"
