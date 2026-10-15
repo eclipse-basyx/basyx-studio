@@ -84,7 +84,7 @@ export function registerOpenEnvironment (page: Page, name: string): Promise<stri
 
 /** Switches the shell browser between view and edit mode. */
 export async function setMode (page: Page, mode: 'View' | 'Edit'): Promise<void> {
-  await page.getByRole('button', { name: mode, exact: true }).click()
+  await page.getByRole('banner').getByRole('button', { name: mode, exact: true }).click()
 }
 
 /** The secured target, accessed with Studio's service account (client credentials). */

@@ -42,7 +42,8 @@ async function openModule (title: string) {
 
 test('runs installed apps on a local package', async () => {
   test.setTimeout(120_000)
-  await window.getByRole('link', { name: 'Apps' }).click()
+  // Administration opens as a panel from the rail's footer, not as a page.
+  await window.getByRole('listitem', { name: 'Apps', exact: true }).click()
   await install(join(root, 'examples/apps/dist/backend-demo.zip'), 'Target Summary')
   await install({ name: 'probe.zip', mimeType: 'application/zip', buffer: Buffer.from(await zipDirectory(join(fixturesDirectory, 'probe'))) }, 'Isolation probe')
 
@@ -58,7 +59,7 @@ test('runs installed apps on a local package', async () => {
   const nameplate = window.frameLocator('iframe[title="App: Digital Nameplate"]')
   await expect(nameplate.getByText('Industrial Servo Motor DM-3000')).toBeVisible()
   expect(window.frames().some(frame => frame.url().startsWith('studio-app://app-'))).toBe(true)
-  await window.getByRole('button', { name: 'Edit', exact: true }).click()
+  await window.getByRole('banner').getByRole('button', { name: 'Edit', exact: true }).click()
   await nameplate.getByRole('button', { name: 'Edit Serial number' }).click()
   await nameplate.getByRole('textbox', { name: 'Serial number' }).fill('SN-DESKTOP-APP')
   await nameplate.getByRole('button', { name: 'Save' }).click()
