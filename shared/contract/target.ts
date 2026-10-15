@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { conceptDescriptionSources } from '../search/expression'
 import { securityModeSchema, syncModes } from './infrastructure'
 
 export const authenticationStates = ['not_required', 'authenticated', 'required'] as const
@@ -41,6 +42,12 @@ export const targetCapabilitiesSchema = z.object({
   files: z.boolean(),
   operations: z.boolean(),
   conceptDescriptions: z.boolean(),
+  /**
+   * How concept descriptions are searched (MVP-6 plan, S1): `query` on the
+   * repository's query endpoint, `expression` by Studio (workspaces), or
+   * `filter` on the loaded list only.
+   */
+  conceptDescriptionSearch: z.enum(searchModes),
   search: z.enum(searchModes),
   /** Where shell queries run (`search: query`); raw queries use that endpoint's roots. */
   queryTarget: z.enum(['registry', 'repository']).nullable(),
@@ -75,6 +82,7 @@ export const noCapabilities: TargetCapabilities = {
   files: false,
   operations: false,
   conceptDescriptions: false,
+  conceptDescriptionSearch: 'filter',
   search: 'filter',
   queryTarget: null,
   elementSearch: false,
@@ -385,14 +393,17 @@ export interface ElementHit {
 
 /** A shell search (MVP-4 plan, S2): the search field's expression, or a raw query from the advanced dialog. */
 export const searchRequestSchema = z.object({
-  scope: z.enum(['shells', 'elements']).default('shells'),
+  scope: z.enum(['shells', 'elements', 'conceptDescriptions']).default('shells'),
+  /** Concept descriptions only: the sources to narrow to (MVP-6 plan, S1). */
+  sources: z.array(z.enum(conceptDescriptionSources)).max(4).optional(),
   expression: z.string().max(2000).optional(),
   query: z.record(z.string(), z.unknown()).optional(),
   limit: z.number().int().min(1).max(200).default(50),
   cursor: z.string().max(4000).optional(),
 })
   .refine(input => (input.expression === undefined) !== (input.query === undefined), 'give either an expression or a query')
-  .refine(input => input.scope === 'shells' || input.expression !== undefined, 'elements are searched by text')
+  .refine(input => input.scope !== 'elements' || input.expression !== undefined, 'elements are searched by text')
+  .refine(input => input.scope === 'conceptDescriptions' || input.sources === undefined, 'only concept descriptions are filtered by source')
 export type SearchRequest = z.input<typeof searchRequestSchema>
 
 export type ShellSearch = { expression: string } | { query: Record<string, unknown> }

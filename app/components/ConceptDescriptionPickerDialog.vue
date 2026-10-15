@@ -1,38 +1,31 @@
 <template>
-  <v-dialog v-model="open" max-width="640" scrollable>
+  <v-dialog v-model="open" max-width="720" scrollable>
     <DialogCard flush :title="t('cd.linkTitle')">
-      <div class="pa-3">
-        <v-text-field
-          v-model="search"
-          autofocus
-          clearable
-          :placeholder="t('concepts.search')"
-          prepend-inner-icon="mdi-magnify"
-        />
-      </div>
+      <!-- The search bar of the Concepts page: text, source filters, advanced query (MVP-6 plan, S1). -->
+      <ConceptDescriptionSearchBar :state="cds" :target-id="targetId" />
 
       <v-divider />
 
       <ProblemAlert
-        v-if="list.error.value"
+        v-if="cds.error.value"
         class="ma-3"
-        :error="list.error.value"
+        :error="cds.error.value"
         retry
-        @retry="list.refetch()"
+        @retry="cds.reload()"
       />
 
-      <v-skeleton-loader v-else-if="list.isPending.value" type="list-item-two-line@4" />
+      <v-skeleton-loader v-else-if="cds.loading.value && cds.rows.value.length === 0" type="list-item-two-line@4" />
 
       <v-empty-state
-        v-else-if="matches.length === 0"
+        v-else-if="cds.rows.value.length === 0"
         icon="mdi-book-search-outline"
         size="48"
         :text="t('cd.linkEmpty')"
       />
 
-      <v-list v-else lines="two" max-height="420">
+      <v-list v-else lines="two">
         <v-list-item
-          v-for="row in matches.slice(0, shown)"
+          v-for="row in cds.rows.value"
           :key="row.id"
           :active="row.id === current"
           prepend-icon="mdi-book-open-page-variant-outline"
@@ -47,9 +40,21 @@
             </div>
           </template>
         </v-list-item>
-
-        <v-list-item v-if="matches.length > shown" :title="t('cd.linkMore', { count: matches.length - shown })" @click="shown += 50" />
       </v-list>
+
+      <v-divider />
+
+      <CursorPager
+        v-model:page-size="pageSize"
+        :count="cds.rows.value.length"
+        :has-next="cds.hasNext.value"
+        :has-previous="cds.hasPrevious.value"
+        :loading="cds.loading.value"
+        :page="cds.pageIndex.value"
+        :sizes="conceptDescriptionPageSizes"
+        @next="cds.next()"
+        @previous="cds.previous()"
+      />
 
       <template #actions>
         <v-btn :text="t('common.cancel')" @click="open = false" />
@@ -59,11 +64,12 @@
 </template>
 
 <script lang="ts" setup>
-  import { langText } from '~/utils/aas'
+  import { noCapabilities } from '#shared/contract'
+  import { conceptDescriptionPageSizes } from '~/composables/useConceptDescriptionSearch'
 
   // Picks an existing concept description of the target, so an element's
-  // semantic ID can point to it (MVP-6 plan, E5). Searches the loaded page by
-  // name, idShort and ID, as the Concepts page does.
+  // semantic ID can point to it (MVP-6 plan, E5), with the search and the
+  // paging of the Concepts page.
   const props = defineProps<{
     targetId: string
     /** The concept description the element names now, marked in the list. */
@@ -73,34 +79,22 @@
   const open = defineModel<boolean>({ required: true })
 
   const { t } = useI18n()
-  const preferences = usePreferences().preferences
-
-  const list = useConceptDescriptions(() => props.targetId, open)
-
-  const search = ref<string | null>('')
-  const shown = ref(50)
-  watch(open, value => {
-    if (value) {
-      search.value = ''
-      shown.value = 50
-      // Concept descriptions created meanwhile appear.
-      void list.refetch()
-    }
+  const target = useTarget(() => props.targetId)
+  const pageSize = ref(25)
+  const cds = useConceptDescriptionSearch({
+    targetId: () => props.targetId,
+    capabilities: () => target.data.value?.capabilities ?? noCapabilities,
+    enabled: () => open.value && target.data.value !== undefined,
+    state: { search: ref<string | null>(''), selected: ref<string[]>([]), pageSize },
   })
 
-  const rows = computed(() => (list.data.value ?? []).map(cd => ({
-    id: cd.id,
-    name: langText(cd.preferredName, preferences.value.valueLanguage) ?? cd.idShort ?? cd.id,
-    idShort: cd.idShort ?? '',
-    dataType: cd.dataType,
-    unit: cd.unit,
-  })))
-
-  const matches = computed(() => {
-    const needle = (search.value ?? '').trim().toLowerCase()
-    return needle === ''
-      ? rows.value
-      : rows.value.filter(row => [row.name, row.idShort, row.id].some(text => text.toLowerCase().includes(needle)))
+  // Every opening starts with an empty search; concept descriptions created meanwhile appear.
+  watch(open, value => {
+    if (value) {
+      cds.search.value = ''
+      cds.selected.value = []
+      cds.rawQuery.value = null
+    }
   })
 
   function pick (id: string) {

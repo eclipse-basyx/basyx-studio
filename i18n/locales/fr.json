@@ -43,7 +43,12 @@
   "lists": {
     "noMatches": "Rien ne correspond à la recherche et aux filtres.",
     "filters": "{n} filtre | {n} filtres",
-    "filtersApplied": "{n} filtre appliqué, le retirer | {n} filtres appliqués, les retirer"
+    "filtersApplied": "{n} filtre appliqué, le retirer | {n} filtres appliqués, les retirer",
+    "perPage": "Lignes par page",
+    "range": "{from}–{to}",
+    "noRows": "Aucune ligne",
+    "previousPage": "Page précédente",
+    "nextPage": "Page suivante"
   },
   "home": {
     "title": "Cibles AAS",
@@ -493,7 +498,8 @@
       "apply": "Rechercher",
       "invalidJson": "JSON non valide : {message}",
       "notObject": "Une requête est un objet JSON avec $condition.",
-      "edit": "Modifier la requête avancée"
+      "edit": "Modifier la requête avancée",
+      "conceptDescriptions": "S'exécute sur le dépôt des descriptions de concept"
     },
     "search": "Rechercher des AAS",
     "filters": {
@@ -701,7 +707,7 @@
   "concepts": {
     "title": "Descriptions de concepts",
     "subtitle": "Définitions sémantiques référencées par les éléments de sous-modèle",
-    "search": "Rechercher par nom, ID ou définition",
+    "search": "Rechercher par idShort ou ID",
     "concept": "Concept",
     "dataType": "Type de données",
     "unit": "Unité",
@@ -710,10 +716,13 @@
     "id": "ID",
     "definition": "Définition",
     "noDefinition": "Aucune définition.",
-    "truncated": "Affichage des {count} premières descriptions de concepts."
+    "truncated": "Affichage des {count} premières descriptions de concepts.",
+    "localOnly": "Filtre uniquement les descriptions de concept chargées : cette infrastructure n'annonce pas de point de requête pour elles.",
+    "otherSource": "Autres"
   },
   "settings": {
     "title": "Paramètres",
+    "showWelcome": "Écran d'accueil au démarrage",
     "close": "Fermer les paramètres",
     "subtitle": "Apparence et données en direct, enregistrées pour votre compte",
     "appearance": "Apparence",
@@ -738,6 +747,19 @@
     "syncModes": {
       "autoCreate": "Créer et retirer les entrées",
       "dontCreate": "Les laisser inchangées"
+    },
+    "palette": "Couleurs",
+    "palettes": {
+      "basyx": "BaSyx",
+      "ocean": "Océan",
+      "forest": "Forêt",
+      "violet": "Violet",
+      "graphite": "Graphite"
+    },
+    "shape": "Forme",
+    "shapes": {
+      "normal": "Normale",
+      "rounded": "Plus arrondie"
     }
   },
   "invite": {
@@ -762,6 +784,13 @@
     "wrap": "Renvoyer à la ligne",
     "noWrap": "Ne pas renvoyer à la ligne",
     "loadFailed": "La vue du code n'a pas pu être chargée"
+  },
+  "welcome": {
+    "overline": "Bienvenue dans",
+    "tagline": "Chaque actif a une histoire. Donnez-lui un jumeau numérique.",
+    "keywords": "Asset Administration Shell · Industrie 4.0 · Open Source",
+    "start": "Entrer dans Studio",
+    "dontShow": "Ne plus afficher au démarrage"
   },
   "cd": {
     "new": "Nouvelle description de concept",

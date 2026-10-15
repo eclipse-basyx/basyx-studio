@@ -44,7 +44,12 @@
   "lists": {
     "noMatches": "Nichts entspricht der Suche und den Filtern.",
     "filters": "{n} Filter | {n} Filter",
-    "filtersApplied": "{n} Filter aktiv, entfernen | {n} Filter aktiv, alle entfernen"
+    "filtersApplied": "{n} Filter aktiv, entfernen | {n} Filter aktiv, alle entfernen",
+    "perPage": "Zeilen pro Seite",
+    "range": "{from}–{to}",
+    "noRows": "Keine Zeilen",
+    "previousPage": "Vorherige Seite",
+    "nextPage": "Nächste Seite"
   },
   "home": {
     "title": "AAS-Ziele",
@@ -588,7 +593,8 @@
       "apply": "Suchen",
       "invalidJson": "Kein gültiges JSON: {message}",
       "notObject": "Eine Abfrage ist ein JSON-Objekt mit $condition.",
-      "edit": "Erweiterte Abfrage bearbeiten"
+      "edit": "Erweiterte Abfrage bearbeiten",
+      "conceptDescriptions": "Läuft auf dem Concept-Description-Repository"
     },
     "search": "Verwaltungsschalen suchen",
     "filters": {
@@ -796,7 +802,7 @@
   "concepts": {
     "title": "Konzeptbeschreibungen",
     "subtitle": "Semantische Definitionen, auf die Teilmodellelemente verweisen",
-    "search": "Nach Name, ID oder Definition suchen",
+    "search": "Nach idShort oder ID suchen",
     "concept": "Konzept",
     "dataType": "Datentyp",
     "unit": "Einheit",
@@ -805,10 +811,13 @@
     "id": "ID",
     "definition": "Definition",
     "noDefinition": "Keine Definition.",
-    "truncated": "Die ersten {count} Konzeptbeschreibungen werden angezeigt."
+    "truncated": "Die ersten {count} Konzeptbeschreibungen werden angezeigt.",
+    "localOnly": "Filtert nur die geladenen Konzeptbeschreibungen: Diese Infrastruktur kündigt dafür keinen Query-Endpoint an.",
+    "otherSource": "Sonstige"
   },
   "settings": {
     "title": "Einstellungen",
+    "showWelcome": "Willkommensbildschirm beim Start",
     "close": "Einstellungen schließen",
     "subtitle": "Darstellung und Live-Daten, gespeichert für Ihr Konto",
     "appearance": "Darstellung",
@@ -833,6 +842,19 @@
     "syncModes": {
       "autoCreate": "Einträge anlegen und entfernen",
       "dontCreate": "Unverändert lassen"
+    },
+    "palette": "Farben",
+    "palettes": {
+      "basyx": "BaSyx",
+      "ocean": "Ozean",
+      "forest": "Wald",
+      "violet": "Violett",
+      "graphite": "Graphit"
+    },
+    "shape": "Form",
+    "shapes": {
+      "normal": "Normal",
+      "rounded": "Runder"
     }
   },
   "invite": {
@@ -944,6 +966,13 @@
       "assetLinks": "Asset-Links"
     },
     "addSubmodel": "Submodell hinzufügen"
+  },
+  "welcome": {
+    "overline": "Willkommen bei",
+    "tagline": "Jedes Asset erzählt eine Geschichte. Geben Sie ihm einen digitalen Zwilling.",
+    "keywords": "Verwaltungsschale · Industrie 4.0 · Open Source",
+    "start": "Studio betreten",
+    "dontShow": "Beim Start nicht mehr anzeigen"
   },
   "cd": {
     "new": "Neue Konzeptbeschreibung",

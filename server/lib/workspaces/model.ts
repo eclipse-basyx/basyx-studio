@@ -1,8 +1,9 @@
 import type { ConceptDescriptionSummary, ConceptDescriptionUsages, ElementHit, ElementValueInput, Page, ShellSummary } from '#shared/contract'
+import type { ConceptDescriptionSource } from '#shared/search/expression'
 import type { LocatorStep } from '../aas/keys'
 import type { JsonObject } from '../aas/outline'
 import type { BinaryContent, ElementSnapshot, StructureResult } from '../targets/aas-target'
-import { matchesShell, parseSearch } from '#shared/search/expression'
+import { conceptDescriptionSearchFields, conceptDescriptionSource, matchesConceptDescription, matchesShell, parseSearch } from '#shared/search/expression'
 import { toConceptDescriptionSummary } from '../aas/basyx-go'
 import { containerChildren, countSemanticUses, insertChild, moveChild, removeChild, replaceChild, semanticKey, shellMetadata, submodelReference, verifyConceptDescription, verifyShell, verifySubmodelMetadata, withChildren } from '../aas/edits'
 import { formatLocator, parseLocator } from '../aas/keys'
@@ -399,6 +400,14 @@ export class WorkspaceModel {
 
   conceptDescriptions (limit: number, cursor: string | undefined): Page<ConceptDescriptionSummary> {
     const page = paged(objects(this.environment.conceptDescriptions), limit, cursor)
+    return { items: page.items.map(cd => toConceptDescriptionSummary(cd)), page: page.page }
+  }
+
+  /** Concept descriptions matching a search expression, evaluated here (no query endpoint). */
+  searchConceptDescriptions (expression: string, sources: readonly ConceptDescriptionSource[], limit: number, cursor: string | undefined): Page<ConceptDescriptionSummary> {
+    const parsed = parseSearch(expression, conceptDescriptionSearchFields)
+    const page = paged(objects(this.environment.conceptDescriptions).filter(cd => matchesConceptDescription(cd, parsed)
+      && (sources.length === 0 || sources.includes(conceptDescriptionSource(String(cd.id))))), limit, cursor)
     return { items: page.items.map(cd => toConceptDescriptionSummary(cd)), page: page.page }
   }
 

@@ -32,6 +32,38 @@
               <v-btn class="flex-grow-1" prepend-icon="mdi-monitor" :text="t('settings.system')" value="system" />
             </v-btn-toggle>
 
+            <!-- Accent colours and shape (shared/appearance.ts). -->
+            <div class="text-label-large mb-2">{{ t('settings.palette') }}</div>
+
+            <v-chip-group
+              class="mb-4"
+              column
+              mandatory
+              :model-value="preferences.palette"
+              selected-class="text-primary"
+              @update:model-value="value => save({ palette: value })"
+            >
+              <v-chip v-for="name in paletteNames" :key="name" filter :value="name">
+                <template #prepend>
+                  <v-avatar class="me-1" :color="palettes[name][dark ? 'dark' : 'light'].primary" size="14" />
+                  <v-avatar class="me-2" :color="palettes[name][dark ? 'dark' : 'light'].secondary" size="14" />
+                </template>
+                {{ t(`settings.palettes.${name}`) }}
+              </v-chip>
+            </v-chip-group>
+
+            <div class="text-label-large mb-2">{{ t('settings.shape') }}</div>
+
+            <v-btn-toggle
+              class="d-flex mb-6"
+              mandatory
+              :model-value="preferences.shape"
+              @update:model-value="value => save({ shape: value })"
+            >
+              <v-btn class="flex-grow-1" prepend-icon="mdi-square-outline" :text="t('settings.shapes.normal')" value="normal" />
+              <v-btn class="flex-grow-1" prepend-icon="mdi-square-rounded-outline" :text="t('settings.shapes.rounded')" value="rounded" />
+            </v-btn-toggle>
+
             <v-select
               class="mb-4"
               :items="uiLanguages"
@@ -47,6 +79,14 @@
               :model-value="preferences.valueLanguage"
               prepend-inner-icon="mdi-translate"
               @update:model-value="value => save({ valueLanguage: value })"
+            />
+
+            <v-switch
+              v-if="session.isDesktop"
+              class="mt-4"
+              :label="t('settings.showWelcome')"
+              :model-value="preferences.showWelcome"
+              @update:model-value="value => save({ showWelcome: Boolean(value) })"
             />
           </v-card-text>
         </v-card>
@@ -130,6 +170,8 @@
   import type { Preferences, SyncMode, Target } from '#shared/contract'
   import type { LocaleCode } from '#shared/i18n/locales'
   import { useQuery } from '@pinia/colada'
+  import { useTheme } from 'vuetify'
+  import { paletteNames, palettes } from '#shared/appearance'
   import { locales } from '#shared/i18n/locales'
 
   const { t, locale, localeCodes, setLocale } = useI18n()
@@ -138,6 +180,9 @@
   const notifications = useNotificationsStore()
   const store = usePreferences()
   const preferences = computed(() => store.preferences.value)
+  // Swatches in the brightness shown now.
+  const theme = useTheme()
+  const dark = computed(() => theme.current.value.dark)
 
   // Easter egg: typing "basyx" on this page (outside a field) reveals the
   // hidden German dialects (shared/i18n/locales.ts) until the next reload.

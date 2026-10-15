@@ -43,7 +43,12 @@
   "lists": {
     "noMatches": "Niets komt overeen met de zoekopdracht en filters.",
     "filters": "{n} filter | {n} filters",
-    "filtersApplied": "{n} filter actief, verwijderen | {n} filters actief, verwijderen"
+    "filtersApplied": "{n} filter actief, verwijderen | {n} filters actief, verwijderen",
+    "perPage": "Rijen per pagina",
+    "range": "{from}–{to}",
+    "noRows": "Geen rijen",
+    "previousPage": "Vorige pagina",
+    "nextPage": "Volgende pagina"
   },
   "home": {
     "title": "AAS-doelen",
@@ -493,7 +498,8 @@
       "apply": "Zoeken",
       "invalidJson": "Geen geldige JSON: {message}",
       "notObject": "Een query is een JSON-object met $condition.",
-      "edit": "Geavanceerde query bewerken"
+      "edit": "Geavanceerde query bewerken",
+      "conceptDescriptions": "Draait op de repository voor conceptbeschrijvingen"
     },
     "search": "AAS'en zoeken",
     "filters": {
@@ -701,7 +707,7 @@
   "concepts": {
     "title": "Conceptbeschrijvingen",
     "subtitle": "Semantische definities waarnaar submodelelementen verwijzen",
-    "search": "Zoeken op naam, ID of definitie",
+    "search": "Zoeken op idShort of ID",
     "concept": "Concept",
     "dataType": "Gegevenstype",
     "unit": "Eenheid",
@@ -710,10 +716,13 @@
     "id": "ID",
     "definition": "Definitie",
     "noDefinition": "Geen definitie.",
-    "truncated": "De eerste {count} conceptbeschrijvingen worden getoond."
+    "truncated": "De eerste {count} conceptbeschrijvingen worden getoond.",
+    "localOnly": "Filtert alleen de geladen conceptbeschrijvingen: deze infrastructuur kondigt er geen query-endpoint voor aan.",
+    "otherSource": "Overige"
   },
   "settings": {
     "title": "Instellingen",
+    "showWelcome": "Welkomstscherm bij opstarten",
     "close": "Instellingen sluiten",
     "subtitle": "Weergave en live gegevens, opgeslagen voor je account",
     "appearance": "Weergave",
@@ -738,6 +747,19 @@
     "syncModes": {
       "autoCreate": "Items aanmaken en verwijderen",
       "dontCreate": "Ongewijzigd laten"
+    },
+    "palette": "Kleuren",
+    "palettes": {
+      "basyx": "BaSyx",
+      "ocean": "Oceaan",
+      "forest": "Bos",
+      "violet": "Violet",
+      "graphite": "Grafiet"
+    },
+    "shape": "Vorm",
+    "shapes": {
+      "normal": "Normaal",
+      "rounded": "Ronder"
     }
   },
   "invite": {
@@ -762,6 +784,13 @@
     "wrap": "Regels laten teruglopen",
     "noWrap": "Regels niet laten teruglopen",
     "loadFailed": "De codeweergave kon niet worden geladen"
+  },
+  "welcome": {
+    "overline": "Welkom bij",
+    "tagline": "Elk asset heeft een verhaal. Geef het een digitale tweeling.",
+    "keywords": "Asset Administration Shell · Industrie 4.0 · Open source",
+    "start": "Studio openen",
+    "dontShow": "Niet meer tonen bij opstarten"
   },
   "cd": {
     "new": "Nieuwe conceptbeschrijving",

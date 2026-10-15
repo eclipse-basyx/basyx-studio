@@ -77,6 +77,27 @@ describe.runIf(testenvAvailable)('LiveAasTarget concept descriptions against the
     await expect(target.replaceConceptDescription(id, invalid, revisionOf(replaced))).rejects.toMatchObject({ code: 'validation_failed' })
   })
 
+  it('searches through the query endpoint by expression and raw query', async () => {
+    expect(target.capabilities.conceptDescriptionSearch).toBe('query')
+    const byText = await target.searchConceptDescriptions({ expression: 'manufacturername' }, [], 50, undefined)
+    expect(byText.items.map(cd => cd.idShort)).toContain('ManufacturerName')
+    const byId = await target.searchConceptDescriptions({ expression: `id=${id}` }, [], 50, undefined)
+    expect(byId.items.map(cd => cd.id)).toEqual([id])
+    const raw = await target.searchConceptDescriptions({ query: { $condition: { $eq: [{ $field: '$cd#idShort' }, { $strVal: 'ManufacturerName' }] } } }, [], 50, undefined)
+    // The test environment has more than one version of it.
+    expect(raw.items.length).toBeGreaterThan(0)
+    expect(raw.items.every(cd => cd.idShort === 'ManufacturerName')).toBe(true)
+    // Sources narrow on the server: ECLASS IRDIs start with 0173-.
+    const eclass = await target.searchConceptDescriptions({ expression: '' }, ['ECLASS'], 200, undefined)
+    expect(eclass.items.length).toBeGreaterThan(0)
+    expect(eclass.items.every(cd => cd.id.startsWith('0173-'))).toBe(true)
+    const studio = await target.searchConceptDescriptions({ expression: 'studio.test' }, ['Other'], 50, undefined)
+    expect(studio.items.map(cd => cd.id)).toContain(id)
+    await expect(target.searchConceptDescriptions({ query: { $condition: { $eq: [{ $field: '$aas#idShort' }, { $strVal: 'x' }] } } }, [], 50, undefined))
+      .rejects
+      .toMatchObject({ code: 'query_invalid' })
+  })
+
   it('counts the submodels and elements that reference it, where the target can query', async () => {
     await target.createSubmodel({
       modelType: 'Submodel',

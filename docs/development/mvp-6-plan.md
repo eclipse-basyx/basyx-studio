@@ -69,6 +69,7 @@ Made on 2026-10-15.
 | L5 | Delete | A row menu and the drawer offer *Delete* in edit mode, with a confirmation naming the concept description (UX-003). Where the target supports element search by semantic ID (query support), the confirmation says how many submodels and elements reference it; otherwise it says that usages cannot be checked. Deleting never changes the referencing elements. |
 | L6 | Palette | ⌘K gets *New concept description* (edit mode) and finds concept descriptions by name and ID on the loaded page, opening them in the drawer. |
 | L7 | Empty and absent states | Without a concept description repository the page and the Semantics card are absent (capability `conceptDescriptions`, as today); without write rights the edit controls are absent and the drawer is read-only. |
+| S1 | Search and paging | The Concepts page and the link picker share one search (`useConceptDescriptionSearch`, `ConceptDescriptionSearchBar`, `CursorPager`): the search bar of the record lists (`ListFilterBar`, as on the infrastructures page) with *Source* in its filter menu and the advanced query beside it. The text (also `id:`/`idShort:` filters typed into it) becomes an AAS Query Language query on `/query/concept-descriptions` (`$cd#id`, `$cd#idShort`, the only concept description fields of the grammar); sources become `$starts-with`/`$contains` conditions on `$cd#id`; raw queries are checked against the `$cd` root. Results come one page at a time with the API's cursors (10, 25, 50 or 100 rows, previous and next; no total count exists), in the server's order, so columns do not sort. Capability `conceptDescriptionSearch`: `query` where the repository announces the IDTA query profile (SSP-003) or BaSyx 3.2+, `expression` on workspaces (Studio evaluates text and sources), else `filter`, where text and sources narrow the page shown, with a note. Names, definitions and data types are not searched on the server: the grammar has no field for them. Added on 2026-10-15 at the user's request. |
 
 ### Forms
 
@@ -241,6 +242,7 @@ Phase 0 measurements (BaSyx Go, `live-target-concept-descriptions.test.ts`):
 | 9. Parity | Done | MVP-5 parity rows updated |
 | E5. Link | Done | *Link concept description* on a property without semantic ID: searched "manufacturer name", picked, applied; the drawer's panel then resolved it (browser) |
 | E6. Units | Done | A property linked to a concept description with unit `1/min` shows `3000 1/min` in the tree and the value card (browser); `ownUnit` unit-tested. The Overview's live cards were checked by typecheck only |
+| S1. Search | Done | `idShort:Manufacturer` and a raw `$cd#idShort` query return 11 of 84 through `/searches` in the browser; a `$aas` field is refused with a finding; unit tests for query building, local matching, profile detection and the request schema; integration test on BaSyx Go |
 
 Automated checks: `pnpm typecheck`, ESLint on the changed files,
 `pnpm test` (226 tests, including `test/aas/iec61360.test.ts` and

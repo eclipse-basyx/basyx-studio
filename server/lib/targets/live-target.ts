@@ -18,6 +18,7 @@ import type {
   ShellSummary,
   TargetCapabilities,
 } from '#shared/contract'
+import type { ConceptDescriptionSource } from '#shared/search/expression'
 import type { JsonObject } from '../aas/outline'
 import type { SyncPlan, SyncStep } from '../aas/sync'
 import type { FailureRecorder } from '../network/guarded-fetch'
@@ -28,7 +29,7 @@ import type { Configuration } from 'basyx-typescript-sdk'
 import { types as aasTypes, jsonization } from '@aas-core-works/aas-core3.1-typescript'
 import { AasDiscoveryClient, AasRegistryClient, AasRepositoryClient, ConceptDescriptionRepositoryClient, Lib, SubmodelRegistryClient, SubmodelRepositoryClient } from 'basyx-typescript-sdk'
 import { serviceUrl } from '#shared/contract'
-import { buildShellQuery, escapeRegex, parseSearch } from '#shared/search/expression'
+import { buildConceptDescriptionQuery, buildShellQuery, escapeRegex, parseSearch } from '#shared/search/expression'
 import {
   handleFromLocation,
   invocationBody,
@@ -606,6 +607,22 @@ export class LiveAasTarget implements AasTarget {
     const nextCursor = data.pagedResult?.cursor ?? null
     return {
       items: data.result.map(cd => toConceptDescriptionSummary(toJson(cd))),
+      page: { nextCursor, hasMore: nextCursor !== null },
+    }
+  }
+
+  /** Concept descriptions through the repository's query endpoint: the search field's expression or a checked raw query. */
+  async searchConceptDescriptions (search: ShellSearch, sources: readonly ConceptDescriptionSource[], limit: number, cursor: string | undefined): Promise<Page<ConceptDescriptionSummary>> {
+    if (this.capabilities.conceptDescriptionSearch !== 'query') {
+      throw new StudioProblem('query_unsupported')
+    }
+    const checked = 'query' in search ? { query: checkRawQuery(search.query, 'conceptDescriptions') } : search
+    const json = buildConceptDescriptionQuery(checked, sources) ?? { $condition: { $boolean: true } }
+    const data = await this.#call('conceptDescriptionRepository', configuration =>
+      this.#cdClient.queryConceptDescriptions({ configuration, query: toSdkQuery(json), limit, cursor }))
+    const nextCursor = data.pagedResult?.cursor ?? null
+    return {
+      items: data.resultType === 'Identifier' ? [] : data.result.map(cd => toConceptDescriptionSummary(toJson(cd))),
       page: { nextCursor, hasMore: nextCursor !== null },
     }
   }

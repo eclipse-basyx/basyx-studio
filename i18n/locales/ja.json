@@ -43,7 +43,12 @@
   "lists": {
     "noMatches": "検索条件とフィルターに一致するものはありません。",
     "filters": "{n} 件のフィルター",
-    "filtersApplied": "{n} 件のフィルターを適用中（クリックで解除）"
+    "filtersApplied": "{n} 件のフィルターを適用中（クリックで解除）",
+    "perPage": "1 ページの行数",
+    "range": "{from}–{to}",
+    "noRows": "行なし",
+    "previousPage": "前のページ",
+    "nextPage": "次のページ"
   },
   "home": {
     "title": "AAS ターゲット",
@@ -493,7 +498,8 @@
       "apply": "検索",
       "invalidJson": "有効な JSON ではありません: {message}",
       "notObject": "クエリは $condition を含む JSON オブジェクトです。",
-      "edit": "詳細クエリを編集"
+      "edit": "詳細クエリを編集",
+      "conceptDescriptions": "コンセプト記述リポジトリで実行"
     },
     "search": "管理シェルを検索",
     "filters": {
@@ -701,7 +707,7 @@
   "concepts": {
     "title": "コンセプト記述",
     "subtitle": "サブモデル要素が参照するセマンティック定義",
-    "search": "名前、ID、定義で検索",
+    "search": "idShort または ID で検索",
     "concept": "コンセプト",
     "dataType": "データ型",
     "unit": "単位",
@@ -710,10 +716,13 @@
     "id": "ID",
     "definition": "定義",
     "noDefinition": "定義はありません。",
-    "truncated": "最初の {count} 件のコンセプト記述を表示しています。"
+    "truncated": "最初の {count} 件のコンセプト記述を表示しています。",
+    "localOnly": "読み込まれたコンセプト記述のみを絞り込みます。このインフラストラクチャはクエリエンドポイントを公開していません。",
+    "otherSource": "その他"
   },
   "settings": {
     "title": "設定",
+    "showWelcome": "起動時のウェルカム画面",
     "close": "設定を閉じる",
     "subtitle": "外観とライブデータ。アカウントに保存されます",
     "appearance": "外観",
@@ -738,6 +747,19 @@
     "syncModes": {
       "autoCreate": "エントリを作成・削除する",
       "dontCreate": "変更しない"
+    },
+    "palette": "カラー",
+    "palettes": {
+      "basyx": "BaSyx",
+      "ocean": "オーシャン",
+      "forest": "フォレスト",
+      "violet": "バイオレット",
+      "graphite": "グラファイト"
+    },
+    "shape": "形状",
+    "shapes": {
+      "normal": "標準",
+      "rounded": "より丸く"
     }
   },
   "invite": {
@@ -762,6 +784,13 @@
     "wrap": "行を折り返す",
     "noWrap": "行を折り返さない",
     "loadFailed": "コードビューを読み込めませんでした"
+  },
+  "welcome": {
+    "overline": "ようこそ",
+    "tagline": "すべてのアセットに物語がある。デジタルツインを与えよう。",
+    "keywords": "アセット管理シェル · インダストリー 4.0 · オープンソース",
+    "start": "Studio を始める",
+    "dontShow": "起動時に表示しない"
   },
   "cd": {
     "new": "新しいコンセプト記述",

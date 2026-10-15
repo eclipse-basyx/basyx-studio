@@ -120,6 +120,15 @@ writes.
 - Look: Studio's colours, small radii (at most 8 px), outlined fields, borders
   instead of shadows. All of it lives in `vuetify.config.ts` defaults and
   aliases.
+- Appearance settings: users choose light, dark or system, a colour palette
+  (BaSyx by default, plus Ocean, Forest, Violet and Graphite) and a shape
+  (*Normal*, the small radii above, or *More rounded*: 24 px surfaces and
+  fields, pill-shaped buttons and chips). Palettes only change the accents;
+  each has a light and a dark variant with at least 4.5:1 contrast and is
+  defined in `shared/appearance.ts`, from which `vuetify.config.ts` builds the
+  themes. The rounded shape is a defaults provider in `app.vue` that changes
+  radii only. New components set radii through defaults, never in templates,
+  so both shapes follow.
 - The details drawer shows the selection in modes: *Details*, *Visualization*
   (app views), *JSON*, *XML* and *UML*. The mode and the selection are in the
   URL, so links reproduce what the user saw.

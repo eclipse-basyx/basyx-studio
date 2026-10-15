@@ -33,7 +33,7 @@ const callable = new Set<string>([
   'undo', 'redo', 'setThumbnail',
   'createSubmodel', 'deleteSubmodel', 'createShell', 'replaceShell', 'addSubmodelRef', 'removeSubmodelRef', 'replaceSubmodel',
   'deleteShell', 'thumbnail', 'attachment', 'replaceAttachment', 'conceptDescriptions', 'searchShells', 'searchElements',
-  'conceptDescription', 'createConceptDescription', 'replaceConceptDescription', 'deleteConceptDescription', 'conceptDescriptionUsages',
+  'conceptDescription', 'searchConceptDescriptions', 'createConceptDescription', 'replaceConceptDescription', 'deleteConceptDescription', 'conceptDescriptionUsages',
 ])
 
 /** Largest file a user may add to a package through Studio. */

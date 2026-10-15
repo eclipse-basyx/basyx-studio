@@ -74,6 +74,15 @@ describe('target capabilities', () => {
       .toMatchObject({ search: 'filter', queryTarget: null })
   })
 
+  it('searches concept descriptions where their repository announces queries', () => {
+    expect(liveCapabilities(environment).conceptDescriptionSearch).toBe('filter')
+    const basyx = infrastructure('mono-all', environment.endpoints, { aasEnvironment: ['https://basyx.org/aas/API/3/2/ConceptDescriptionRepositoryService/1.0'] })
+    expect(liveCapabilities(basyx).conceptDescriptionSearch).toBe('query')
+    const idta = infrastructure('mono-all', environment.endpoints, { aasEnvironment: ['https://admin-shell.io/aas/API/3/2/ConceptDescriptionRepositoryServiceSpecification/SSP-003'] })
+    expect(liveCapabilities(idta).conceptDescriptionSearch).toBe('query')
+    expect(workspaceCapabilities.conceptDescriptionSearch).toBe('expression')
+  })
+
   it('offers history, the change feed and sharing only where the services announce them', () => {
     expect(liveCapabilities(environment)).toMatchObject({ history: false, changeFeed: false, sharing: false })
     const announcing = infrastructure('mono-all', environment.endpoints, { aasEnvironment: [history, eventFeed, rebac] })

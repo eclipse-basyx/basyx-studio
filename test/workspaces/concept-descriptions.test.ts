@@ -83,6 +83,14 @@ describe('concept descriptions in a workspace', () => {
     expect(findings('conceptDescription', current)).toEqual([])
   })
 
+  it('searches by expression', () => {
+    expect(model().searchConceptDescriptions('torque', [], 10, undefined).items.map(cd => cd.id)).toEqual([torque])
+    expect(model().searchConceptDescriptions('idShort=Speed', [], 10, undefined).items).toEqual([])
+    // Torque is an ECLASS IRDI.
+    expect(model().searchConceptDescriptions('', ['ECLASS'], 10, undefined).items.map(cd => cd.id)).toEqual([torque])
+    expect(model().searchConceptDescriptions('', ['IDTA', 'Other'], 10, undefined).items).toEqual([])
+  })
+
   it('counts the submodels and elements that reference it', () => {
     expect(model().conceptDescriptionUsages(torque)).toEqual({ checked: true, submodels: 1, elements: 2, truncated: false })
     expect(model().conceptDescriptionUsages('urn:unused')).toEqual({ checked: true, submodels: 0, elements: 0, truncated: false })

@@ -43,7 +43,12 @@
   "lists": {
     "noMatches": "Nada coincide con la búsqueda y los filtros.",
     "filters": "{n} filtro | {n} filtros",
-    "filtersApplied": "{n} filtro aplicado, quitarlo | {n} filtros aplicados, quitarlos"
+    "filtersApplied": "{n} filtro aplicado, quitarlo | {n} filtros aplicados, quitarlos",
+    "perPage": "Filas por página",
+    "range": "{from}–{to}",
+    "noRows": "Sin filas",
+    "previousPage": "Página anterior",
+    "nextPage": "Página siguiente"
   },
   "home": {
     "title": "Destinos AAS",
@@ -493,7 +498,8 @@
       "apply": "Buscar",
       "invalidJson": "JSON no válido: {message}",
       "notObject": "Una consulta es un objeto JSON con $condition.",
-      "edit": "Editar la consulta avanzada"
+      "edit": "Editar la consulta avanzada",
+      "conceptDescriptions": "Se ejecuta en el repositorio de descripciones de concepto"
     },
     "search": "Buscar AAS",
     "filters": {
@@ -701,7 +707,7 @@
   "concepts": {
     "title": "Descripciones de conceptos",
     "subtitle": "Definiciones semánticas referenciadas por elementos de submodelo",
-    "search": "Buscar por nombre, ID o definición",
+    "search": "Buscar por idShort o ID",
     "concept": "Concepto",
     "dataType": "Tipo de datos",
     "unit": "Unidad",
@@ -710,10 +716,13 @@
     "id": "ID",
     "definition": "Definición",
     "noDefinition": "Sin definición.",
-    "truncated": "Se muestran las primeras {count} descripciones de conceptos."
+    "truncated": "Se muestran las primeras {count} descripciones de conceptos.",
+    "localOnly": "Filtra solo las descripciones de concepto cargadas: esta infraestructura no anuncia un endpoint de consultas para ellas.",
+    "otherSource": "Otras"
   },
   "settings": {
     "title": "Configuración",
+    "showWelcome": "Pantalla de bienvenida al iniciar",
     "close": "Cerrar configuración",
     "subtitle": "Apariencia y datos en directo, guardados para tu cuenta",
     "appearance": "Apariencia",
@@ -738,6 +747,19 @@
     "syncModes": {
       "autoCreate": "Crear y quitar entradas",
       "dontCreate": "Dejarlas sin cambios"
+    },
+    "palette": "Colores",
+    "palettes": {
+      "basyx": "BaSyx",
+      "ocean": "Océano",
+      "forest": "Bosque",
+      "violet": "Violeta",
+      "graphite": "Grafito"
+    },
+    "shape": "Forma",
+    "shapes": {
+      "normal": "Normal",
+      "rounded": "Más redondeada"
     }
   },
   "invite": {
@@ -762,6 +784,13 @@
     "wrap": "Ajustar líneas",
     "noWrap": "No ajustar líneas",
     "loadFailed": "No se pudo cargar la vista de código"
+  },
+  "welcome": {
+    "overline": "Bienvenido a",
+    "tagline": "Cada activo tiene una historia. Dale un gemelo digital.",
+    "keywords": "Asset Administration Shell · Industria 4.0 · Código abierto",
+    "start": "Entrar en Studio",
+    "dontShow": "No mostrar al iniciar"
   },
   "cd": {
     "new": "Nueva descripción de concepto",

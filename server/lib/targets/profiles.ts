@@ -18,6 +18,8 @@ const queryProfiles = {
   aasRegistry: [/^https:\/\/admin-shell\.io\/aas\/API\/3\/\d+\/AssetAdministrationShellRegistryServiceSpecification\/SSP-004$/, basyxQuery('AssetAdministrationShellRegistryServiceSpecification')],
   aasRepository: [/^https:\/\/admin-shell\.io\/aas\/API\/3\/\d+\/AssetAdministrationShellRepositoryServiceSpecification\/SSP-003$/, basyxQuery('AssetAdministrationShellRepositoryServiceSpecification')],
   submodelRepository: [/^https:\/\/admin-shell\.io\/aas\/API\/3\/\d+\/SubmodelRepositoryServiceSpecification\/SSP-005$/, basyxQuery('SubmodelRepositoryService')],
+  // The IDTA query profile of the concept description repository (SSP-003), or BaSyx 3.2 and later.
+  conceptDescriptionRepository: [/^https:\/\/admin-shell\.io\/aas\/API\/3\/\d+\/ConceptDescriptionRepositoryServiceSpecification\/SSP-003$/, basyxQuery('ConceptDescriptionRepositoryService')],
 } as const
 
 function basyxQuery (service: string): RegExp {
@@ -56,7 +58,7 @@ export interface AnnouncedFeatures {
   /** Access to shells can be granted (ReBAC). */
   rebac: boolean
   /** Query endpoints of the services. */
-  query: { aasRegistry: boolean, aasRepository: boolean, submodelRepository: boolean }
+  query: { aasRegistry: boolean, aasRepository: boolean, submodelRepository: boolean, conceptDescriptionRepository: boolean }
 }
 
 export function announcedFeatures (infrastructure: ProfiledInfrastructure): AnnouncedFeatures {
@@ -68,6 +70,7 @@ export function announcedFeatures (infrastructure: ProfiledInfrastructure): Anno
       aasRegistry: announces(infrastructure, 'aasRegistry', ...queryProfiles.aasRegistry),
       aasRepository: announces(infrastructure, 'aasRepository', ...queryProfiles.aasRepository),
       submodelRepository: announces(infrastructure, 'submodelRepository', ...queryProfiles.submodelRepository),
+      conceptDescriptionRepository: announces(infrastructure, 'conceptDescriptionRepository', ...queryProfiles.conceptDescriptionRepository),
     },
   }
 }

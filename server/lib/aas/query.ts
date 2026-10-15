@@ -1,4 +1,4 @@
-import type { ShellQueryTarget } from '#shared/search/expression'
+import type { QueryTarget } from '#shared/search/expression'
 import type { JsonObject } from './outline'
 import type { ErrorObject } from 'ajv'
 import type { Query } from 'basyx-typescript-sdk'
@@ -52,7 +52,7 @@ function schemaFinding (error: ErrorObject): Finding {
  * rows) and only the roots of the endpoint it runs on. Fails with
  * `query_invalid` and readable findings.
  */
-export function checkRawQuery (raw: unknown, target: ShellQueryTarget): JsonObject {
+export function checkRawQuery (raw: unknown, target: QueryTarget): JsonObject {
   if (JSON.stringify(raw ?? null).length > maxQueryBytes) {
     throw new StudioProblem('query_invalid', `The query is larger than ${maxQueryBytes / 1024} KiB.`)
   }
@@ -69,7 +69,7 @@ export function checkRawQuery (raw: unknown, target: ShellQueryTarget): JsonObje
   }
   const query = (raw ?? {}) as JsonObject
   if (typeof query === 'object' && '$select' in query) {
-    findings.push({ path: '/$select', message: 'is not supported here: the shell list needs complete objects' })
+    findings.push({ path: '/$select', message: 'is not supported here: the list needs complete objects' })
   }
   for (const { path, field } of fieldsOf(raw)) {
     if (!isUnderRoot(field, queryRoots[target])) {

@@ -39,7 +39,7 @@
 
       <v-spacer />
 
-      <template v-if="!session.needsLogin && targetId">
+      <template v-if="!session.needsLogin && activeTargetId">
         <!-- The active target stays visible at every width (design guidelines);
              a menu button like the other app bar controls, its name from sm up. -->
         <v-menu v-if="targetItems.length > 0">
@@ -61,7 +61,7 @@
           </template>
 
           <v-card min-width="240">
-            <v-list :selected="[targetId]">
+            <v-list :selected="[activeTargetId]">
               <v-list-subheader>{{ t('app.target') }}</v-list-subheader>
 
               <v-list-item
@@ -268,17 +268,23 @@
   const label = useLocalizedLabel()
   const { mdAndUp, smAndUp, lgAndUp } = useDisplay()
 
+  const navigation = useNavigationStore()
   const targetId = computed(() => typeof route.params.targetId === 'string' ? route.params.targetId : null)
+  // Outside any target (the targets list, global modules) the last opened
+  // target stays current, so its navigation and controls do not disappear.
+  const rememberedTargetId = computed(() => targetId.value ?? navigation.currentTarget)
   const inShellBrowser = computed(() => targetId.value !== null && route.path.startsWith(`/targets/${targetId.value}/shells`))
 
   const targets = useQuery({
     key: ['targets'],
     query: ({ signal }) => api<{ items: Target[] }>('/targets', { signal }),
-    enabled: () => !session.needsLogin && targetId.value !== null,
+    enabled: () => !session.needsLogin && rememberedTargetId.value !== null,
   })
-  const draftCount = computed(() => targetId.value ? drafts.countFor(targetId.value) : 0)
+  const target = computed(() => targets.data.value?.items.find(item => item.id === rememberedTargetId.value) ?? null)
+  // A remembered target that was removed or is no longer listed is not current.
+  const activeTargetId = computed(() => targetId.value ?? target.value?.id ?? null)
+  const draftCount = computed(() => activeTargetId.value ? drafts.countFor(activeTargetId.value) : 0)
   const targetItems = computed(() => (targets.data.value?.items ?? []).map(target => ({ title: target.name, value: target.id })))
-  const target = computed(() => targets.data.value?.items.find(item => item.id === targetId.value) ?? null)
 
   function switchTarget (id: string) {
     // Another target never shows this target's shell or selection (UX-001).
@@ -306,8 +312,8 @@
       let to: NavItem['to']
       if (module.context === 'global') {
         to = `/${path}`
-      } else if (targetId.value && (module.context === 'target' || shellKey)) {
-        to = module.context === 'shell' ? { path: `/targets/${targetId.value}/${path}`, query: { shell: shellKey! } } : `/targets/${targetId.value}/${path}`
+      } else if (activeTargetId.value && (module.context === 'target' || shellKey)) {
+        to = module.context === 'shell' ? { path: `/targets/${activeTargetId.value}/${path}`, query: { shell: shellKey! } } : `/targets/${activeTargetId.value}/${path}`
       } else {
         return []
       }
@@ -318,8 +324,8 @@
 
   const navItems = computed<NavItem[]>(() => {
     const items: NavItem[] = [{ key: 'targets', title: t('nav.targets'), short: t('nav.targetsShort'), icon: 'mdi-server-network', to: '/', exact: true }]
-    if (targetId.value) {
-      const base = `/targets/${targetId.value}`
+    if (activeTargetId.value) {
+      const base = `/targets/${activeTargetId.value}`
       items.push(
         { key: 'dashboard', title: t('nav.dashboard'), short: t('nav.dashboardShort'), icon: 'mdi-view-dashboard-outline', to: base, exact: true },
         { key: 'shells', title: t('nav.shells'), short: t('nav.shellsShort'), icon: '$aas', to: `${base}/shells` },
@@ -337,7 +343,6 @@
       : item)
   })
 
-  const navigation = useNavigationStore()
   watch(() => route.fullPath, () => {
     const { panel: _, ...query } = route.query
     navigation.remember(route.path, router.resolve({ path: route.path, query, hash: route.hash }).fullPath)
@@ -393,7 +398,7 @@
     ui.commandOpen = true
   }, { inputs: true })
   useHotkey('cmd+e', () => {
-    if (targetId.value) {
+    if (activeTargetId.value) {
       ui.toggleMode()
     }
   })

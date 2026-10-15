@@ -1,4 +1,5 @@
 import type { ConceptDescriptionSummary, ConceptDescriptionUsages, ElementHit, ElementValueInput, Page, ShellSummary } from '#shared/contract'
+import type { ConceptDescriptionSource } from '#shared/search/expression'
 import type { JsonObject } from '../aas/outline'
 import type { Violation } from '../problem'
 import type { BinaryContent, ElementSnapshot, StructureResult } from '../targets/aas-target'
@@ -48,6 +49,7 @@ export interface WorkspaceCalls {
   replaceAttachment: (submodelId: string, idShortPath: string, file: BinaryContent, revision: string) => Promise<ElementSnapshot>
   conceptDescriptions: (limit: number, cursor: string | undefined) => Page<ConceptDescriptionSummary>
   conceptDescription: (id: string) => JsonObject
+  searchConceptDescriptions: (expression: string, sources: readonly ConceptDescriptionSource[], limit: number, cursor: string | undefined) => Page<ConceptDescriptionSummary>
   createConceptDescription: (conceptDescription: JsonObject) => void
   replaceConceptDescription: (id: string, conceptDescription: JsonObject, revision: string) => JsonObject
   deleteConceptDescription: (id: string, revision: string) => void

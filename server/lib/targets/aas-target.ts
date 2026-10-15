@@ -17,6 +17,7 @@ import type {
   ShellSummary,
   TargetCapabilities,
 } from '#shared/contract'
+import type { ConceptDescriptionSource } from '#shared/search/expression'
 import type { JsonObject } from '../aas/outline'
 import type { SyncPlan, SyncStep } from '../aas/sync'
 
@@ -134,6 +135,12 @@ export interface AasTarget {
   replaceConceptDescription: (id: string, conceptDescription: JsonObject, revision: string) => Promise<JsonObject>
   /** Deletes a concept description, based on the `revision` of it as read; referencing elements stay as they are. */
   deleteConceptDescription: (id: string, revision: string) => Promise<void>
+  /**
+   * Concept descriptions matching the search field's expression or a raw
+   * query, cursor-paged (MVP-6 plan, S1). Needs `conceptDescriptionSearch`
+   * other than `filter`; workspaces take expressions only.
+   */
+  searchConceptDescriptions: (search: ShellSearch, sources: readonly ConceptDescriptionSource[], limit: number, cursor: string | undefined) => Promise<Page<ConceptDescriptionSummary>>
   /** Submodels and elements whose semantic ID names the concept description, where the target can search for them (L5). */
   conceptDescriptionUsages: (id: string) => Promise<ConceptDescriptionUsages>
   /** Shells matching the search field's expression or a raw query (MVP-4 plan, S2). */

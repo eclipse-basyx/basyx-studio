@@ -43,7 +43,12 @@
   "lists": {
     "noMatches": "没有与搜索和筛选条件匹配的内容。",
     "filters": "{n} 个筛选条件",
-    "filtersApplied": "已应用 {n} 个筛选条件，点击移除"
+    "filtersApplied": "已应用 {n} 个筛选条件，点击移除",
+    "perPage": "每页行数",
+    "range": "{from}–{to}",
+    "noRows": "无数据",
+    "previousPage": "上一页",
+    "nextPage": "下一页"
   },
   "home": {
     "title": "AAS 目标",
@@ -493,7 +498,8 @@
       "apply": "搜索",
       "invalidJson": "JSON 无效：{message}",
       "notObject": "查询是一个包含 $condition 的 JSON 对象。",
-      "edit": "编辑高级查询"
+      "edit": "编辑高级查询",
+      "conceptDescriptions": "在概念描述存储库上运行"
     },
     "search": "搜索管理壳",
     "filters": {
@@ -701,7 +707,7 @@
   "concepts": {
     "title": "概念描述",
     "subtitle": "子模型元素所引用的语义定义",
-    "search": "按名称、ID 或定义搜索",
+    "search": "按 idShort 或 ID 搜索",
     "concept": "概念",
     "dataType": "数据类型",
     "unit": "单位",
@@ -710,10 +716,13 @@
     "id": "ID",
     "definition": "定义",
     "noDefinition": "没有定义。",
-    "truncated": "仅显示前 {count} 个概念描述。"
+    "truncated": "仅显示前 {count} 个概念描述。",
+    "localOnly": "仅筛选已加载的概念描述：此基础设施未公布相应的查询端点。",
+    "otherSource": "其他"
   },
   "settings": {
     "title": "设置",
+    "showWelcome": "启动时显示欢迎页",
     "close": "关闭设置",
     "subtitle": "外观和实时数据，保存在你的账户中",
     "appearance": "外观",
@@ -738,6 +747,19 @@
     "syncModes": {
       "autoCreate": "创建和移除条目",
       "dontCreate": "保持不变"
+    },
+    "palette": "颜色",
+    "palettes": {
+      "basyx": "BaSyx",
+      "ocean": "海洋",
+      "forest": "森林",
+      "violet": "紫罗兰",
+      "graphite": "石墨"
+    },
+    "shape": "形状",
+    "shapes": {
+      "normal": "标准",
+      "rounded": "更圆润"
     }
   },
   "invite": {
@@ -762,6 +784,13 @@
     "wrap": "自动换行",
     "noWrap": "不自动换行",
     "loadFailed": "无法加载代码视图"
+  },
+  "welcome": {
+    "overline": "欢迎使用",
+    "tagline": "每个资产都有自己的故事。为它创建数字孪生。",
+    "keywords": "资产管理壳 · 工业 4.0 · 开源",
+    "start": "进入 Studio",
+    "dontShow": "启动时不再显示"
   },
   "cd": {
     "new": "新建概念描述",

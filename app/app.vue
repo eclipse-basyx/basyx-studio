@@ -1,11 +1,19 @@
 <template>
-  <NuxtLayout>
-    <NuxtPage />
-  </NuxtLayout>
+  <!-- The shape of Settings: the rounded defaults over vuetify.config.ts. -->
+  <v-defaults-provider :defaults="shapeDefaults">
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
+
+    <ClientOnly>
+      <WelcomeScreen />
+    </ClientOnly>
+  </v-defaults-provider>
 </template>
 
 <script lang="ts" setup>
   import { useTheme } from 'vuetify'
+  import { roundedDefaults, themeName } from '#shared/appearance'
   import { locales } from '#shared/i18n/locales'
 
   // `<html lang>` from the locale's BCP 47 tag, so screen readers and the
@@ -15,13 +23,15 @@
   const { locale, localeCodes, setLocale } = useI18n()
   useHead(() => ({ htmlAttrs: { lang: locales.find(entry => entry.code === locale.value)?.language ?? 'en-US', dir: 'ltr' } }))
 
-  // The user's theme preference (Settings); "system" follows the OS. It is
-  // applied only after hydration: a theme change while the page hydrates
-  // leaves server-rendered parts in the server's theme, because Vue keeps
-  // mismatching attributes. Vuetify's color-scheme cookie then lets the next
-  // server render start in the same theme.
+  // The user's theme preference (Settings): a palette, and light, dark or
+  // "system", which follows the OS. Like the shape, it is applied only after
+  // hydration: a theme change while the page hydrates leaves server-rendered
+  // parts in the server's theme, because Vue keeps mismatching attributes.
+  // Vuetify's color-scheme cookie then lets the next server render start in
+  // the same theme.
   const theme = useTheme()
   const preferences = usePreferences()
+  const shapeDefaults = ref<typeof roundedDefaults | undefined>(undefined)
   onMounted(() => {
     // The stored UI language (Settings), applied after hydration like the
     // theme; setLocale() also rewrites the i18n_redirected cookie, so the
@@ -37,10 +47,15 @@
     const apply = () => {
       const value = preferences.query.data.value?.theme
       if (value) {
-        theme.change(value === 'system' ? (dark.matches ? 'dark' : 'light') : value)
+        const isDark = value === 'system' ? dark.matches : value === 'dark'
+        theme.change(themeName(preferences.query.data.value?.palette ?? 'basyx', isDark))
       }
     }
-    watch(() => preferences.query.data.value?.theme, apply, { immediate: true })
+    watch(() => [preferences.query.data.value?.theme, preferences.query.data.value?.palette], apply, { immediate: true })
     dark.addEventListener('change', apply)
+
+    watch(() => preferences.query.data.value?.shape, shape => {
+      shapeDefaults.value = shape === 'rounded' ? roundedDefaults : undefined
+    }, { immediate: true })
   })
 </script>

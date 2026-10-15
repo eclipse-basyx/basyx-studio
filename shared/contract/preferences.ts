@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { paletteNames, shapes } from '../appearance'
 import { localeCodes } from '../i18n/locales'
 import { syncModes } from './infrastructure'
 
@@ -27,6 +28,10 @@ export const preferencesSchema = z.object({
   uiLanguage: z.enum(localeCodes).nullable().default(null).catch(null),
   valueLanguage: z.string().regex(/^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})?$/).default('en'),
   theme: z.enum(['system', 'light', 'dark']).default('system'),
+  /** Accent colours (shared/appearance.ts); an unknown palette falls back to BaSyx. */
+  palette: z.enum(paletteNames).default('basyx').catch('basyx'),
+  /** `normal`: small radii; `rounded`: large radii, pill-shaped buttons and chips. */
+  shape: z.enum(shapes).default('normal').catch('normal'),
   /** View of the AAS targets list; `null` picks cards for a few targets and rows for many. */
   targetsView: z.enum(['grid', 'list']).nullable().default(null).catch(null),
   /** Off by default, as auto-sync in the BaSyx Web UI: every open shell would poll its infrastructure. */
@@ -37,6 +42,8 @@ export const preferencesSchema = z.object({
    * infrastructure lets users choose (MVP-4 plan, I5).
    */
   syncOverrides: z.record(z.string().max(100), z.enum(syncModes)).default({}),
+  /** Desktop app: the welcome screen at startup, until the user turns it off. */
+  showWelcome: z.boolean().default(true),
 })
 export type Preferences = z.infer<typeof preferencesSchema>
 

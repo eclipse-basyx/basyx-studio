@@ -4,80 +4,55 @@
       <PageHeader :subtitle="t('concepts.subtitle')" :title="t('concepts.title')" />
 
       <ProblemAlert
-        v-if="error"
+        v-if="cds.error.value"
         class="mb-4"
-        :error="error"
+        :error="cds.error.value"
         retry
-        @retry="load"
+        @retry="cds.reload()"
       />
 
       <ProblemAlert v-if="actionError" class="mb-4" :error="actionError" />
 
       <v-card>
-        <v-toolbar class="px-3" color="transparent">
-          <v-text-field
-            v-model="search"
-            clearable
-            density="compact"
-            max-width="420"
-            :placeholder="t('concepts.search')"
-            prepend-inner-icon="mdi-magnify"
-          />
-
-          <v-spacer />
-
-          <v-chip-group v-if="smAndUp && sources.length > 0" v-model="source" selected-class="text-primary">
-            <v-chip
-              v-for="entry in sources"
-              :key="entry"
-              filter
-              :text="entry"
-              :value="entry"
+        <!-- The search bar of the link picker too: text, source filters, advanced query (S1). -->
+        <ConceptDescriptionSearchBar :state="cds" :target-id="targetId">
+          <template #append>
+            <WorkspaceActions
+              v-if="target.data.value?.workspace"
+              :target="target.data.value"
+              @error="value => (actionError = value)"
+              @restored="onRestored"
             />
-          </v-chip-group>
 
-          <WorkspaceActions
-            v-if="target.data.value?.workspace"
-            class="ms-2"
-            :target="target.data.value"
-            @error="value => (actionError = value)"
-            @restored="onRestored"
-          />
+            <!-- Creating needs edit mode (UX-006): new, or from JSON. -->
+            <v-btn-group v-if="canWrite" density="compact">
+              <v-btn prepend-icon="mdi-plus" :text="xs ? undefined : t('cd.new')" @click="adding = true" />
 
-          <!-- Creating needs edit mode (UX-006): new, or from JSON. -->
-          <v-btn-group v-if="canWrite" class="ms-2" density="compact">
-            <v-btn prepend-icon="mdi-plus" :text="xs ? undefined : t('cd.new')" @click="adding = true" />
+              <v-menu>
+                <template #activator="{ props: activator }">
+                  <v-btn v-bind="activator" :aria-label="t('cd.moreCreate')" icon="mdi-chevron-down" />
+                </template>
 
-            <v-menu>
-              <template #activator="{ props: activator }">
-                <v-btn v-bind="activator" :aria-label="t('cd.moreCreate')" icon="mdi-chevron-down" />
-              </template>
-
-              <v-list>
-                <v-list-item prepend-icon="mdi-code-json" :title="t('cd.fromJson')" @click="inserting = true" />
-              </v-list>
-            </v-menu>
-          </v-btn-group>
-        </v-toolbar>
+                <v-list>
+                  <v-list-item prepend-icon="mdi-code-json" :title="t('cd.fromJson')" @click="inserting = true" />
+                </v-list>
+              </v-menu>
+            </v-btn-group>
+          </template>
+        </ConceptDescriptionSearchBar>
 
         <v-divider />
 
-        <v-alert
-          v-if="truncated"
-          density="compact"
-          rounded="0"
-          :text="t('concepts.truncated', { count: maxItems })"
-          type="info"
-        />
-
+        <!-- One page of the server at a time (cursor paging below), in the server's order. -->
         <v-data-table
           :headers="headers"
+          hide-default-footer
           item-value="key"
-          :items="filtered"
-          :loading="loading"
+          :items="rows"
+          :items-per-page="-1"
+          :loading="cds.loading.value"
           :mobile="xs"
           :row-props="rowProps"
-          :search="search ?? undefined"
           @click:row="(_: unknown, row: { item: Row }) => select(row.item.key)"
         >
           <template #[`item.idShort`]="{ item }">
@@ -118,6 +93,20 @@
             </v-menu>
           </template>
         </v-data-table>
+
+        <v-divider />
+
+        <CursorPager
+          v-model:page-size="pageSize"
+          :count="rows.length"
+          :has-next="cds.hasNext.value"
+          :has-previous="cds.hasPrevious.value"
+          :loading="cds.loading.value"
+          :page="cds.pageIndex.value"
+          :sizes="conceptDescriptionPageSizes"
+          @next="cds.next()"
+          @previous="cds.previous()"
+        />
       </v-card>
 
       <ConceptDescriptionAddDialog v-model="adding" :target-id="targetId" @created="onCreated" />
@@ -175,14 +164,16 @@
 </template>
 
 <script lang="ts" setup>
-  import type { ConceptDescriptionDetail, ConceptDescriptionSummary, ConceptDescriptionUsages, Page, TargetCapabilities } from '#shared/contract'
+  import type { ConceptDescriptionDetail, ConceptDescriptionSummary, ConceptDescriptionUsages, TargetCapabilities } from '#shared/contract'
+  import type { ConceptDescriptionRow } from '~/composables/useConceptDescriptionSearch'
   import { useQuery, useQueryCache } from '@pinia/colada'
   import { useDisplay } from 'vuetify'
   import { noCapabilities } from '#shared/contract'
+  import { conceptDescriptionPageSizes } from '~/composables/useConceptDescriptionSearch'
   import { conceptDescriptionDraftSlot } from '~/stores/drafts'
-  import { langText, resourceKey } from '~/utils/aas'
+  import { resourceKey } from '~/utils/aas'
 
-  type Row = Omit<ConceptDescriptionSummary, 'definition'> & { key: string, name: string, definition: string, source: string }
+  type Row = ConceptDescriptionRow & { key: string }
 
   const { t } = useI18n()
   const route = useRoute()
@@ -194,85 +185,43 @@
   const queryCache = useQueryCache()
   const notifications = useNotificationsStore()
   const structureActions = useStructureActionsStore()
-  const preferences = usePreferences().preferences
-  const { xs, smAndUp } = useDisplay()
+  const { xs } = useDisplay()
 
   const targetId = computed(() => String(route.params.targetId))
   const target = useTarget(targetId)
   const capabilities = computed<TargetCapabilities>(() => target.data.value?.capabilities ?? noCapabilities)
   // Concept descriptions change like submodels: edit mode and a target that takes structural writes (MVP-6 plan, W4).
   const canWrite = computed(() => ui.editing && capabilities.value.conceptDescriptions && capabilities.value.writeStructure && capabilities.value.createResources)
-  const maxItems = 1000
-
-  const items = ref<ConceptDescriptionSummary[]>([])
-  const loading = ref(false)
-  const truncated = ref(false)
-  const error = ref<unknown>(null)
   const actionError = ref<unknown>(null)
-  // Kept per target while the user visits other pages (usePageState).
-  const search = usePageState<string | null>(() => `concepts:${targetId.value}:search`, () => '')
-  const source = usePageState<string | null>(() => `concepts:${targetId.value}:source`, () => null)
 
-  // Columns and filters only for what the data has (D18).
-  const sources = computed(() => [...new Set(rows.value.map(row => row.source))].filter(entry => entry !== 'Other').toSorted())
-  const hasUnits = computed(() => items.value.some(cd => cd.unit))
+  // The search, kept per target while the user visits other pages (usePageState), one page at a time (S1).
+  const pageSize = usePageState<number>(() => `concepts:${targetId.value}:pageSize`, () => 25)
+  const cds = useConceptDescriptionSearch({
+    targetId,
+    capabilities,
+    enabled: () => target.data.value !== undefined,
+    state: {
+      search: usePageState<string | null>(() => `concepts:${targetId.value}:search`, () => ''),
+      selected: usePageState<string[]>(() => `concepts:${targetId.value}:filters`, () => []),
+      pageSize,
+    },
+  })
+  const rows = computed<Row[]>(() => cds.rows.value.map(row => ({ ...row, key: resourceKey(row.id) })))
+
+  // Columns only for what the page has (D18).
+  const hasUnits = computed(() => rows.value.some(row => row.unit))
+  const hasSources = computed(() => rows.value.some(row => row.source !== 'Other'))
   const headers = computed(() => [
-    { title: t('concepts.concept'), key: 'idShort' },
-    { title: t('concepts.dataType'), key: 'dataType', width: 160 },
-    ...(hasUnits.value ? [{ title: t('concepts.unit'), key: 'unit', width: 100 }] : []),
-    ...(sources.value.length > 0 ? [{ title: t('concepts.source'), key: 'source', width: 120 }] : []),
+    { title: t('concepts.concept'), key: 'idShort', sortable: false },
+    { title: t('concepts.dataType'), key: 'dataType', width: 160, sortable: false },
+    ...(hasUnits.value ? [{ title: t('concepts.unit'), key: 'unit', width: 100, sortable: false }] : []),
+    ...(hasSources.value ? [{ title: t('concepts.source'), key: 'source', width: 120, sortable: false }] : []),
     { title: '', key: 'actions', sortable: false, align: 'end' as const, width: 64 },
   ])
-
-  // By IRDI prefix: ECLASS (0173-) and the IEC Common Data Dictionary (0112/);
-  // IDTA templates live under admin-shell.io.
-  function sourceOf (id: string): string {
-    if (id.startsWith('0173-')) {
-      return 'ECLASS'
-    }
-    if (id.startsWith('0112/')) {
-      return 'IEC CDD'
-    }
-    return id.includes('admin-shell.io') ? 'IDTA' : 'Other'
-  }
-
-  const rows = computed<Row[]>(() => items.value.map(cd => ({
-    ...cd,
-    key: resourceKey(cd.id),
-    name: langText(cd.preferredName, preferences.value.valueLanguage) ?? cd.idShort ?? cd.id,
-    definition: langText(cd.definition, preferences.value.valueLanguage) ?? '',
-    source: sourceOf(cd.id),
-  })))
-  const filtered = computed(() => source.value ? rows.value.filter(row => row.source === source.value) : rows.value)
 
   function rowName (key: string): string {
     return rows.value.find(row => row.key === key)?.name ?? key
   }
-
-  /** Loads all pages up to a limit; filtering and sorting then happen in the browser. */
-  async function load () {
-    loading.value = true
-    error.value = null
-    truncated.value = false
-    try {
-      const loaded: ConceptDescriptionSummary[] = []
-      let cursor: string | undefined
-      do {
-        const page = await api<Page<ConceptDescriptionSummary>>(`/targets/${targetId.value}/concept-descriptions`, { query: { limit: 200, cursor } })
-        loaded.push(...page.items)
-        cursor = page.page.nextCursor ?? undefined
-      } while (cursor && loaded.length < maxItems)
-      items.value = loaded
-      truncated.value = Boolean(cursor)
-    } catch (error_) {
-      items.value = []
-      error.value = error_
-    } finally {
-      loading.value = false
-    }
-  }
-
-  watch(targetId, load, { immediate: true })
 
   // The selection and the drawer's mode are in the URL (L3): `cd` and `mode`.
   const selectedKey = computed(() => typeof route.query.cd === 'string' ? route.query.cd : null)
@@ -297,11 +246,10 @@
     return { class: item.key === selectedKey.value ? 'bg-surface-light cursor-pointer' : 'cursor-pointer' }
   }
 
-  /** The list row of a concept description, updated in place without reloading the whole list. */
-  function upsert (detail: ConceptDescriptionDetail) {
+  /** The row of an edited concept description, updated in place on the page shown. */
+  function update (detail: ConceptDescriptionDetail) {
     const summary = toSummary(detail.conceptDescription)
-    const index = items.value.findIndex(item => item.id === summary.id)
-    items.value = index === -1 ? [...items.value, summary] : items.value.map((item, position) => position === index ? summary : item)
+    cds.items.value = cds.items.value.map(item => item.id === summary.id ? summary : item)
   }
 
   function toSummary (cd: Record<string, any>): ConceptDescriptionSummary {
@@ -327,7 +275,7 @@
   }
 
   function onChanged (detail: ConceptDescriptionDetail) {
-    upsert(detail)
+    update(detail)
     afterWrite()
   }
 
@@ -335,10 +283,11 @@
   const adding = ref(false)
   const inserting = ref(false)
 
+  /** A new concept description opens in the drawer; the page shown reloads, where the server puts it. */
   function onCreated (detail: ConceptDescriptionDetail) {
-    upsert(detail)
     queryCache.setQueryData(['targets', targetId.value, 'concept-descriptions', detail.key], detail)
-    notifications.notify({ text: t('cd.created', { name: rowName(detail.key) }), color: 'success' })
+    void cds.reload()
+    notifications.notify({ text: t('cd.created', { name: String(detail.conceptDescription.idShort ?? detail.conceptDescription.id) }), color: 'success' })
     select(detail.key)
     afterWrite()
   }
@@ -381,7 +330,7 @@
       const detail = queryCache.getQueryData<ConceptDescriptionDetail>(['targets', targetId.value, 'concept-descriptions', entry.key])
         ?? await api<ConceptDescriptionDetail>(`/targets/${targetId.value}/concept-descriptions/${entry.key}`)
       await api(`/targets/${targetId.value}/concept-descriptions/${entry.key}`, { method: 'DELETE', headers: { 'If-Match': `"${detail.revision}"` } })
-      items.value = items.value.filter(item => resourceKey(item.id) !== entry.key)
+      void cds.reload()
       drafts.discard(targetId.value, conceptDescriptionDraftSlot(entry.key), 'concept-description')
       queryCache.remove(queryCache.get(['targets', targetId.value, 'concept-descriptions', entry.key])!)
       notifications.notify({ text: t('cd.deleted', { name: entry.name }), color: 'success' })
@@ -399,7 +348,7 @@
 
   // Undo and redo on a workspace change concept descriptions too (W3).
   async function onRestored () {
-    await load()
+    await cds.reload()
     await queryCache.invalidateQueries({ key: ['targets', targetId.value, 'concept-descriptions'] })
   }
 

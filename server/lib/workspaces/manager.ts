@@ -108,6 +108,14 @@ class WorkspaceAasTarget implements AasTarget {
 
   conceptDescriptions = (limit: number, cursor: string | undefined) => this.#call('conceptDescriptions', limit, cursor)
   conceptDescription = (id: string) => this.#call('conceptDescription', id)
+  /** Workspaces have no query endpoint; raw queries are not offered (`conceptDescriptionSearch: expression`). */
+  searchConceptDescriptions: AasTarget['searchConceptDescriptions'] = async (search, sources, limit, cursor) => {
+    if (!('expression' in search)) {
+      throw new StudioProblem('query_unsupported', 'AASX packages are searched with the search field only.')
+    }
+    return this.#call('searchConceptDescriptions', search.expression, sources, limit, cursor)
+  }
+
   createConceptDescription = (conceptDescription: JsonObject) => this.#call('createConceptDescription', conceptDescription)
   replaceConceptDescription = (id: string, conceptDescription: JsonObject, revision: string) =>
     this.#call('replaceConceptDescription', id, conceptDescription, revision)

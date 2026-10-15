@@ -29,12 +29,21 @@ export const useNavigationStore = defineStore('navigation', () => {
   /** The last full path (without an open panel) per section. */
   const locations = ref<Record<string, string>>({})
   const pageState = ref<Record<string, unknown>>({})
+  /**
+   * The target opened last. It stays the current target on pages outside
+   * any target (the targets list, global app modules) until another is opened.
+   */
+  const currentTarget = ref<string | null>(null)
 
   /** Records `fullPath` (resolved without an open panel) as the location of its path's section. */
   function remember (path: string, fullPath: string) {
     const section = sectionOf(path)
     if (section) {
       locations.value[section] = fullPath
+    }
+    const target = /^\/targets\/([^/]+)/.exec(path)?.[1]
+    if (target) {
+      currentTarget.value = target
     }
   }
 
@@ -44,5 +53,5 @@ export const useNavigationStore = defineStore('navigation', () => {
     return (section && locations.value[section]) ?? to
   }
 
-  return { locations, pageState, remember, resume }
+  return { locations, pageState, currentTarget, remember, resume }
 })

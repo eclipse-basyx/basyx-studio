@@ -1,4 +1,5 @@
 import { defineVuetifyConfiguration } from 'vuetify-nuxt-module/custom-configuration'
+import { paletteNames, palettes, themeName } from './shared/appearance.ts'
 
 // The single place for Studio's look and feel. Components rely on these
 // defaults instead of repeating props, and on Vuetify utility classes instead
@@ -6,15 +7,6 @@ import { defineVuetifyConfiguration } from 'vuetify-nuxt-module/custom-configura
 //
 // A calm, bordered look (MVP-4 plan, L2): Vuetify's own palette with the BaSyx
 // brand colours, small radii, outlined fields, borders instead of shadows.
-
-// BaSyx brand colours, taken from app/assets/basyx-logo.svg. Light-theme
-// variants are darkened to keep at least 4.5:1 contrast with white (WCAG AA).
-const brand = {
-  cyan: '#00ADEE',
-  orange: '#F69222',
-  cyanOnLight: '#0077A6',
-  orangeOnLight: '#A65400',
-}
 
 // Vuetify's status colours, listed so they get on-colours below.
 const status = {
@@ -39,6 +31,18 @@ function withOnColors (colors: Record<string, string>): Record<string, string> {
 
 const field = { variant: 'outlined', density: 'comfortable', hideDetails: 'auto' } as const
 
+// A light and a dark theme per palette of Settings (shared/appearance.ts):
+// the palette's accents with Vuetify's surfaces and status colours. The BaSyx
+// palette keeps the plain `light` and `dark` names.
+const paletteThemes = Object.fromEntries(paletteNames.flatMap(name => [false, true].map(dark => [themeName(name, dark), {
+  dark,
+  colors: {
+    ...withOnColors({ ...palettes[name][dark ? 'dark' : 'light'], ...status[dark ? 'dark' : 'light'] }),
+    // Dialog headers, a shade off the card, as in the BaSyx AAS Web UI (DialogCard).
+    'dialog-header': dark ? '#282828' : '#F5F5F5',
+  },
+}])))
+
 export default defineVuetifyConfiguration({
   theme: {
     // An explicit theme, so server rendering and hydration agree: the module
@@ -48,19 +52,7 @@ export default defineVuetifyConfiguration({
     // (including "system") is applied in app.vue after hydration.
     defaultTheme: 'light',
     themes: {
-      light: {
-        colors: {
-          ...withOnColors({ primary: brand.cyanOnLight, secondary: brand.orangeOnLight, ...status.light }),
-          // Dialog headers, a shade off the card, as in the BaSyx AAS Web UI (DialogCard).
-          'dialog-header': '#F5F5F5',
-        },
-      },
-      dark: {
-        colors: {
-          ...withOnColors({ primary: brand.cyan, secondary: brand.orange, ...status.dark }),
-          'dialog-header': '#282828',
-        },
-      },
+      ...paletteThemes,
       // Easter egg: the Konami code (default layout) applies it to the app for
       // the session, scoped through <v-app :theme>, so the color-scheme cookie
       // and the stored theme stay as they are.
@@ -143,10 +135,12 @@ export default defineVuetifyConfiguration({
     },
     // Menus are dense, as in shadcn: compact rows, slim icons, body-sized text.
     // Items are inset evenly (pa-1) with a smaller radius (4 px) than the
-    // menu card (8 px), so their highlight follows the card's corners.
+    // menu card (8 px), so their highlight follows the card's corners. Lists
+    // are transparent elsewhere (below); the menus of selects, comboboxes and
+    // autocompletes have no card around their list, so it brings the surface.
     VMenu: {
       VCard: { flat: false },
-      VList: { density: 'compact', slim: true, class: 'pa-1 text-body-medium' },
+      VList: { density: 'compact', slim: true, bgColor: 'surface', class: 'pa-1 text-body-medium' },
       VListItem: { minHeight: 36, rounded: true },
     },
     // Compact lists throughout: more rows on screen, as in the BaSyx Web UI and shadcn.

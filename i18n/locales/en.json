@@ -44,7 +44,12 @@
   "lists": {
     "noMatches": "Nothing matches the search and filters.",
     "filters": "{n} filter | {n} filters",
-    "filtersApplied": "{n} filter applied, remove it | {n} filters applied, remove them"
+    "filtersApplied": "{n} filter applied, remove it | {n} filters applied, remove them",
+    "perPage": "Rows per page",
+    "range": "{from}–{to}",
+    "noRows": "No rows",
+    "previousPage": "Previous page",
+    "nextPage": "Next page"
   },
   "home": {
     "title": "AAS targets",
@@ -588,7 +593,8 @@
       "apply": "Search",
       "invalidJson": "Not valid JSON: {message}",
       "notObject": "A query is a JSON object with $condition.",
-      "edit": "Edit the advanced query"
+      "edit": "Edit the advanced query",
+      "conceptDescriptions": "Runs on the concept description repository"
     },
     "search": "Search shells",
     "filters": {
@@ -796,7 +802,7 @@
   "concepts": {
     "title": "Concept descriptions",
     "subtitle": "Semantic definitions referenced by submodel elements",
-    "search": "Search by name, ID or definition",
+    "search": "Search by idShort or ID",
     "concept": "Concept",
     "dataType": "Data type",
     "unit": "Unit",
@@ -805,10 +811,13 @@
     "id": "ID",
     "definition": "Definition",
     "noDefinition": "No definition.",
-    "truncated": "Showing the first {count} concept descriptions."
+    "truncated": "Showing the first {count} concept descriptions.",
+    "localOnly": "Filters the loaded concept descriptions only: this infrastructure announces no query endpoint for them.",
+    "otherSource": "Other"
   },
   "settings": {
     "title": "Settings",
+    "showWelcome": "Welcome screen at startup",
     "close": "Close settings",
     "subtitle": "Appearance and live data, saved for your account",
     "appearance": "Appearance",
@@ -833,6 +842,19 @@
     "syncModes": {
       "autoCreate": "Create and remove entries",
       "dontCreate": "Leave them unchanged"
+    },
+    "palette": "Colours",
+    "palettes": {
+      "basyx": "BaSyx",
+      "ocean": "Ocean",
+      "forest": "Forest",
+      "violet": "Violet",
+      "graphite": "Graphite"
+    },
+    "shape": "Shape",
+    "shapes": {
+      "normal": "Normal",
+      "rounded": "More rounded"
     }
   },
   "invite": {
@@ -944,6 +966,13 @@
       "assetLinks": "Asset links"
     },
     "addSubmodel": "Add submodel"
+  },
+  "welcome": {
+    "overline": "Welcome to",
+    "tagline": "Every asset has a story. Give it a digital twin.",
+    "keywords": "Asset Administration Shell · Industry 4.0 · Open Source",
+    "start": "Enter Studio",
+    "dontShow": "Don't show this at startup"
   },
   "cd": {
     "new": "New concept description",

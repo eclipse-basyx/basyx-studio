@@ -49,10 +49,9 @@
 </template>
 
 <script lang="ts" setup>
-  import type { ShellSearchPage } from '#shared/contract'
-  import type { ShellQueryTarget } from '#shared/search/expression'
+  import type { QueryTarget } from '#shared/search/expression'
   import { useDisplay } from 'vuetify'
-  import { buildShellQuery, parseSearch, queryRoots } from '#shared/search/expression'
+  import { buildShellQuery, conceptDescriptionSearchFields, parseSearch, queryRoots, searchFields } from '#shared/search/expression'
   import querySchema from '#shared/search/query-schema.json'
   import { StudioApiError } from '~/composables/useStudioApi'
 
@@ -61,7 +60,8 @@
 
   const props = defineProps<{
     targetId: string
-    queryTarget: ShellQueryTarget
+    /** Shells (`repository`, `registry`) or concept descriptions (`conceptDescriptions`, MVP-6 plan, S1). */
+    queryTarget: QueryTarget
     /** The search field's expression, the starting point of a new query. */
     expression: string
     query: Record<string, unknown> | null
@@ -89,7 +89,8 @@
   }
 
   function reset () {
-    text.value = format(buildShellQuery(props.queryTarget, parseSearch(props.expression)))
+    const fields = props.queryTarget === 'conceptDescriptions' ? conceptDescriptionSearchFields : searchFields
+    text.value = format(buildShellQuery(props.queryTarget, parseSearch(props.expression, fields)))
     findings.value = []
     error.value = null
   }
@@ -120,7 +121,7 @@
     checking.value = true
     try {
       // One row is enough to know that the server accepts the query.
-      await api<ShellSearchPage>(`/targets/${props.targetId}/searches`, { method: 'POST', body: { scope: 'shells', query, limit: 1 } })
+      await api(`/targets/${props.targetId}/searches`, { method: 'POST', body: { scope: props.queryTarget === 'conceptDescriptions' ? 'conceptDescriptions' : 'shells', query, limit: 1 } })
       emit('apply', query as Record<string, unknown>)
       open.value = false
     } catch (error_) {
