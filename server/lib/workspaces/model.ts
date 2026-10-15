@@ -103,6 +103,11 @@ export class WorkspaceModel {
     return this.revision !== this.savedRevision
   }
 
+  /** Marks a package that was never saved as changed, so closing it asks first. */
+  markUnsaved (): void {
+    this.revision = ++this.#latest
+  }
+
   /** The state before a change, for the undo log (W8). */
   snapshot (): { environment: JsonObject, revision: number } {
     return { environment: structuredClone(this.environment), revision: this.revision }

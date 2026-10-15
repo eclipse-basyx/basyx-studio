@@ -91,6 +91,28 @@ describe('structural edits of a workspace', () => {
       .toThrowError(expect.objectContaining({ code: 'validation_failed' }))
   })
 
+  it('refuses a stale list reorder, although list items are anonymous', () => {
+    const target = model()
+    const listRevision = () => structureRevisionOf((target.element(submodelId, 'Numbers').value.value as unknown[]))
+    target.addElement(submodelId, 'Numbers', { ...newElement('Property', null, target.element(submodelId, 'Numbers').value), value: '2' }, null, listRevision())
+    const read = listRevision()
+    target.moveElement(submodelId, 'Numbers[0]', 1, read)
+    expect(listRevision()).not.toBe(read)
+    expect(() => target.moveElement(submodelId, 'Numbers[0]', 1, read)).toThrowError(expect.objectContaining({ code: 'structure_conflict' }))
+    expect((target.element(submodelId, 'Numbers').value.value as JsonObject[]).map(item => item.value)).toEqual(['2', '1'])
+  })
+
+  it('refuses children a parent of any kind does not accept', () => {
+    const target = model()
+    const reference = (value: string) => ({ type: 'ExternalReference', keys: [{ type: 'GlobalReference', value }] })
+    target.addElement(submodelId, null, { modelType: 'AnnotatedRelationshipElement', idShort: 'Relation', first: reference('urn:a'), second: reference('urn:b') }, null, topRevision(target))
+    expect(() => target.addElement(submodelId, 'Relation', { modelType: 'SubmodelElementCollection', idShort: 'Pasted' }, null, structureRevisionOf([])))
+      .toThrowError(expect.objectContaining({ code: 'validation_failed' }))
+    expect(target.element(submodelId, 'Relation').value.annotations).toBeUndefined()
+    const added = target.addElement(submodelId, 'Relation', newElement('Property', 'Note'), null, structureRevisionOf([]))
+    expect(added.path).toBe('Relation.Note')
+  })
+
   it('refuses deleting an element that changed after it was read', () => {
     const target = model()
     const stale = target.element(submodelId, 'First').revision

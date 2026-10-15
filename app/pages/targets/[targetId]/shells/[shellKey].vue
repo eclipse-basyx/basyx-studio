@@ -1164,6 +1164,25 @@
   async function afterStructureChange (submodelKey: string) {
     await trees.refresh(submodelKey)
     await queryCache.invalidateQueries({ key: ['targets', targetId.value], exact: true })
+    // Paths of list items shift, so cached details may show another element now.
+    await queryCache.invalidateQueries({ key: ['targets', targetId.value, 'details'] })
+  }
+
+  /**
+   * A selection addressed by list index follows a deleted or moved element
+   * (`to` is `null` for a delete). False if the selection was deleted with it.
+   */
+  function followSelection (item: ShellTreeItem, to: number | null): boolean {
+    const element = typeof route.query.element === 'string' ? decodeResourceKey(route.query.element) : null
+    const changed = item.elementKey ? decodeResourceKey(item.elementKey) : null
+    if (route.query.submodel !== item.submodelKey || !element || !changed) {
+      return true
+    }
+    const next = followListChange(element, changed, to)
+    if (next !== null && next !== element) {
+      void router.replace({ query: { ...route.query, element: resourceKey(next) } })
+    }
+    return next !== null
   }
 
   async function onCreated (detail: ElementDetail) {
@@ -1185,7 +1204,7 @@
       await structure.remove(item.submodelKey, item.elementKey!)
       notifications.notify({ text: t('edit.deleted', { name: item.title }), color: 'success' })
       const parent = trees.parentOf(item.id)
-      const wasSelected = selectedId.value === item.id || selectedId.value?.startsWith(`${item.id}/`)
+      const wasSelected = selectedId.value === item.id || !followSelection(item, null)
       await afterStructureChange(item.submodelKey)
       if (wasSelected) {
         select(parent?.id ?? null)
@@ -1202,9 +1221,14 @@
         return
       }
       const revision = await structureRevisionOf(parent)
-      const moved = await structure.move(item.submodelKey, item.elementKey, position(item) + delta, revision)
+      const to = position(item) + delta
+      const moved = await structure.move(item.submodelKey, item.elementKey, to, revision)
+      const wasSelected = selectedId.value === item.id
+      if (!wasSelected) {
+        followSelection(item, to)
+      }
       await afterStructureChange(item.submodelKey)
-      if (selectedId.value === item.id) {
+      if (wasSelected) {
         select(itemId(item.submodelKey, moved.key))
       }
     })

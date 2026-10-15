@@ -130,8 +130,7 @@ export class WorkspaceWorker {
     const opened = await readPackage(await newPackageBytes())
     const workspaceId = `ws-${randomBytes(9).toString('base64url')}`
     const model = new WorkspaceModel(opened.environment, packageFiles(opened))
-    // Never saved: it counts as changed, so closing it asks first.
-    model.revision = 1
+    model.markUnsaved()
     this.#workspaces.set(workspaceId, { path: '', opened, model, diagnostics: [] })
     return this.#info(workspaceId)
   }

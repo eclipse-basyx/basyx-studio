@@ -259,7 +259,7 @@
       :dirty="dirty"
       :message="appliedMessage"
       @apply="apply"
-      @discard="creating ? emit('cancel') : discard()"
+      @discard="creating ? cancel() : discard()"
     />
   </v-form>
 </template>
@@ -436,6 +436,12 @@
     drafts.discard(props.targetId, props.submodelKey, draftKey.value)
     conflict.value = null
     error.value = null
+  }
+
+  /** Abandons a new element: its draft goes too, so the next creation under this parent starts fresh. */
+  function cancel () {
+    discard()
+    emit('cancel')
   }
 
   watch(draftKey, () => {

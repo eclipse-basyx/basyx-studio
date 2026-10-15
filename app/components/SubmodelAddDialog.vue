@@ -37,14 +37,32 @@
   const busy = ref(false)
   const error = ref<unknown>(null)
   const steps = ref<SyncStep[]>([])
+  // What earlier attempts wrote, so a retry adds only the rest (see pendingAdditions).
+  const written = new Map<string, SubmodelSource | null>()
+
+  async function addOne (key: string, source: SubmodelSource) {
+    try {
+      await api(`/targets/${props.targetId}/shells/${props.shellKey}/submodel-refs`, { method: 'POST', body: { submodel: source } })
+      written.set(key, null)
+    } catch (error_) {
+      // The submodel exists, its reference does not: a retry only references it.
+      const created = error_ instanceof StudioApiError
+        ? (error_.problem?.steps as SyncStep[] | undefined)?.find(step => step.resource === 'submodel' && step.outcome === 'written')
+        : undefined
+      if (created) {
+        written.set(key, { source: 'existing', id: created.id })
+      }
+      throw error_
+    }
+  }
 
   async function add () {
     busy.value = true
     error.value = null
     steps.value = []
     try {
-      for (const source of sources.value) {
-        await api(`/targets/${props.targetId}/shells/${props.shellKey}/submodel-refs`, { method: 'POST', body: { submodel: source } })
+      for (const { key, source } of pendingAdditions(sources.value, written)) {
+        await addOne(key, source)
       }
       emit('added')
       close()
@@ -65,5 +83,6 @@
     sources.value = []
     steps.value = []
     error.value = null
+    written.clear()
   }
 </script>

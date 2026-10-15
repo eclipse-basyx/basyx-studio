@@ -17,7 +17,9 @@ conflict whenever one of them edits a value next to the other's insert.
 
 - Adding and moving an element are based on the **structure revision** of the
   parent (`s.<hash>`): a hash of its children's idShorts, model types and
-  order, never their values. The Studio API returns it as `structureRevision`
+  order, not their values. List items have no idShort and share one model
+  type, so their content stands in for their identity: a reorder or an
+  edited item changes the list's revision. The Studio API returns it as `structureRevision`
   with a container's detail and with every tree level, and takes it as
   `If-Match`.
 - Replacing (including a rename) and deleting an element are based on the

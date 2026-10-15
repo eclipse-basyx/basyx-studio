@@ -1,11 +1,16 @@
 import type { AasTarget } from '~~/server/lib/targets/aas-target'
+import type { WorkspaceInfo } from '~~/server/lib/workspaces/protocol'
 import { readFileSync } from 'node:fs'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { addSubmodel, convertSubmodelToInstance, createInstance, createShell, removeSubmodel } from '~~/server/lib/aas/creation'
 import { findings } from '~~/server/lib/aas/edits'
 import { bundledTemplate, bundledTemplates } from '~~/server/lib/templates'
 import { WorkspaceModel } from '~~/server/lib/workspaces/model'
 import { newPackageBytes, readPackage } from '~~/server/lib/workspaces/package'
+import { WorkspaceWorker } from '~~/server/lib/workspaces/worker'
 import { generateId } from '#shared/aas/identifiers'
 import { convertToInstance, instantiateSubmodel, templateFields } from '#shared/aas/templates'
 
@@ -218,6 +223,22 @@ describe('undo, redo and new packages', () => {
     expect(model.canRedo).toBe(false)
     expect(model.unsavedChanges).toBe(true)
     expect(() => emptyModel().undo()).toThrowError(expect.objectContaining({ code: 'unsupported_operation' }))
+  })
+
+  it('records the first change to a saved new package', async () => {
+    const directory = await mkdtemp(join(tmpdir(), 'studio-worker-'))
+    try {
+      const worker = new WorkspaceWorker()
+      const { workspaceId } = await worker.handle({ op: 'create' }) as WorkspaceInfo
+      expect((await worker.handle({ op: 'list' }) as WorkspaceInfo[])[0]!.unsavedChanges).toBe(true)
+      const saved = await worker.handle({ op: 'save', workspaceId, path: join(directory, 'new.aasx') }) as WorkspaceInfo
+      expect(saved.unsavedChanges).toBe(false)
+      await worker.handle({ op: 'call', workspaceId, method: 'createShell', args: [{ modelType: 'AssetAdministrationShell', id: 'urn:s:new', assetInformation: { assetKind: 'Instance' } }] })
+      const [info] = await worker.handle({ op: 'list' }) as WorkspaceInfo[]
+      expect(info).toMatchObject({ unsavedChanges: true, canUndo: true })
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
   })
 
   it('creates an empty package that opens', async () => {

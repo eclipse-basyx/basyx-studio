@@ -1,7 +1,8 @@
+import type { ElementModelType } from '#shared/aas/defaults'
 import type { JsonObject } from './outline'
 import type { types } from '@aas-core-works/aas-core3.1-typescript'
 import { jsonization, verification } from '@aas-core-works/aas-core3.1-typescript'
-import { childProperties, hasNamedChildren } from '#shared/aas/defaults'
+import { childProperties, childTypesFor, hasNamedChildren } from '#shared/aas/defaults'
 import { StudioProblem } from '../problem'
 
 // Structural edits of submodel elements on plain AAS JSON (MVP-5 plan, W1,
@@ -78,7 +79,15 @@ export function verifySubmodelMetadata (submodel: JsonObject): JsonObject {
 
 /** A parent's rule for what it holds, checked before AAS Core sees the result. */
 function checkAgainstParent (parent: JsonObject | null, element: JsonObject): void {
-  if (parent?.modelType !== 'SubmodelElementList') {
+  if (parent === null) {
+    return
+  }
+  if (parent.modelType !== 'SubmodelElementList' && !childTypesFor(parent).includes(element.modelType as ElementModelType)) {
+    throw new StudioProblem('validation_failed', `A ${String(parent.modelType)} cannot hold a ${String(element.modelType)}.`, {
+      violations: [{ path: 'modelType', message: `A ${String(parent.modelType)} cannot hold a ${String(element.modelType)}.` }],
+    })
+  }
+  if (parent.modelType !== 'SubmodelElementList') {
     return
   }
   const expected = parent.typeValueListElement
@@ -92,6 +101,23 @@ function checkAgainstParent (parent: JsonObject | null, element: JsonObject): vo
     throw new StudioProblem('validation_failed', `The list holds values of type ${expectedValueType}.`, {
       violations: [{ path: 'valueType', message: `The list holds ${expectedValueType} values only.` }],
     })
+  }
+}
+
+/**
+ * Parses the parent holding the verified element with AAS Core, so a child
+ * the parent's type does not accept never reaches the environment and makes
+ * it unsavable. Only errors in the child count: findings the parent has
+ * already do not block.
+ */
+function assertParentAccepts (parent: JsonObject | null, element: JsonObject): void {
+  if (parent === null) {
+    return
+  }
+  const parsed = jsonization.submodelElementFromJsonable(withChildren(parent, [element]) as jsonization.JsonValue)
+  if (parsed.error?.path.toString().startsWith(`${childProperty(parent.modelType)}[0]`)) {
+    const message = `A ${String(parent.modelType)} cannot hold this element: ${parsed.error.message}`
+    throw new StudioProblem('validation_failed', message, { violations: [{ path: 'modelType', message }] })
   }
 }
 
@@ -128,6 +154,7 @@ export function insertChild (children: JsonObject[], parent: JsonObject | null, 
   checkAgainstParent(parent, element)
   assertUnique(children, element.idShort, -1)
   const verified = verifyElement(element).json
+  assertParentAccepts(parent, verified)
   const position = index === null ? children.length : Math.min(index, children.length)
   return { children: [...children.slice(0, position), verified, ...children.slice(position)], index: position }
 }
@@ -148,6 +175,7 @@ export function replaceChild (children: JsonObject[], position: number, parent: 
   checkAgainstParent(parent, merged)
   assertUnique(children, merged.idShort, position)
   const verified = verifyElement(merged).json
+  assertParentAccepts(parent, verified)
   const next = [...children]
   next[position] = verified
   return { children: next, index: position }
