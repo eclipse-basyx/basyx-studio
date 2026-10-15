@@ -51,7 +51,6 @@
     "search": "Ziele suchen",
     "filters": {
       "state": "Wie't steht",
-      "all": "Allet",
       "ready": "Läuft",
       "required": "Wa brauchen die Erlaubnis"
     },

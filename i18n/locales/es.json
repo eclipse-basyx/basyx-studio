@@ -51,7 +51,7 @@
     "search": "Buscar destinos",
     "filters": {
       "state": "Estado",
-      "all": "Todos",
+      "access": "Acceso",
       "ready": "Listos",
       "required": "Requiere autorización"
     },

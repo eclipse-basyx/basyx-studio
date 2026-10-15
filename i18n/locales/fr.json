@@ -51,7 +51,7 @@
     "search": "Rechercher des cibles",
     "filters": {
       "state": "État",
-      "all": "Toutes",
+      "access": "Accès",
       "ready": "Prêtes",
       "required": "Autorisation requise"
     },

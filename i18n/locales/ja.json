@@ -51,7 +51,7 @@
     "search": "ターゲットを検索",
     "filters": {
       "state": "状態",
-      "all": "すべて",
+      "access": "アクセス",
       "ready": "準備完了",
       "required": "認可が必要"
     },

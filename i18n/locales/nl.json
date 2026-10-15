@@ -51,7 +51,7 @@
     "search": "Doelen zoeken",
     "filters": {
       "state": "Status",
-      "all": "Alle",
+      "access": "Toegang",
       "ready": "Gereed",
       "required": "Autorisatie nodig"
     },

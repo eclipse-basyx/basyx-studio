@@ -51,7 +51,7 @@
     "search": "搜索目标",
     "filters": {
       "state": "状态",
-      "all": "全部",
+      "access": "访问方式",
       "ready": "就绪",
       "required": "需要授权"
     },

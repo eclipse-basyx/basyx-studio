@@ -51,100 +51,79 @@
         @retry="targets.refetch()"
       />
 
-      <v-row v-if="targets.isPending.value" dense>
-        <v-col
-          v-for="index in 3"
-          :key="index"
-          cols="12"
-          lg="4"
-          sm="6"
+      <v-card v-if="targets.isPending.value">
+        <v-skeleton-loader type="list-item-avatar-two-line@3" />
+      </v-card>
+
+      <!-- One card, as the other record lists: the search across its full
+           width beside the view, the filters in the search field's menu. -->
+      <v-card v-else-if="items.length > 0">
+        <ListFilterBar
+          v-model:search="search"
+          v-model:selected="selected"
+          :groups="filterGroups"
+          :placeholder="t('home.search')"
         >
-          <v-card>
-            <v-skeleton-loader type="list-item-avatar-two-line, text, actions" />
-          </v-card>
-        </v-col>
-      </v-row>
+          <template #append>
+            <v-btn-toggle v-model="view" :aria-label="t('home.view.label')" mandatory>
+              <v-btn-toggle-icon v-tooltip="t('home.view.grid')" :aria-label="t('home.view.grid')" icon="mdi-view-grid-outline" value="grid" />
+              <v-btn-toggle-icon v-tooltip="t('home.view.list')" :aria-label="t('home.view.list')" icon="mdi-view-list-outline" value="list" />
+            </v-btn-toggle>
+          </template>
+        </ListFilterBar>
 
-      <template v-else-if="items.length > 0">
-        <!-- Search and view are always there; the state filter only where several states occur. -->
-        <div class="d-flex flex-wrap align-center ga-2 mb-3">
-          <v-text-field
-            v-model="search"
-            :aria-label="t('home.search')"
-            class="flex-grow-1"
-            clearable
-            density="compact"
-            max-width="420"
-            min-width="220"
-            :placeholder="t('home.search')"
-            prepend-inner-icon="mdi-magnify"
-          />
-
-          <v-btn-toggle v-if="stateOptions.length > 2" v-model="state" :aria-label="t('home.filters.state')" mandatory>
-            <v-btn v-for="option in stateOptions" :key="option.value" :value="option.value">
-              {{ option.title }}
-              <span class="ms-2 text-medium-emphasis">{{ option.count }}</span>
-            </v-btn>
-          </v-btn-toggle>
-
-          <v-spacer />
-
-          <v-btn-toggle v-model="view" :aria-label="t('home.view.label')" mandatory>
-            <v-btn-toggle-icon v-tooltip="t('home.view.grid')" :aria-label="t('home.view.grid')" icon="mdi-view-grid-outline" value="grid" />
-            <v-btn-toggle-icon v-tooltip="t('home.view.list')" :aria-label="t('home.view.list')" icon="mdi-view-list-outline" value="list" />
-          </v-btn-toggle>
-        </div>
+        <v-divider />
 
         <template v-if="filtered.length > 0">
-          <v-row v-if="view === 'grid'" dense>
-            <v-col
-              v-for="target in filtered"
-              :key="target.id"
-              cols="12"
-              lg="4"
-              sm="6"
-            >
-              <TargetCard :target="target" />
-            </v-col>
-          </v-row>
+          <v-card-text v-if="view === 'grid'">
+            <v-row density="compact">
+              <v-col
+                v-for="target in filtered"
+                :key="target.id"
+                cols="12"
+                lg="4"
+                sm="6"
+              >
+                <TargetCard :target="target" />
+              </v-col>
+            </v-row>
+          </v-card-text>
 
           <!-- Many targets at a glance: one row each, the action on hover. -->
-          <v-card v-else>
-            <v-list-records>
-              <template v-for="(target, index) in filtered" :key="target.id">
-                <v-divider v-if="index > 0" />
+          <v-list-records v-else>
+            <template v-for="(target, index) in filtered" :key="target.id">
+              <v-divider v-if="index > 0" />
 
-                <RecordListItem
-                  :icon="targetIcon(target)"
-                  :subtitle="targetSubtitle(target, t('landing.subtitle'))"
-                  :title="target.name"
-                  :to="`/targets/${target.id}`"
-                >
-                  <template #meta>
-                    <TargetChips :target="target" />
-                  </template>
+              <RecordListItem
+                :icon="targetIcon(target)"
+                :subtitle="targetSubtitle(target, t('landing.subtitle'))"
+                :title="target.name"
+                :to="`/targets/${target.id}`"
+              >
+                <template #meta>
+                  <TargetChips :target="target" />
+                </template>
 
-                  <template #actions>
-                    <v-btn-primary
-                      v-if="target.authenticationState === 'required'"
-                      prepend-icon="mdi-key-outline"
-                      size="small"
-                      :text="t('target.authorize')"
-                      @click.stop.prevent="navigateTo(`/targets/${target.id}/shells`)"
-                    />
+                <template #actions>
+                  <v-btn-primary
+                    v-if="target.authenticationState === 'required'"
+                    prepend-icon="mdi-key-outline"
+                    size="small"
+                    :text="t('target.authorize')"
+                    @click.stop.prevent="navigateTo(`/targets/${target.id}/shells`)"
+                  />
 
-                    <v-btn-primary
-                      v-else
-                      append-icon="mdi-arrow-right"
-                      size="small"
-                      :text="t('landing.openViewer')"
-                      @click.stop.prevent="navigateTo(`/targets/${target.id}/shells`)"
-                    />
-                  </template>
-                </RecordListItem>
-              </template>
-            </v-list-records>
-          </v-card>
+                  <v-btn-primary
+                    v-else
+                    append-icon="mdi-arrow-right"
+                    size="small"
+                    :text="t('landing.openViewer')"
+                    @click.stop.prevent="navigateTo(`/targets/${target.id}/shells`)"
+                  />
+                </template>
+              </RecordListItem>
+            </template>
+          </v-list-records>
         </template>
 
         <v-empty-state
@@ -156,7 +135,7 @@
             <v-btn-secondary :text="t('home.resetFilters')" @click="resetFilters" />
           </template>
         </v-empty-state>
-      </template>
+      </v-card>
 
       <v-empty-state
         v-else-if="targets.data.value"
@@ -177,10 +156,11 @@
 <script lang="ts" setup>
   import type { Target } from '#shared/contract'
   import type { DesktopBridge } from '~/composables/useDesktopBridge'
+  import type { FilterGroup } from '~/utils/records'
   import { useQuery } from '@pinia/colada'
   import basyxLogo from '~/assets/basyx-logo.svg'
   import { StudioApiError } from '~/composables/useStudioApi'
-  import { targetIcon, targetSubtitle } from '~/utils/aas'
+  import { securityModeIcons, targetIcon, targetSubtitle } from '~/utils/aas'
   import { filterRecords } from '~/utils/records'
 
   const { t } = useI18n()
@@ -205,8 +185,32 @@
     return target.authenticationState === 'required' ? 'required' : 'ready'
   }
 
+  /** Security mode, or `workspace` for a local package. */
+  function kindOf (target: Target): string {
+    return target.securityMode ?? 'workspace'
+  }
+
   const search = ref<string | null>(null)
-  const state = ref<'all' | TargetState>('all')
+  const selected = ref<string[]>([])
+
+  // Filters for the states and kinds of access that occur; a group with a
+  // single option would not filter anything. Local packages are an access kind.
+  const filterGroups = computed<FilterGroup[]>(() => [
+    {
+      title: t('home.filters.state'),
+      options: (['ready', 'required'] as const)
+        .filter(state => items.value.some(target => stateOf(target) === state))
+        .map(state => ({ value: `state:${state}`, title: t(`home.filters.${state}`) })),
+    },
+    {
+      title: t('home.filters.access'),
+      options: [...new Set(items.value.map(target => kindOf(target)))].map(kind => ({
+        value: `security:${kind}`,
+        title: kind === 'workspace' ? t('workspace.localFile') : t(`security.${kind}`),
+        icon: kind === 'workspace' ? 'mdi-package-variant-closed' : securityModeIcons[kind],
+      })),
+    },
+  ].filter(group => group.options.length > 1))
 
   // Cards for a few targets, rows for many, until the user picks a view;
   // the choice is kept in a cookie, so server rendering shows it too.
@@ -216,27 +220,14 @@
     set: value => (viewCookie.value = value),
   })
 
-  // The states that occur, with their counts; `all` comes first.
-  const stateOptions = computed(() => {
-    const titles: Record<'all' | TargetState, string> = {
-      all: t('home.filters.all'),
-      ready: t('home.filters.ready'),
-      required: t('home.filters.required'),
-      workspace: t('workspace.localFile'),
-    }
-    return (Object.keys(titles) as Array<'all' | TargetState>)
-      .map(value => ({ value, title: titles[value], count: value === 'all' ? items.value.length : items.value.filter(target => stateOf(target) === value).length }))
-      .filter(option => option.count > 0)
-  })
-
-  const filtered = computed(() => filterRecords(items.value, search.value, state.value === 'all' ? [] : [`state:${state.value}`], target => ({
+  const filtered = computed(() => filterRecords(items.value, search.value, selected.value, target => ({
     text: [target.name, target.description, target.workspace?.fileName],
-    facets: [`state:${stateOf(target)}`],
+    facets: [`state:${stateOf(target)}`, `security:${kindOf(target)}`],
   })))
 
   function resetFilters () {
     search.value = null
-    state.value = 'all'
+    selected.value = []
   }
 
   // An infrastructure added here becomes a target in this list.

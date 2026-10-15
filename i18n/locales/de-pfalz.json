@@ -51,7 +51,6 @@
     "search": "Ziele suche",
     "filters": {
       "state": "Wie's steht",
-      "all": "Alles",
       "ready": "Alla hopp",
       "required": "Mer brauche die Erlaubnis"
     },

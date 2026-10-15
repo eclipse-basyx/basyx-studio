@@ -1,8 +1,9 @@
 <template>
   <!-- Search and filters above a record list (infrastructures, targets,
        apps), as in the shell list: the filters are in a menu that opens from
-       the field (click or ↓); one chip in the field says how many apply. -->
-  <div class="pa-2">
+       the field (click or ↓); one chip in the field says how many apply.
+       The `append` slot adds controls to the right of the field, e.g. a view. -->
+  <div class="d-flex align-center ga-2 pa-2">
     <v-menu
       v-model="menu"
       :close-on-content-click="false"
@@ -14,6 +15,7 @@
           v-bind="activator"
           v-model="search"
           :aria-label="placeholder"
+          class="flex-grow-1"
           clearable
           density="compact"
           :placeholder="placeholder"
@@ -65,6 +67,8 @@
         </v-list>
       </v-card>
     </v-menu>
+
+    <slot name="append" />
   </div>
 </template>
 
@@ -75,6 +79,7 @@
     placeholder: string
     groups: FilterGroup[]
   }>()
+  defineSlots<{ append?: () => unknown }>()
   const search = defineModel<string | null>('search', { required: true })
   const selected = defineModel<string[]>('selected', { required: true })
 

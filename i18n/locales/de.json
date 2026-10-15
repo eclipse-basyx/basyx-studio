@@ -52,7 +52,7 @@
     "search": "Ziele suchen",
     "filters": {
       "state": "Status",
-      "all": "Alle",
+      "access": "Zugriff",
       "ready": "Bereit",
       "required": "Autorisierung nötig"
     },
