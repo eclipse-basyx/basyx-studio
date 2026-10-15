@@ -98,6 +98,10 @@ export const syncSettingsSchema = z.object({
   studioDefault: z.enum(syncModes).default('autoCreate'),
   /** Whether users may choose differently for themselves (in Settings). */
   userOverride: z.boolean().default(false),
+  /** How Studio generates identifiers of new shells and submodels (MVP-5 plan, W5). */
+  idScheme: z.enum(['iri', 'uuid']).default('iri'),
+  /** The IRI prefix for `idScheme: iri`; the kind and a UUID follow. */
+  idPrefix: z.string().trim().min(1).max(200).default('https://example.com/ids/'),
 })
 export type SyncSettings = z.infer<typeof syncSettingsSchema>
 export const defaultSyncSettings: SyncSettings = syncSettingsSchema.parse({})

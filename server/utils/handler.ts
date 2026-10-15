@@ -64,6 +64,7 @@ function toProblem (event: RequestEvent, error: unknown): Problem {
     requestId: requestIdOf(event),
     retryable: problem.retryable,
     violations: problem.violations,
+    steps: problem.steps,
   }
 }
 

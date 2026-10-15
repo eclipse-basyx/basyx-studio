@@ -35,6 +35,10 @@ changes one, add a new ADR with `Supersedes` and mark the old record
 | [0024](0024-aas-query-language-through-the-bff.md) | Accepted | Web UI search syntax and checked raw queries, run through the BFF |
 | [0025](0025-client-certificates-for-infrastructures.md) | Accepted | PKCS#12 client certificates per infrastructure, presented by the Studio Service on every HTTPS request |
 | [0026](0026-ui-translation.md) | Proposed | Seven UI locales, lazy-loaded; UI language separate from content language; CI key checks |
+| [0027](0027-structure-revisions-and-structural-writes.md) | Accepted | Structure revisions for add and move; whole-resource structural writes; `writeStructure` capability |
+| [0028](0028-identifier-generation-per-infrastructure.md) | Accepted | IRI or URN identifiers per infrastructure; collision check before writes |
+| [0029](0029-submodel-templates-and-instantiation.md) | Accepted | Bundled IDTA templates, instantiation and partial writes |
+| [0030](0030-workspace-undo-log.md) | Accepted | Undo and redo log in the Workspace Worker |
 
 ## Template
 

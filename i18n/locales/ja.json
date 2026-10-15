@@ -113,7 +113,6 @@
     "more": "その他の操作",
     "delete": "管理シェルを削除",
     "deleteTitle": "管理シェルを削除しますか？",
-    "deleteText": "{name} をインフラストラクチャから削除します。その {count} 件のサブモデルはサブモデルリポジトリに残ります。",
     "deleted": "{name} を削除しました",
     "assetKind": "アセットの種別: {kind}",
     "assetType": "アセットタイプ",

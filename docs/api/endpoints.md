@@ -70,6 +70,7 @@ serverseitig den BaSyx-TypeScript-SDK-Client oder den Workspace Worker.
 | `GET/PUT/DELETE /targets/{targetId}/submodels/{submodelKey}` | Submodell lesen (`content=metadata\|full`, `format=json\|xml`, `at`), ersetzen oder löschen. |
 | `GET/POST /targets/{targetId}/submodels/{submodelKey}/elements` | Baumknoten unter dem Submodell oder `parentElementKey` mit so vielen vollständigen Ebenen, wie in `budget` Knoten passen (Standard 2.000, höchstens 5.000), auch historisch mit `at`; bzw. ein Element anlegen. |
 | `GET/PUT/DELETE /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}` | Einzelnes Element als JSON mit Revision und `ancestors` oder als AAS-XML lesen (`format`, `at`), ersetzen oder löschen. |
+| `POST /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/moves` | Element an eine Position unter seinen Geschwistern verschieben; `If-Match` mit der Strukturrevision des Elternknotens (`structure_conflict` bei gleichzeitiger Strukturänderung). |
 | `PUT /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/value` | Wert einer Property oder MultiLanguageProperty mit `If-Match` setzen. |
 | `GET/PUT /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/attachment` | Inhalt eines File-Elements streamen bzw. mit `If-Match` ersetzen. |
 | `POST /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/invocations` | Eine Operation synchron oder asynchron aufrufen; asynchrone Aufrufe liefern ein Handle. |
@@ -210,3 +211,29 @@ Electron-IPC, Workspace-Worker-API, App-SDK-RPC, Marketplace-Publisher-/OCI-
 API, OIDC-Provider-API, BaSyx-Downstream-API und der Desktop-Updater bleiben
 separate Verträge. Dadurch bleiben die im Architektur- und Security-Teil der
 Dokumentation beschriebenen Trust Boundaries erhalten.
+
+## Stand MVP-5: Editor
+
+Strukturelle Schreibzugriffe nutzen Strukturrevisionen (`s.<hash>`, ADR 0027)
+und ganze Ressourcen. Zusätzlich zu den oben genannten Routen sind
+implementiert:
+
+| Route | Zweck |
+| --- | --- |
+| `POST /targets/{targetId}/submodels/{submodelKey}/elements` | Element einfügen (`parentElementKey`, `index`); `If-Match` mit der Strukturrevision des Elternknotens. |
+| `PUT/DELETE /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}` | Element ersetzen (auch Umbenennen) bzw. löschen; `If-Match` mit der Elementrevision. |
+| `POST …/elements/{elementKey}/moves` | Element verschieben (Listenelemente; BaSyx Go sortiert benannte Kinder nach Namen). |
+| `PUT /targets/{targetId}/submodels/{submodelKey}` | Submodell-Metadaten ersetzen, Elemente bleiben. |
+| `POST /targets/{targetId}/shells` | Shell mit neuen Submodellen anlegen (Assistent); Submodelle zuerst, Schritte im Ergebnis. |
+| `PUT /targets/{targetId}/shells/{shellKey}` | Shell-Metadaten und Asset-Informationen ersetzen, Submodell-Referenzen bleiben. |
+| `PUT /targets/{targetId}/shells/{shellKey}/thumbnail` | Vorschaubild setzen. |
+| `POST /targets/{targetId}/shells/{shellKey}/instances` | Instanz aus einem Typ-Shell. |
+| `POST/DELETE /targets/{targetId}/shells/{shellKey}/submodel-refs[/{submodelKey}]` | Submodell hinzufügen bzw. entfernen (`deleteSubmodel`). |
+| `POST /targets/{targetId}/submodels/{submodelKey}/instance-conversions` | Template in Instanz umwandeln. |
+| `GET /targets/{targetId}/templates[/{templateId}]`, `GET /submodel-templates/{templateId}` | Templates und ihre Felder. |
+| `POST /targets/{targetId}/validations` | AAS-Core-Befunde für JSON, ohne zu schreiben. |
+| `POST /workspaces` mit `{ "empty": true }` | Neues, leeres Paket. |
+| `POST /workspaces/{workspaceId}/undos`, `/redos` | Rückgängig / Wiederholen bis Speichern oder Schließen. |
+
+Neue Problem-Codes: `idshort_conflict`, `structure_conflict`,
+`identifier_conflict`, `partial_write` (mit `steps`), `template_invalid`.

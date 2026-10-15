@@ -1,6 +1,7 @@
 import type { SubmodelDetail } from '#shared/contract'
 import { decodeKey } from '~~/server/lib/aas/keys'
 import { toAasXml } from '~~/server/lib/aas/xml'
+import { revisionOf } from '~~/server/lib/targets/revision'
 import { sendBinary } from '~~/server/utils/files'
 import { defineStudioHandler, queryValidated, routeParam } from '~~/server/utils/handler'
 import { openTarget, requireCapability } from '~~/server/utils/target'
@@ -19,7 +20,9 @@ export default defineStudioHandler(async (event): Promise<SubmodelDetail | Uint8
     await requireCapability(opened, 'history')
   }
   if (content === 'metadata' && format === 'json' && !at) {
-    return { key, submodel: await opened.target.submodelMetadata(submodelId) }
+    const metadata = await opened.target.submodelMetadata(submodelId)
+    event.res.headers.set('ETag', `"${revisionOf(metadata)}"`)
+    return { key, submodel: metadata, revision: revisionOf(metadata) }
   }
   const submodel = at
     ? await opened.target.submodelAt(submodelId, new Date(at).toISOString())

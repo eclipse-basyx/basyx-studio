@@ -16,7 +16,7 @@ export const infrastructures = pgTable('infrastructures', {
   template: text('template').$type<InfrastructureTemplate>().notNull().default('full'),
   endpoints: jsonb('endpoints').$type<EndpointInput[]>().notNull(),
   listSource: text('list_source').$type<ListSource>().notNull().default('registry'),
-  sync: jsonb('sync').$type<SyncSettings>().notNull().default({ serverSyncsRegistry: true, serverSyncsDiscovery: true, studioDefault: 'autoCreate', userOverride: false }),
+  sync: jsonb('sync').$type<SyncSettings>().notNull().default({ serverSyncsRegistry: true, serverSyncsDiscovery: true, studioDefault: 'autoCreate', userOverride: false, idScheme: 'iri', idPrefix: 'https://example.com/ids/' }),
   /** `/description` profiles per endpoint at the last probe (MVP-4 plan, I6). */
   serviceProfiles: jsonb('service_profiles').$type<ServiceProfiles>().notNull().default({}),
   probedAt: timestamp('probed_at', { withTimezone: true }),

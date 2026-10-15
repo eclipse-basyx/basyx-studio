@@ -15,6 +15,16 @@ export const problemCodes = [
   'precondition_required',
   'unsupported_operation',
   'validation_failed',
+  /** An element with this idShort exists among the siblings. */
+  'idshort_conflict',
+  /** The children of the parent changed since the structure revision was read. */
+  'structure_conflict',
+  /** A shell or submodel with this identifier exists already; nothing was written. */
+  'identifier_conflict',
+  /** Some steps of a write over several resources were written, others were not (see `steps`). */
+  'partial_write',
+  /** A submodel template cannot be instantiated. */
+  'template_invalid',
   'internal_error',
   // Infrastructure administration
   'endpoint_rejected',
@@ -62,6 +72,13 @@ export const problemSchema = z.object({
   requestId: z.string(),
   retryable: z.boolean(),
   violations: z.array(z.object({ path: z.string(), message: z.string() })).optional(),
+  /** What a write over several resources did, step by step (`partial_write`). */
+  steps: z.array(z.object({
+    resource: z.enum(['submodel', 'shell', 'submodelReference', 'shellDescriptor', 'submodelDescriptor', 'assetLinks']),
+    id: z.string(),
+    outcome: z.enum(['written', 'removed', 'failed', 'skipped']),
+    detail: z.string().optional(),
+  })).optional(),
 })
 export type Problem = z.infer<typeof problemSchema>
 

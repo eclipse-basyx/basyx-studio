@@ -113,7 +113,6 @@
     "more": "Meer acties",
     "delete": "AAS verwijderen",
     "deleteTitle": "AAS verwijderen?",
-    "deleteText": "Hiermee wordt {name} uit de infrastructuur verwijderd. De {count} submodellen ervan blijven in de submodel-repository.",
     "deleted": "{name} verwijderd",
     "assetKind": "Assetsoort: {kind}",
     "assetType": "Assettype",

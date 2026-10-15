@@ -113,7 +113,6 @@
     "more": "Noch meh",
     "delete": "Verwaltungsschal fortschmeiße",
     "deleteTitle": "Verwaltungsschal fortschmeiße?",
-    "deleteText": "Dann is {name} aus der Infrastruktur fort. Die {count} Teilmodelle bleiwe im Teilmodell-Repository.",
     "deleted": "{name} is fort",
     "assetKind": "Asset-Sort: {kind}",
     "assetType": "Asset-Typ",

@@ -128,6 +128,25 @@ export async function inspectEnvironment (bytes: Uint8Array, format: UploadForma
   return { shellIds: shells.map(shell => String(shell.id)), diagnostics }
 }
 
+/** The bytes of a new package: an empty environment as the JSON spec part, ready to open. */
+export async function newPackageBytes (): Promise<Uint8Array> {
+  let stored: Uint8Array = new Uint8Array(0)
+  const stream = {
+    readAll: () => stored,
+    writeAll: (data: Uint8Array) => {
+      stored = data
+    },
+  }
+  const pkg = await NewPackaging().CreateInStream(stream)
+  const spec = await pkg.PutPart(
+    new URL('file:///aasx/data.json'),
+    'application/json',
+    new TextEncoder().encode(JSON.stringify({ assetAdministrationShells: [], submodels: [], conceptDescriptions: [] })),
+  )
+  await pkg.MakeSpec(spec)
+  return pkg.Flush()
+}
+
 /** Serializes the environment in the package's original format and returns the new package bytes. */
 export async function writePackage (opened: OpenedPackage, environment: JsonObject): Promise<Uint8Array> {
   const parsed = jsonization.environmentFromJsonable(environment as jsonization.JsonValue)

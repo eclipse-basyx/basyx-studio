@@ -100,6 +100,9 @@ export default defineVuetifyConfiguration({
     // v-divider: slim, square rows, and the row icon (RecordListItem) as far
     // from the left edge as from the top and bottom.
     VListRecords: 'VList',
+    // The fields of a resource form (shell, submodel, element): the same
+    // comfortable inputs in the drawer and in dialogs, which default to compact.
+    VFormFields: 'VSheet',
   },
 
   defaults: {
@@ -142,12 +145,22 @@ export default defineVuetifyConfiguration({
     // Compact lists throughout: more rows on screen, as in the BaSyx Web UI and shadcn.
     VList: { color: 'primary', density: 'compact', bgColor: 'transparent' },
     VListItem: { rounded: 'lg', VBtn: { size: 'small' } },
+    VFormFields: {
+      color: 'transparent',
+      VTextField: { density: 'comfortable' },
+      VSelect: { density: 'comfortable' },
+      VCombobox: { density: 'comfortable' },
+      VAutocomplete: { density: 'comfortable' },
+      VTextarea: { density: 'comfortable' },
+      VFileInput: { density: 'comfortable' },
+    },
     VListRecords: { slim: true, lines: 'two', class: 'py-0', VListItem: { rounded: false, class: 'ps-3' } },
     VChip: { label: true, size: 'small', variant: 'tonal' },
     VAlert: { border: 'start', variant: 'tonal', VBtn: { size: 'small' } },
     VTextField: field,
     VSelect: field,
     VAutocomplete: field,
+    VCombobox: field,
     VFileInput: field,
     VTextarea: field,
     VCheckbox: { density: 'compact', color: 'primary', hideDetails: 'auto' },

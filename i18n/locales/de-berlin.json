@@ -113,7 +113,6 @@
     "more": "Mehr",
     "delete": "Verwaltungsschale wegschmeißen",
     "deleteTitle": "Verwaltungsschale wegschmeißen?",
-    "deleteText": "Denn is {name} aus de Infrastruktur weg. Die {count} Teilmodelle bleiben im Teilmodell-Repository.",
     "deleted": "{name} is weg",
     "assetKind": "Asset-Sorte: {kind}",
     "assetType": "Asset-Typ",

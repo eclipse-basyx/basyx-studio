@@ -17,7 +17,8 @@
     "edit": "Edit",
     "account": "Account",
     "arcadeOn": "Arcade mode: +30 lives",
-    "arcadeOff": "Arcade mode off. Back to work."
+    "arcadeOff": "Arcade mode off. Back to work.",
+    "drafts": "no drafts | {count} draft | {count} drafts"
   },
   "qr": {
     "title": "QR code of the asset",
@@ -113,7 +114,7 @@
     "more": "More actions",
     "delete": "Delete shell",
     "deleteTitle": "Delete shell?",
-    "deleteText": "This removes {name} from the infrastructure. Its {count} submodels stay in the submodel repository.",
+    "deleteText": "{name} is removed from the infrastructure. Its submodels stay unless you delete them too.",
     "deleted": "{name} deleted",
     "assetKind": "Asset kind: {kind}",
     "assetType": "Asset type",
@@ -146,7 +147,24 @@
       "error": "The submodel could not be loaded.",
       "absent": "Not present at this time."
     },
-    "deletedSyncFailed": "{name} was deleted; {count} registry or discovery entry could not be removed. | {name} was deleted; {count} registry or discovery entries could not be removed."
+    "deletedSyncFailed": "{name} was deleted; {count} registry or discovery entry could not be removed. | {name} was deleted; {count} registry or discovery entries could not be removed.",
+    "edit": "Edit",
+    "editTitle": "Edit shell",
+    "asset": "Asset",
+    "assetKindLabel": "Asset kind",
+    "specificAssetIds": "Specific asset IDs",
+    "specificName": "Name",
+    "addSpecific": "Add specific asset ID",
+    "thumbnail": "Thumbnail",
+    "derivedFrom": "Derived from",
+    "administration": "Administration",
+    "revisionLabel": "Revision",
+    "addSubmodel": "Submodel",
+    "alsoDeleteSubmodels": "Also delete its submodel | Also delete its {count} submodels",
+    "affectedSubmodels": "These submodels are deleted",
+    "sharedWarning": "Other shells that reference these submodels will lose them.",
+    "assetHint": "What the shell describes: an instance of a product, a product type, or neither.",
+    "derivedHint": "The type shell this shell was derived from."
   },
   "editor": {
     "title": "Value",
@@ -163,7 +181,62 @@
     "conflictTitle": "Someone else changed this value",
     "conflictText": "Your change was not applied. Keep it and apply it anyway, or discard it.",
     "overwrite": "Apply mine anyway",
-    "bestEffort": "This infrastructure does not report revisions. A change made by someone else at the same moment can be overwritten."
+    "bestEffort": "This infrastructure does not report revisions. A change made by someone else at the same moment can be overwritten.",
+    "create": "Add element",
+    "findings": "Findings from AAS Core",
+    "sections": {
+      "identity": "Identity",
+      "semantics": "Semantics",
+      "value": "Value",
+      "qualifiers": "Qualifiers",
+      "basics": "Basics",
+      "names": "Names and description",
+      "supplemental": "Supplemental semantic IDs"
+    },
+    "referenceType": "Reference type",
+    "keyType": "Key type",
+    "keyValue": "Key value",
+    "addKey": "Add key",
+    "addReference": "Add reference",
+    "clear": "Clear",
+    "pasteReference": "Paste copied reference",
+    "min": "Minimum",
+    "max": "Maximum",
+    "filePath": "File path or URL",
+    "blobHint": "The content of a Blob is shown and downloaded from its details. Change the media type here.",
+    "listType": "Element type",
+    "listTypeLocked": "The type cannot change while the list has elements.",
+    "orderRelevant": "Order is relevant",
+    "direction": "Direction",
+    "state": "State",
+    "messageTopic": "Message topic",
+    "addQualifier": "Add qualifier",
+    "qualifierType": "Type",
+    "qualifierValue": "Value",
+    "structureConflictTitle": "The structure changed in the meantime",
+    "newTitle": "New {type} in {parent}",
+    "idShortHint": "Letters, digits, - and _; starts with a letter.",
+    "idShortInvalid": "An idShort starts with a letter and has letters, digits, - or _ only.",
+    "value": "Value",
+    "noValue": "A {type} has no value of its own; its structure is edited in the tree.",
+    "categoryHint": "CONSTANT, PARAMETER or VARIABLE, or your own.",
+    "semanticsHint": "What the element means: a global reference such as an IRDI or an IRI. Use the options for model references.",
+    "unapplied": "Unapplied changes",
+    "addText": "Add text",
+    "addTranslation": "Add translation",
+    "referenceValue": "Reference value (IRI, IRDI)",
+    "referenceAdvanced": "Reference type and keys",
+    "kinds": {
+      "Instance": "Instance",
+      "Template": "Template"
+    },
+    "assetKinds": {
+      "Instance": "Instance",
+      "Type": "Type",
+      "NotApplicable": "Not applicable"
+    },
+    "supplementalSemanticId": "Supplemental semantic ID",
+    "addSupplemental": "Add supplemental semantic ID"
   },
   "workspace": {
     "localFile": "Local AASX file",
@@ -176,7 +249,10 @@
     "closeTitle": "Close {name}?",
     "closeText": "The package has unsaved changes. They are lost if you close it now.",
     "closeWithoutSaving": "Close without saving",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "new": "New package",
+    "undo": "Undo",
+    "redo": "Redo"
   },
   "variables": {
     "input": "Input variables",
@@ -223,7 +299,9 @@
     "app_not_found": "The app is not installed (anymore).",
     "app_permission_not_declared": "The app did not declare the permission for this action.",
     "app_backend_unavailable": "The app's backend is not available.",
-    "app_backend_failed": "The app's backend failed."
+    "app_backend_failed": "The app's backend failed.",
+    "idshort_conflict": "An element with this name exists already here. Choose another idShort.",
+    "structure_conflict": "The elements here changed in the meantime. The list was reloaded; try again."
   },
   "admin": {
     "title": "Infrastructures",
@@ -348,7 +426,15 @@
       "changeFeed": "The services report changes, so Studio can show what changed recently.",
       "rebac": "The services check access per user and shell (relationship-based access control), so shells can be shared."
     },
-    "probedAt": "Checked {time}"
+    "probedAt": "Checked {time}",
+    "ids": "Identifiers",
+    "idScheme": "Identifier scheme",
+    "idSchemeHint": "How Studio generates the identifiers of new shells and submodels; users may replace one per resource.",
+    "idPrefix": "IRI prefix",
+    "idSchemes": {
+      "iri": "IRI: prefix, kind and UUID",
+      "uuid": "URN: urn:uuid and a UUID"
+    }
   },
   "apps": {
     "title": "Apps",
@@ -445,6 +531,14 @@
       "dashboard": "Go to the target's home page",
       "concepts": "Go to concept descriptions",
       "infrastructures": "Manage infrastructures"
+    },
+    "structure": {
+      "add": "Add element to {name}",
+      "json": "Insert from JSON into {name}",
+      "paste": "Paste into {name}",
+      "copy": "Copy {name}",
+      "duplicate": "Duplicate {name}",
+      "delete": "Delete {name}"
     }
   },
   "capabilities": {
@@ -761,5 +855,92 @@
     "wrap": "Wrap lines",
     "noWrap": "Do not wrap lines",
     "loadFailed": "The code view could not be loaded"
+  },
+  "edit": {
+    "rowMenu": "Element actions",
+    "unsaved": "Unsaved changes",
+    "addElement": "Add element",
+    "paste": "Paste",
+    "copy": "Copy",
+    "copyReference": "Copy reference",
+    "duplicate": "Duplicate",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "delete": "Delete",
+    "deleteTitle": "Delete element?",
+    "deleteText": "{type} {name} and everything below it will be removed.",
+    "deleted": "{name} deleted",
+    "pasted": "{name} pasted",
+    "referenceCopied": "Reference to {name} copied. Paste it into a reference field.",
+    "draftNode": "draft",
+    "insertJson": "Insert from JSON",
+    "insertJsonTitle": "Insert into {name}",
+    "convert": "Convert to instance",
+    "convertTitle": "Convert to instance?",
+    "convertText": "The template qualifiers of {name} are removed and its kind becomes Instance. This changes the submodel itself.",
+    "converted": "{name} is an instance now; {count} template qualifiers removed",
+    "removeSubmodel": "Remove submodel",
+    "removeSubmodelTitle": "Remove {name}?",
+    "removeSubmodelText": "The submodel is removed from this shell. Other shells that reference it keep it.",
+    "alsoDelete": "Also delete the submodel itself",
+    "editSubmodel": "Edit submodel"
+  },
+  "instance": {
+    "create": "Create instance",
+    "title": "Create instance",
+    "text": "A new shell derived from {name} with copies of its submodels, each with a new identifier.",
+    "created": "Instance {name} created"
+  },
+  "insert": {
+    "insert": "Insert",
+    "valid": "AAS Core finds no problems.",
+    "notJson": "This is not a JSON object."
+  },
+  "wizard": {
+    "title": "Create shell",
+    "newShell": "New shell",
+    "steps": {
+      "shell": "Shell and asset",
+      "submodels": "Submodels",
+      "review": "Review"
+    },
+    "generatedHint": "Left empty, Studio generates one.",
+    "generatedIdHint": "Left empty, Studio generates one by the infrastructure's scheme.",
+    "next": "Next",
+    "back": "Back",
+    "create": "Create",
+    "willWrite": "Studio writes, in this order",
+    "newSubmodel": "New submodel",
+    "unnamed": "(unnamed)",
+    "partial": "Only some of the changes were written",
+    "fromTemplate": "From template",
+    "empty": "Empty submodel",
+    "fromJson": "From JSON",
+    "json": "Submodel as JSON",
+    "noSubmodels": "No submodels yet. Add an empty submodel and fill in its fields; elements are added in the tree afterwards.",
+    "required": "Required elements",
+    "noRequired": "The template has no required values.",
+    "optional": "Optional elements ({count})",
+    "selectAll": "Select all",
+    "selectNone": "Select none",
+    "remove": "Remove",
+    "bundled": "IDTA template",
+    "onTarget": "On this target",
+    "addSubmodels": "Add submodels",
+    "add": "Add",
+    "kinds": {
+      "template": "Template",
+      "empty": "Empty",
+      "json": "JSON"
+    },
+    "resource": {
+      "submodel": "Submodel",
+      "shell": "Shell",
+      "submodelReference": "Reference",
+      "shellDescriptor": "Shell descriptor",
+      "submodelDescriptor": "Submodel descriptor",
+      "assetLinks": "Asset links"
+    },
+    "addSubmodel": "Add submodel"
   }
 }

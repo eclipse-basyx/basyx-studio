@@ -75,6 +75,15 @@
           </v-card>
         </v-menu>
 
+        <!-- Applied-but-unfinished work of this target stays visible (MVP-5 plan, W7). -->
+        <v-chip
+          v-if="ui.editing && draftCount > 0"
+          class="me-2"
+          color="warning"
+          prepend-icon="mdi-circle-medium"
+          :text="t('app.drafts', draftCount)"
+        />
+
         <v-btn-toggle
           v-if="smAndUp"
           v-model="ui.mode"
@@ -237,6 +246,7 @@
   const session = useSessionStore()
   const notifications = useNotificationsStore()
   const ui = useUiStore()
+  const drafts = useDraftStore()
   const label = useLocalizedLabel()
   const { mdAndUp, smAndUp, lgAndUp } = useDisplay()
 
@@ -248,6 +258,7 @@
     query: ({ signal }) => api<{ items: Target[] }>('/targets', { signal }),
     enabled: () => !session.needsLogin && targetId.value !== null,
   })
+  const draftCount = computed(() => targetId.value ? drafts.countFor(targetId.value) : 0)
   const targetItems = computed(() => (targets.data.value?.items ?? []).map(target => ({ title: target.name, value: target.id })))
   const target = computed(() => targets.data.value?.items.find(item => item.id === targetId.value) ?? null)
 

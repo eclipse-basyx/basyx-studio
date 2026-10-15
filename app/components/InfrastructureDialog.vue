@@ -68,6 +68,23 @@
         </template>
 
         <v-divider />
+        <div class="text-title-small">{{ t('admin.ids') }}</div>
+
+        <v-select
+          v-model="model.sync.idScheme"
+          :hint="t('admin.idSchemeHint')"
+          :items="idSchemeItems"
+          :label="t('admin.idScheme')"
+          persistent-hint
+        />
+
+        <v-text-field
+          v-if="model.sync.idScheme === 'iri'"
+          v-model="model.sync.idPrefix"
+          :label="t('admin.idPrefix')"
+        />
+
+        <v-divider />
         <div class="text-title-small">{{ t('admin.security') }}</div>
 
         <v-select
@@ -272,6 +289,10 @@
 
   const modes = computed(() => securityModes.map(mode => ({ value: mode, title: t(`security.${mode}`) })))
   const templates = computed(() => infrastructureTemplates.map(template => ({ value: template, title: t(`admin.templates.${template}.title`) })))
+  const idSchemeItems = computed(() => [
+    { value: 'iri', title: t('admin.idSchemes.iri') },
+    { value: 'uuid', title: t('admin.idSchemes.uuid') },
+  ])
   const syncModeItems = computed(() => syncModes.map(mode => ({ value: mode, title: t(`admin.syncModes.${mode}`) })))
 
   // A constant: vue-tsc 3.3 garbles `//` inside bound template expressions.

@@ -1,9 +1,11 @@
+import type { IdScheme } from '#shared/aas/identifiers'
 import type { AuthenticationState, Target } from '#shared/contract'
 import type { SyncPlan } from '../lib/aas/sync'
 import type { Actor } from '../lib/deps'
 import type { InfrastructureRecord } from '../lib/infrastructures'
 import type { AasTarget } from '../lib/targets/aas-target'
 import type { RequestEvent } from 'nuxt/server'
+import { defaultIdScheme, workspaceIdScheme } from '#shared/aas/identifiers'
 import { serviceUrl } from '#shared/contract'
 import { decodeKey } from '../lib/aas/keys'
 import { syncPlan } from '../lib/aas/sync'
@@ -26,6 +28,8 @@ export interface OpenedTarget {
   auditWrite: (outcome: 'success' | 'failure', details: Record<string, unknown>) => Promise<void>
   /** What Studio writes to registries and discovery after uploads and deletes, for this user (I5). */
   syncPlan: () => Promise<SyncPlan>
+  /** How new shells and submodels get their identifiers (W5). */
+  idScheme: IdScheme
 }
 
 /** Who opens which target, for what; the audit records come from this. */
@@ -58,6 +62,7 @@ export async function openTargetFor (access: TargetAccess): Promise<OpenedTarget
       actor,
       target: requireWorkspaces(studio).target(targetId),
       syncPlan: async () => ({ registry: false, discovery: false }),
+      idScheme: workspaceIdScheme,
       auditWrite: (outcome, details) => recordAudit(studio, {
         action: 'workspace.write',
         outcome,
@@ -101,6 +106,7 @@ export async function openTargetFor (access: TargetAccess): Promise<OpenedTarget
     auditWrite: (outcome, details) => audit('target.write', outcome, details),
     target,
     syncPlan: async () => syncPlan(record, (await getPreferences(studio, actor.subject)).syncOverrides[record.id]),
+    idScheme: { type: record.sync.idScheme ?? 'iri', prefix: record.sync.idPrefix ?? defaultIdScheme.prefix },
   }
 }
 

@@ -25,6 +25,7 @@ export async function resolveSubmodelRefs (target: AasTarget, ids: string[]): Pr
           ...base,
           idShort: typeof metadata.idShort === 'string' ? metadata.idShort : null,
           semanticId: firstKeyValue(metadata.semanticId),
+          kind: typeof metadata.kind === 'string' ? metadata.kind : null,
           status: 'available',
         }
       } catch (error) {

@@ -16,6 +16,15 @@
 
         <div v-if="localOnly && search" class="text-body-small text-medium-emphasis mt-1">{{ t('shells.localOnly') }}</div>
 
+        <v-btn-secondary
+          v-if="canCreate"
+          block
+          class="mt-2"
+          prepend-icon="mdi-plus"
+          :text="t('wizard.newShell')"
+          @click="wizardOpen = true"
+        />
+
         <v-chip-group v-model="filter" class="mt-1" mandatory selected-class="text-primary">
           <v-chip filter :text="t('shells.all')" value="all" />
           <v-chip filter :text="t('shells.instances')" value="Instance" />
@@ -136,10 +145,12 @@
   />
 
   <QrScanDialog v-if="canScan" v-model="scanOpen" :target-id="targetId" />
+
+  <ShellWizard v-if="canCreate" v-model="wizardOpen" :target-id="targetId" @created="onCreated" />
 </template>
 
 <script lang="ts" setup>
-  import type { LangString, Page, ShellAvailability, ShellDetail, ShellSearchPage, ShellSummary } from '#shared/contract'
+  import type { LangString, Page, ShellAvailability, ShellCreateResult, ShellDetail, ShellSearchPage, ShellSummary } from '#shared/contract'
   import type { ParsedSearch } from '#shared/search/expression'
   import { useInfiniteQuery, useQueryCache } from '@pinia/colada'
   import { useDisplay } from 'vuetify'
@@ -157,6 +168,14 @@
   // Lookup by asset ID needs discovery or queries on the repository (lookupShells).
   const canScan = computed(() => Boolean(target.value?.capabilities.discovery || target.value?.capabilities.queryTarget === 'repository'))
   const scanOpen = ref(false)
+  // The creation wizard (MVP-5 plan, T3), in edit mode only.
+  const canCreate = computed(() => ui.editing && Boolean(target.value?.capabilities.createResources))
+  const wizardOpen = ref(false)
+
+  async function onCreated (result: ShellCreateResult) {
+    await queryCache.invalidateQueries({ key: ['targets', props.targetId] })
+    await router.push(`/targets/${props.targetId}/shells/${result.shell.key}`)
+  }
 
   const open = computed({
     get: () => ui.listDrawer ?? mdAndUp.value,

@@ -17,7 +17,8 @@
     "edit": "Bearbeiten",
     "account": "Konto",
     "arcadeOn": "Arcade-Modus: +30 Leben",
-    "arcadeOff": "Arcade-Modus aus. Zurück an die Arbeit."
+    "arcadeOff": "Arcade-Modus aus. Zurück an die Arbeit.",
+    "drafts": "keine Entwürfe | {count} Entwurf | {count} Entwürfe"
   },
   "qr": {
     "title": "QR-Code des Assets",
@@ -113,7 +114,7 @@
     "more": "Weitere Aktionen",
     "delete": "Verwaltungsschale löschen",
     "deleteTitle": "Verwaltungsschale löschen?",
-    "deleteText": "Damit wird {name} aus der Infrastruktur entfernt. Ihre {count} Teilmodelle bleiben im Teilmodell-Repository.",
+    "deleteText": "{name} wird aus der Infrastruktur entfernt. Die Submodelle bleiben, außer Sie löschen sie mit.",
     "deleted": "{name} gelöscht",
     "assetKind": "Asset-Art: {kind}",
     "assetType": "Asset-Typ",
@@ -146,7 +147,24 @@
       "error": "Das Teilmodell konnte nicht geladen werden.",
       "absent": "Zu diesem Zeitpunkt nicht vorhanden."
     },
-    "deletedSyncFailed": "{name} wurde gelöscht; {count} Registry- oder Discovery-Eintrag konnte nicht entfernt werden. | {name} wurde gelöscht; {count} Registry- oder Discovery-Einträge konnten nicht entfernt werden."
+    "deletedSyncFailed": "{name} wurde gelöscht; {count} Registry- oder Discovery-Eintrag konnte nicht entfernt werden. | {name} wurde gelöscht; {count} Registry- oder Discovery-Einträge konnten nicht entfernt werden.",
+    "edit": "Bearbeiten",
+    "editTitle": "Shell bearbeiten",
+    "asset": "Asset",
+    "assetKindLabel": "Asset-Art",
+    "specificAssetIds": "Spezifische Asset-IDs",
+    "specificName": "Name",
+    "addSpecific": "Spezifische Asset-ID hinzufügen",
+    "thumbnail": "Vorschaubild",
+    "derivedFrom": "Abgeleitet von",
+    "administration": "Verwaltung",
+    "revisionLabel": "Revision",
+    "addSubmodel": "Submodell",
+    "alsoDeleteSubmodels": "Auch das Submodell löschen | Auch die {count} Submodelle löschen",
+    "affectedSubmodels": "Diese Submodelle werden gelöscht",
+    "sharedWarning": "Andere Shells, die diese Submodelle referenzieren, verlieren sie.",
+    "assetHint": "Was die Shell beschreibt: eine Produktinstanz, einen Produkttyp oder keins von beiden.",
+    "derivedHint": "Die Typ-Shell, von der diese Shell abgeleitet wurde."
   },
   "editor": {
     "title": "Wert",
@@ -163,7 +181,62 @@
     "conflictTitle": "Jemand anderes hat diesen Wert geändert",
     "conflictText": "Ihre Änderung wurde nicht übernommen. Behalten und trotzdem übernehmen, oder verwerfen.",
     "overwrite": "Meine trotzdem übernehmen",
-    "bestEffort": "Diese Infrastruktur meldet keine Revisionen. Eine gleichzeitige Änderung durch jemand anderen kann überschrieben werden."
+    "bestEffort": "Diese Infrastruktur meldet keine Revisionen. Eine gleichzeitige Änderung durch jemand anderen kann überschrieben werden.",
+    "create": "Element hinzufügen",
+    "findings": "Befunde von AAS Core",
+    "sections": {
+      "identity": "Identität",
+      "semantics": "Semantik",
+      "value": "Wert",
+      "qualifiers": "Qualifier",
+      "basics": "Grunddaten",
+      "names": "Namen und Beschreibung",
+      "supplemental": "Zusätzliche Semantik-IDs"
+    },
+    "referenceType": "Referenztyp",
+    "keyType": "Schlüsseltyp",
+    "keyValue": "Schlüsselwert",
+    "addKey": "Schlüssel hinzufügen",
+    "addReference": "Referenz hinzufügen",
+    "clear": "Entfernen",
+    "pasteReference": "Kopierte Referenz einfügen",
+    "min": "Minimum",
+    "max": "Maximum",
+    "filePath": "Dateipfad oder URL",
+    "blobHint": "Der Inhalt eines Blobs wird in den Details angezeigt und geladen. Hier ändern Sie den Medientyp.",
+    "listType": "Elementtyp",
+    "listTypeLocked": "Der Typ kann nicht geändert werden, solange die Liste Elemente enthält.",
+    "orderRelevant": "Reihenfolge ist relevant",
+    "direction": "Richtung",
+    "state": "Zustand",
+    "messageTopic": "Nachrichtenthema",
+    "addQualifier": "Qualifier hinzufügen",
+    "qualifierType": "Typ",
+    "qualifierValue": "Wert",
+    "structureConflictTitle": "Die Struktur wurde zwischenzeitlich geändert",
+    "newTitle": "Neues Element {type} in {parent}",
+    "idShortHint": "Buchstaben, Ziffern, - und _; beginnt mit einem Buchstaben.",
+    "idShortInvalid": "Ein idShort beginnt mit einem Buchstaben und enthält nur Buchstaben, Ziffern, - oder _.",
+    "value": "Wert",
+    "noValue": "Ein {type} hat keinen eigenen Wert; seine Struktur bearbeiten Sie im Baum.",
+    "categoryHint": "CONSTANT, PARAMETER oder VARIABLE, oder eigene.",
+    "semanticsHint": "Was das Element bedeutet: eine globale Referenz wie IRDI oder IRI. Modellreferenzen finden Sie in den Optionen.",
+    "unapplied": "Nicht angewendete Änderungen",
+    "addText": "Text hinzufügen",
+    "addTranslation": "Übersetzung hinzufügen",
+    "referenceValue": "Referenzwert (IRI, IRDI)",
+    "referenceAdvanced": "Referenztyp und Schlüssel",
+    "kinds": {
+      "Instance": "Instanz",
+      "Template": "Template"
+    },
+    "assetKinds": {
+      "Instance": "Instanz",
+      "Type": "Typ",
+      "NotApplicable": "Nicht zutreffend"
+    },
+    "supplementalSemanticId": "Zusätzliche Semantik-ID",
+    "addSupplemental": "Zusätzliche Semantik-ID hinzufügen"
   },
   "workspace": {
     "localFile": "Lokale AASX-Datei",
@@ -176,7 +249,10 @@
     "closeTitle": "{name} schließen?",
     "closeText": "Das Paket hat ungespeicherte Änderungen. Sie gehen verloren, wenn Sie es jetzt schließen.",
     "closeWithoutSaving": "Ohne Speichern schließen",
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "new": "Neues Paket",
+    "undo": "Rückgängig",
+    "redo": "Wiederholen"
   },
   "variables": {
     "input": "Eingabevariablen",
@@ -223,7 +299,9 @@
     "app_not_found": "Die App ist nicht (mehr) installiert.",
     "app_permission_not_declared": "Die App hat die Berechtigung für diese Aktion nicht deklariert.",
     "app_backend_unavailable": "Das Backend der App ist nicht verfügbar.",
-    "app_backend_failed": "Das Backend der App ist fehlgeschlagen."
+    "app_backend_failed": "Das Backend der App ist fehlgeschlagen.",
+    "idshort_conflict": "Ein Element mit diesem Namen existiert hier bereits. Wählen Sie einen anderen idShort.",
+    "structure_conflict": "Die Elemente hier wurden zwischenzeitlich geändert. Die Liste wurde neu geladen; versuchen Sie es erneut."
   },
   "admin": {
     "title": "Infrastrukturen",
@@ -348,7 +426,15 @@
       "changeFeed": "Die Dienste melden Änderungen, sodass Studio zeigen kann, was sich kürzlich geändert hat.",
       "rebac": "Die Dienste prüfen den Zugriff pro Benutzer und Verwaltungsschale (beziehungsbasierte Zugriffskontrolle), sodass Verwaltungsschalen geteilt werden können."
     },
-    "probedAt": "Geprüft {time}"
+    "probedAt": "Geprüft {time}",
+    "ids": "Kennungen",
+    "idScheme": "Kennungsschema",
+    "idSchemeHint": "Wie Studio die Kennungen neuer Shells und Submodelle erzeugt; Nutzer können sie je Ressource ersetzen.",
+    "idPrefix": "IRI-Präfix",
+    "idSchemes": {
+      "iri": "IRI: Präfix, Art und UUID",
+      "uuid": "URN: urn:uuid plus UUID"
+    }
   },
   "apps": {
     "title": "Apps",
@@ -445,6 +531,14 @@
       "dashboard": "Zur Startseite des Ziels",
       "concepts": "Zu den Konzeptbeschreibungen",
       "infrastructures": "Infrastrukturen verwalten"
+    },
+    "structure": {
+      "add": "Element zu {name} hinzufügen",
+      "json": "Aus JSON in {name} einfügen",
+      "paste": "In {name} einfügen",
+      "copy": "{name} kopieren",
+      "duplicate": "{name} duplizieren",
+      "delete": "{name} löschen"
     }
   },
   "capabilities": {
@@ -761,5 +855,92 @@
     "wrap": "Zeilen umbrechen",
     "noWrap": "Zeilen nicht umbrechen",
     "loadFailed": "Die Code-Ansicht konnte nicht geladen werden"
+  },
+  "edit": {
+    "rowMenu": "Elementaktionen",
+    "unsaved": "Ungespeicherte Änderungen",
+    "addElement": "Element hinzufügen",
+    "paste": "Einfügen",
+    "copy": "Kopieren",
+    "copyReference": "Referenz kopieren",
+    "duplicate": "Duplizieren",
+    "moveUp": "Nach oben",
+    "moveDown": "Nach unten",
+    "delete": "Löschen",
+    "deleteTitle": "Element löschen?",
+    "deleteText": "{type} {name} und alles darunter wird entfernt.",
+    "deleted": "{name} gelöscht",
+    "pasted": "{name} eingefügt",
+    "referenceCopied": "Referenz auf {name} kopiert. Fügen Sie sie in ein Referenzfeld ein.",
+    "draftNode": "Entwurf",
+    "insertJson": "Aus JSON einfügen",
+    "insertJsonTitle": "In {name} einfügen",
+    "convert": "In Instanz umwandeln",
+    "convertTitle": "In Instanz umwandeln?",
+    "convertText": "Die Template-Qualifier von {name} werden entfernt, die Art wird Instance. Das ändert das Submodell selbst.",
+    "converted": "{name} ist jetzt eine Instanz; {count} Template-Qualifier entfernt",
+    "removeSubmodel": "Submodell entfernen",
+    "removeSubmodelTitle": "{name} entfernen?",
+    "removeSubmodelText": "Das Submodell wird aus dieser Shell entfernt. Andere Shells, die es referenzieren, behalten es.",
+    "alsoDelete": "Das Submodell auch selbst löschen",
+    "editSubmodel": "Submodell bearbeiten"
+  },
+  "instance": {
+    "create": "Instanz erstellen",
+    "title": "Instanz erstellen",
+    "text": "Eine neue Shell, abgeleitet von {name}, mit Kopien ihrer Submodelle, jeweils mit neuer Kennung.",
+    "created": "Instanz {name} erstellt"
+  },
+  "insert": {
+    "insert": "Einfügen",
+    "valid": "AAS Core findet keine Probleme.",
+    "notJson": "Das ist kein JSON-Objekt."
+  },
+  "wizard": {
+    "title": "Shell erstellen",
+    "newShell": "Neue Shell",
+    "steps": {
+      "shell": "Shell und Asset",
+      "submodels": "Submodelle",
+      "review": "Prüfen"
+    },
+    "generatedHint": "Leer gelassen erzeugt Studio eine.",
+    "generatedIdHint": "Leer gelassen erzeugt Studio eine nach dem Schema der Infrastruktur.",
+    "next": "Weiter",
+    "back": "Zurück",
+    "create": "Erstellen",
+    "willWrite": "Studio schreibt in dieser Reihenfolge",
+    "newSubmodel": "Neues Submodell",
+    "unnamed": "(ohne Namen)",
+    "partial": "Nur ein Teil der Änderungen wurde geschrieben",
+    "fromTemplate": "Aus Template",
+    "empty": "Leeres Submodell",
+    "fromJson": "Aus JSON",
+    "json": "Submodell als JSON",
+    "noSubmodels": "Noch keine Submodelle. Fügen Sie ein leeres Submodell hinzu und füllen Sie seine Felder aus; Elemente fügen Sie danach im Baum hinzu.",
+    "required": "Erforderliche Elemente",
+    "noRequired": "Das Template hat keine erforderlichen Werte.",
+    "optional": "Optionale Elemente ({count})",
+    "selectAll": "Alle wählen",
+    "selectNone": "Keine wählen",
+    "remove": "Entfernen",
+    "bundled": "IDTA-Template",
+    "onTarget": "Auf diesem Ziel",
+    "addSubmodels": "Submodelle hinzufügen",
+    "add": "Hinzufügen",
+    "kinds": {
+      "template": "Template",
+      "empty": "Leer",
+      "json": "JSON"
+    },
+    "resource": {
+      "submodel": "Submodell",
+      "shell": "Shell",
+      "submodelReference": "Referenz",
+      "shellDescriptor": "Shell-Deskriptor",
+      "submodelDescriptor": "Submodell-Deskriptor",
+      "assetLinks": "Asset-Links"
+    },
+    "addSubmodel": "Submodell hinzufügen"
   }
 }

@@ -1,4 +1,4 @@
-import type { ProblemCode } from '#shared/contract'
+import type { Problem, ProblemCode } from '#shared/contract'
 
 interface ProblemDefinition {
   status: number
@@ -16,6 +16,11 @@ const definitions: Record<ProblemCode, ProblemDefinition> = {
   precondition_required: { status: 428, title: 'The request needs the revision it is based on (If-Match)', retryable: false },
   unsupported_operation: { status: 422, title: 'This operation is not supported here', retryable: false },
   validation_failed: { status: 422, title: 'The value is not valid', retryable: false },
+  idshort_conflict: { status: 409, title: 'An element with this idShort already exists here', retryable: false },
+  structure_conflict: { status: 412, title: 'The structure was changed by someone else', retryable: false },
+  identifier_conflict: { status: 409, title: 'This identifier is used already', retryable: false },
+  partial_write: { status: 502, title: 'Only some of the changes were written', retryable: false },
+  template_invalid: { status: 422, title: 'The template cannot be used', retryable: false },
   internal_error: { status: 500, title: 'Internal error', retryable: true },
   endpoint_rejected: { status: 422, title: 'Endpoint not permitted by the network policy', retryable: false },
   infrastructure_unreachable: { status: 422, title: 'Infrastructure could not be reached', retryable: true },
@@ -59,8 +64,9 @@ export class StudioProblem extends Error {
   readonly retryable: boolean
   readonly detail: string | undefined
   readonly violations: Violation[] | undefined
+  readonly steps: Problem['steps']
 
-  constructor (code: ProblemCode, detail?: string, options?: { violations?: Violation[], cause?: unknown }) {
+  constructor (code: ProblemCode, detail?: string, options?: { violations?: Violation[], steps?: Problem['steps'], cause?: unknown }) {
     const definition = definitions[code]
     super(detail ?? definition.title, { cause: options?.cause })
     this.name = 'StudioProblem'
@@ -70,5 +76,6 @@ export class StudioProblem extends Error {
     this.retryable = definition.retryable
     this.detail = detail
     this.violations = options?.violations
+    this.steps = options?.steps
   }
 }

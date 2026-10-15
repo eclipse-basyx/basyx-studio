@@ -8,7 +8,48 @@
     :temporary="!lgAndUp"
     :width="drawerWidth"
   >
-    <div v-if="item" class="d-flex flex-column h-100">
+    <!-- A new element: its form takes the drawer until it is created or cancelled (U4). -->
+    <div v-if="creating" class="d-flex flex-column h-100">
+      <v-toolbar class="px-1" color="transparent" density="compact">
+        <v-toolbar-title class="text-title-medium">{{ t('editor.newTitle', { type: creating.element.modelType, parent: creating.parentLabel }) }}</v-toolbar-title>
+        <v-btn :aria-label="t('common.close')" icon="mdi-close" size="small" @click="emit('cancel-create')" />
+      </v-toolbar>
+
+      <v-divider />
+
+      <div class="flex-grow-1 overflow-y-auto">
+        <ElementForm
+          :create="creating"
+          :explicit-save="capabilities.persistence === 'explicit_save'"
+          :submodel-key="creating.submodelKey"
+          :target-id="targetId"
+          @cancel="emit('cancel-create')"
+          @created="detail => emit('created', detail)"
+        />
+      </div>
+    </div>
+
+    <!-- The shell form (U5): the shell header's Edit opens it here. -->
+    <div v-else-if="editingShell && shellDetail" class="d-flex flex-column h-100">
+      <v-toolbar class="px-1" color="transparent" density="compact">
+        <v-toolbar-title class="text-title-medium">{{ t('shell.editTitle') }}</v-toolbar-title>
+        <v-btn :aria-label="t('common.close')" icon="mdi-close" size="small" @click="emit('close-shell')" />
+      </v-toolbar>
+
+      <v-divider />
+
+      <div class="flex-grow-1 overflow-y-auto">
+        <ShellForm
+          :can-upload="capabilities.files"
+          :explicit-save="capabilities.persistence === 'explicit_save'"
+          :shell="shellDetail"
+          :target-id="targetId"
+          @changed="detail => emit('shell-changed', detail)"
+        />
+      </div>
+    </div>
+
+    <div v-else-if="item" class="d-flex flex-column h-100">
       <!-- Where the selection is, on one line: up to the parent, or jump to
            any level from the path menu. The title below names the selection. -->
       <v-toolbar class="px-1" color="transparent" density="compact">
@@ -119,13 +160,14 @@
 
       <!-- Details -->
       <div v-else-if="mode === 'details' && detail" class="flex-grow-1 overflow-y-auto">
-        <div v-if="item.elementKey" class="pa-4">
+        <div v-if="item.elementKey && (!form || keepsView)" class="pa-4">
+          <!-- Types whose form covers their whole value replace the view; the
+               views of File, Blob and Operation stay and get the form below. -->
           <ElementValueView
+            v-if="!form || keepsView"
             :can-invoke="canInvoke"
             :can-replace="canWrite && capabilities.files"
             :detail="detail"
-            :editable="canWrite && isEditableModelType(value.modelType) && detail.revision !== null"
-            :explicit-save="capabilities.persistence === 'explicit_save'"
             :history="history"
             :item="item"
             :refreshing="refreshing"
@@ -133,6 +175,26 @@
             :target-id="targetId"
             @changed="onChanged"
             @select="id => emit('select', id)"
+          />
+        </div>
+
+        <div v-if="form && item.elementKey && detail">
+          <ElementForm
+            :detail="detail"
+            :explicit-save="capabilities.persistence === 'explicit_save'"
+            :submodel-key="item.submodelKey"
+            :target-id="targetId"
+            @changed="onChanged"
+          />
+        </div>
+
+        <div v-else-if="form && detail">
+          <SubmodelForm
+            :detail="detail"
+            :explicit-save="capabilities.persistence === 'explicit_save'"
+            :submodel-key="item.submodelKey"
+            :target-id="targetId"
+            @changed="onChanged"
           />
         </div>
 
@@ -215,12 +277,14 @@
 </template>
 
 <script lang="ts" setup>
-  import type { ElementDetail, SubmodelDetail, SubmodelRef, SubmodelViewContributionInfo, Target, TargetCapabilities } from '#shared/contract'
+  import type { ElementDetail, ShellDetail, SubmodelDetail, SubmodelRef, SubmodelViewContributionInfo, Target, TargetCapabilities } from '#shared/contract'
   import type { ShellTreeItem } from '~/composables/useShellTrees'
   import type { DetailsMode } from '~/utils/aas'
+  import type { CreatingElement } from '~/utils/editor'
   import { useQuery, useQueryCache } from '@pinia/colada'
   import { useDisplay } from 'vuetify'
-  import { decodeResourceKey, isEditableModelType, langText, modelTypeIcon } from '~/utils/aas'
+  import { isElementModelType } from '#shared/aas/defaults'
+  import { decodeResourceKey, langText, modelTypeIcon } from '~/utils/aas'
 
   // The details drawer (MVP-4 plan, T2): the selected submodel or element in
   // the modes of the Web UI's right pane. The mode and the app view are in the
@@ -239,11 +303,20 @@
     at: string | null
     history: number[]
     refreshing: boolean
+    /** A new element being created below a parent (U4); takes the drawer. */
+    creating: CreatingElement | null
+    /** The shell's form takes the drawer (U5). */
+    editingShell: boolean
+    shellDetail: ShellDetail | null | undefined
   }>()
   const emit = defineEmits<{
-    select: [id: string]
+    'select': [id: string]
+    'created': [detail: ElementDetail]
+    'cancel-create': []
+    'close-shell': []
+    'shell-changed': [detail: ShellDetail]
     /** An element changed at its source; reload what shows it. */
-    changed: [detail: ElementDetail]
+    'changed': [detail: ElementDetail]
   }>()
   const mode = defineModel<DetailsMode>('mode', { required: true })
   const view = defineModel<string | null>('view', { required: true })
@@ -295,7 +368,7 @@
         return api<ElementDetail>(`/targets/${targetId.value}/submodels/${item.submodelKey}/elements/${item.elementKey}`, { query: { at }, signal })
       }
       const submodel = await api<SubmodelDetail>(`/targets/${targetId.value}/submodels/${item.submodelKey}`, { query: { at }, signal })
-      return { key: submodel.key, path: '', value: submodel.submodel, revision: null, concurrency: null, ancestors: [] } satisfies ElementDetail
+      return { key: submodel.key, path: '', value: submodel.submodel, revision: submodel.revision ?? null, concurrency: null, ancestors: [] } satisfies ElementDetail
     },
     enabled: () => props.item !== null && !props.item.unavailable && !props.item.more,
   })
@@ -350,6 +423,12 @@
       mode.value = 'details'
     }
   })
+
+  // The edit form: in edit mode, for elements and submodels the target lets the user change.
+  const form = computed(() => props.canWrite && props.capabilities.writeStructure && !props.at
+    && detail.value?.revision !== null && detail.value?.revision !== undefined
+    && (props.item?.elementKey ? isElementModelType(value.value.modelType) : true))
+  const keepsView = computed(() => ['File', 'Blob', 'Operation'].includes(String(value.value.modelType)))
 
   const description = computed(() => langText(Array.isArray(value.value.description) ? value.value.description : [], preferences.value.valueLanguage))
 

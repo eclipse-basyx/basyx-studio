@@ -19,6 +19,10 @@ export interface ShellTreeItem {
   refreshable: boolean
   /** Loaded children; an empty list until the children of an expandable item are loaded. */
   children?: ShellTreeItem[]
+  /** `Template` or `Instance` for a submodel, where known. */
+  kind?: string | null
+  /** The element being created: it exists in the tree only until it is written or cancelled. */
+  draft?: boolean
   /** A "show more" row of a long level: its parent and how many children it hides. */
   more?: { parent: string, remaining: number }
 }
@@ -28,6 +32,8 @@ interface Level {
   nodes: TreeNode[] | null
   error: unknown
   loading: boolean
+  /** Revision of the children's idShorts, types and order, which structural edits are based on. */
+  structureRevision?: string
 }
 
 const numericTypes = new Set(['xs:double', 'xs:float', 'xs:decimal', 'xs:int', 'xs:integer', 'xs:long', 'xs:short', 'xs:byte',
@@ -126,15 +132,15 @@ export function useShellTrees (options: {
 
   async function readLevel (submodelKey: string, elementKey: string | null, id: string, current: number, quiet: boolean) {
     if (!quiet) {
-      setLevel(id, { nodes: levels.value[id]?.nodes ?? null, error: null, loading: true })
+      setLevel(id, { nodes: levels.value[id]?.nodes ?? null, error: null, loading: true, structureRevision: levels.value[id]?.structureRevision })
     }
     try {
       const at = options.at()
-      const result = await api<{ items: TreeNode[] }>(`/targets/${options.targetId()}/submodels/${submodelKey}/elements`, {
+      const result = await api<{ items: TreeNode[], structureRevision?: string }>(`/targets/${options.targetId()}/submodels/${submodelKey}/elements`, {
         query: { parentElementKey: elementKey ?? undefined, at: at ?? undefined },
       })
       if (current === generation) {
-        setLevel(id, { nodes: result.items, error: null, loading: false })
+        setLevel(id, { nodes: result.items, error: null, loading: false, structureRevision: result.structureRevision })
         if (!at) {
           record(submodelKey, result.items)
         }
@@ -237,6 +243,7 @@ export function useShellTrees (options: {
       preview: null,
       valueType: null,
       variableGroup: null,
+      kind: ref.kind ?? null,
       unavailable,
       refreshable: nodes ? hasNumeric(nodes) : false,
       children: unavailable ? undefined : (nodes ? paged(ref.key, ref.key, nodes.map(node => toItem(ref.key, node))) : []),
@@ -377,6 +384,24 @@ export function useShellTrees (options: {
     history,
     loading,
     lookup: (id: string) => find(items.value, id),
+    /** The structure revision of the children of a submodel or element, if its level is loaded. */
+    structureRevision: (id: string) => levels.value[id]?.structureRevision ?? null,
+    /** The item above an item, or `null` for a submodel. */
+    parentOf: (id: string): ShellTreeItem | null => {
+      const walk = (list: ShellTreeItem[], parent: ShellTreeItem | null): ShellTreeItem | null | undefined => {
+        for (const item of list) {
+          if (item.id === id) {
+            return parent
+          }
+          const found = walk(item.children ?? [], item)
+          if (found !== undefined) {
+            return found
+          }
+        }
+        return undefined
+      }
+      return walk(items.value, null) ?? null
+    },
     loadChildren,
     expandAll,
     reveal,

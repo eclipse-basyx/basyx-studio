@@ -971,6 +971,14 @@ paths:
       tags: [AAS]
       operationId: replaceSubmodelElement
       summary: Replace and validate a submodel element
+      description: |
+        Body `{ element }`: the element as it should be, including a new
+        `idShort` (a rename; list children cannot be renamed). A container
+        keeps the children it has now. `If-Match` carries the element's
+        revision. Needs the `writeStructure` capability. Findings of AAS Core
+        come as `validation_failed` with `violations`; a sibling with the
+        same idShort is `idshort_conflict`. The answer is the element at its
+        new path, with its revision.
       x-requirements: [PROD-001, DATA-007, DATA-009]
       parameters:
         - $ref: '#/components/parameters/CsrfToken'
@@ -988,14 +996,62 @@ paths:
     delete:
       tags: [AAS]
       operationId: deleteSubmodelElement
-      summary: Delete a submodel element
+      summary: Delete a submodel element with its children
+      description: '`If-Match` carries the element revision. Needs the `writeStructure` capability.'
       x-requirements: [PROD-001, DATA-009, UX-003]
       parameters:
         - $ref: '#/components/parameters/CsrfToken'
         - $ref: '#/components/parameters/IfMatch'
       responses:
-        '204': { description: Element deleted }
+        '200':
+          description: Element deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [deleted]
+                properties:
+                  deleted: { type: boolean, enum: [true] }
         '412': { $ref: '#/components/responses/PreconditionFailed' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/moves:
+    post:
+      tags: [AAS]
+      operationId: moveSubmodelElement
+      summary: Move an element to a position among its siblings
+      description: |
+        Body `{ index }`. `If-Match` carries the parent's structure revision
+        (`structureRevision` of the parent's detail or of the tree level), so a
+        value edit elsewhere does not block it, but a concurrent add or
+        reorder is `structure_conflict` (412). The answer is the element at its
+        new path. Needs the `writeStructure` capability.
+      x-requirements: [PROD-004, DATA-009]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/SubmodelKey'
+        - $ref: '#/components/parameters/ElementKey'
+        - $ref: '#/components/parameters/CsrfToken'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [index]
+              properties:
+                index: { type: integer, minimum: 0 }
+      responses:
+        '200':
+          description: The element at its new path
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ElementDetail' }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '428': { $ref: '#/components/responses/PreconditionRequired' }
         default: { $ref: '#/components/responses/Problem' }
 
   /targets/{targetId}/submodels/{submodelKey}/elements/{elementKey}/value:
@@ -1405,6 +1461,182 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/SemanticMatchPage' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/shells/{shellKey}/instances:
+    post:
+      tags: [AAS]
+      operationId: createShellInstance
+      summary: Create an instance from a shell of asset kind Type
+      description: |
+        A new shell with `derivedFrom` pointing to the type, asset kind
+        `Instance` and copies of the type's submodels with new identifiers and
+        kind `Instance` (template qualifiers removed). Submodels are written
+        first, then the shell, then registries and discovery; a failure is
+        `partial_write` with `steps`. Needs the `createResources` capability.
+      x-requirements: [PROD-004, DATA-014]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/ShellKey'
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                shell: { type: object, additionalProperties: true }
+                submodelIds: { type: array, items: { type: string } }
+      responses:
+        '201':
+          description: The new shell and the steps that created it
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        '409': { $ref: '#/components/responses/Conflict' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/shells/{shellKey}/submodel-refs/{submodelKey}:
+    delete:
+      tags: [AAS]
+      operationId: removeShellSubmodel
+      summary: Remove a submodel reference, optionally deleting the submodel
+      description: '`deleteSubmodel=true` also deletes the submodel and its descriptor. Needs the `createResources` capability.'
+      x-requirements: [PROD-004, UX-003]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/ShellKey'
+        - $ref: '#/components/parameters/SubmodelKey'
+        - $ref: '#/components/parameters/CsrfToken'
+        - name: deleteSubmodel
+          in: query
+          schema: { type: string, enum: ['true', 'false'], default: 'false' }
+      responses:
+        '200':
+          description: The steps that were run
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/submodels/{submodelKey}/instance-conversions:
+    post:
+      tags: [AAS]
+      operationId: convertSubmodelToInstance
+      summary: Convert a template submodel to an instance in place
+      description: Removes the template qualifiers and sets the kind to `Instance`; only submodels of kind `Template` qualify.
+      x-requirements: [PROD-004]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/SubmodelKey'
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '201':
+          description: The submodel's metadata and the number of removed qualifiers
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/templates:
+    get:
+      tags: [AAS]
+      operationId: listSubmodelTemplates
+      summary: Submodel templates for a target
+      description: The four bundled IDTA templates and Template-kind submodels of shells on the target.
+      x-requirements: [PROD-004]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+      responses:
+        '200':
+          description: Templates
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /targets/{targetId}/validations:
+    post:
+      tags: [AAS]
+      operationId: validateAasJson
+      summary: AAS Core findings for a JSON value; nothing is written
+      description: Body `{ kind: element | submodel | shell, value }`. Used by the insert dialog while the user types.
+      x-requirements: [DATA-007]
+      parameters:
+        - $ref: '#/components/parameters/TargetId'
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, additionalProperties: true }
+      responses:
+        '200':
+          description: Findings, empty when the value is valid
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /submodel-templates/{templateId}:
+    get:
+      tags: [AAS]
+      operationId: getBundledSubmodelTemplate
+      summary: The elements of a bundled submodel template
+      x-requirements: [PROD-004]
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The template's fields with cardinality
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/undos:
+    post:
+      tags: [Workspaces]
+      operationId: undoWorkspaceChange
+      summary: Take back the last applied change of a workspace
+      description: Until Save or Close. Live targets have no undo.
+      x-requirements: [UX-005]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - name: workspaceId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The workspace target with its undo and redo state
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /workspaces/{workspaceId}/redos:
+    post:
+      tags: [Workspaces]
+      operationId: redoWorkspaceChange
+      summary: Apply the change that was taken back last
+      x-requirements: [UX-005]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+        - name: workspaceId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: The workspace target with its undo and redo state
+          content:
+            application/json:
+              schema: { type: object, additionalProperties: true }
         default: { $ref: '#/components/responses/Problem' }
 
   /workspaces:
@@ -2942,9 +3174,10 @@ components:
       type: object
       additionalProperties: false
       description: What a target supports. Feature code branches on capabilities, never on the target kind. Optional server features are `true` only where the server announces them in its service profiles (ADR 0021).
-      required: [write, persistence, deleteShells, files, operations, conceptDescriptions, search, queryTarget, elementSearch, discovery, export, upload, history, changeFeed, sharing, listSource]
+      required: [write, writeStructure, persistence, deleteShells, files, operations, conceptDescriptions, search, queryTarget, elementSearch, discovery, export, upload, history, changeFeed, sharing, listSource]
       properties:
-        write: { type: boolean }
+        write: { type: boolean, description: Change values of elements. }
+        writeStructure: { type: boolean, description: 'Add, delete, move and rename elements and edit submodel metadata (MVP-5).' }
         persistence:
           type: string
           enum: [immediate, explicit_save]
@@ -3548,6 +3781,9 @@ components:
       additionalProperties: false
       required: [key, path, value, revision, concurrency, ancestors]
       properties:
+        structureRevision:
+          type: [string, 'null']
+          description: Revision of the element's children (idShorts, model types and order, not their values) that adding and moving are based on; `null` for elements without children.
         key: { $ref: '#/components/schemas/ResourceKey' }
         path:
           type: string
@@ -5222,7 +5458,8 @@ components:
         `app_permission_not_declared` 403; `invalid_request`,
         `target_request_rejected` 400; `not_found`, `target_resource_not_found`,
         `app_not_found` 404; `target_auth_required`, `workspace_unsaved_changes`,
-        `app_already_installed` 409; `revision_conflict` 412;
+        `app_already_installed`, `idshort_conflict`, `identifier_conflict` 409; `revision_conflict`,
+        `structure_conflict` 412; `partial_write` 502; `template_invalid` 422;
         `precondition_required` 428; `unsupported_operation`,
         `validation_failed`, `endpoint_rejected`, `infrastructure_unreachable`,
         `query_invalid`, `query_unsupported`, `package_rejected`,
@@ -5254,6 +5491,11 @@ components:
         - invalid_request
         - not_found
         - revision_conflict
+        - idshort_conflict
+        - structure_conflict
+        - identifier_conflict
+        - partial_write
+        - template_invalid
         - precondition_required
         - unsupported_operation
         - validation_failed

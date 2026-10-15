@@ -113,7 +113,6 @@
     "more": "更多操作",
     "delete": "删除管理壳",
     "deleteTitle": "删除管理壳？",
-    "deleteText": "这会将 {name} 从基础设施中移除。其 {count} 个子模型仍保留在子模型存储库中。",
     "deleted": "已删除 {name}",
     "assetKind": "资产类别：{kind}",
     "assetType": "资产类型",

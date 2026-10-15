@@ -22,6 +22,14 @@
             @click="addOpen = true"
           />
 
+          <v-btn-secondary
+            v-if="bridge"
+            :loading="opening"
+            prepend-icon="mdi-package-variant-plus"
+            :text="t('workspace.new')"
+            @click="newPackage"
+          />
+
           <v-btn-primary
             v-if="bridge"
             :loading="opening"
@@ -253,6 +261,23 @@
   onMounted(() => (bridge.value = useDesktopBridge()))
   const opening = ref(false)
   const openError = ref<unknown>(null)
+
+  /** A new, empty package (MVP-5 plan, P4); *Save as* gives it a file. */
+  const ui = useUiStore()
+
+  async function newPackage () {
+    opening.value = true
+    openError.value = null
+    try {
+      const target = await api<Target>('/workspaces', { method: 'POST', body: { empty: true } })
+      ui.mode = 'edit'
+      await navigateTo(`/targets/${target.id}/shells`)
+    } catch (error) {
+      openError.value = error
+    } finally {
+      opening.value = false
+    }
+  }
 
   async function openPackage () {
     opening.value = true

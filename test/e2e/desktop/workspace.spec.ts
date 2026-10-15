@@ -40,7 +40,7 @@ async function editSerialNumber (value: string, select = true) {
   if (await edit.getAttribute('aria-pressed') !== 'true') {
     await edit.click()
   }
-  const field = window.getByRole('textbox', { name: 'SerialNumber' })
+  const field = window.getByRole('textbox', { name: 'Value', exact: true })
   await field.fill(value)
   await window.getByRole('button', { name: 'Apply' }).click()
   await expect(window.getByText('Applied. Save the package to keep the change.')).toBeVisible()

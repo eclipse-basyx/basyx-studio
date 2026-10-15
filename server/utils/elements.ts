@@ -1,10 +1,13 @@
 import type { ElementDetail } from '#shared/contract'
 import type { LocatorStep } from '../lib/aas/keys'
-import type { ElementSnapshot } from '../lib/targets/aas-target'
+import type { ElementSnapshot, StructureResult } from '../lib/targets/aas-target'
+import type { OpenedTarget } from './target'
 import type { RequestEvent } from 'nuxt/server'
-import { ancestorsOf, decodeKey, parseLocator, splitAddressable } from '../lib/aas/keys'
+import { childProperty, containerChildren } from '../lib/aas/edits'
+import { ancestorsOf, decodeKey, encodeKey, parseLocator, splitAddressable } from '../lib/aas/keys'
 import { navigate } from '../lib/aas/outline'
 import { StudioProblem } from '../lib/problem'
+import { structureRevisionOf } from '../lib/targets/revision'
 import { routeParam } from './handler'
 
 export interface ElementRoute {
@@ -45,5 +48,34 @@ export function toElementDetail (event: RequestEvent, route: ElementRoute, snaps
     revision: writable ? snapshot.revision : null,
     concurrency: writable ? snapshot.concurrency : null,
     ancestors: ancestorsOf(parseLocator(route.locator)),
+    structureRevision: writable && !Array.isArray(value) && childProperty(value.modelType)
+      ? structureRevisionOf(containerChildren(value))
+      : null,
+  }
+}
+
+/** The route of an element addressed by its locator, e.g. one a structural write returned. */
+export function routeForPath (submodelId: string, locator: string): ElementRoute {
+  const { idShortPath, rest } = splitAddressable(parseLocator(locator))
+  return { submodelId, key: encodeKey(locator), locator, idShortPath, rest }
+}
+
+/** The detail of the element a structural write produced (add, rename, move). */
+export function structureDetail (event: RequestEvent, submodelId: string, result: StructureResult): ElementDetail {
+  if (!result.path || !result.snapshot) {
+    throw new StudioProblem('internal_error')
+  }
+  return toElementDetail(event, routeForPath(submodelId, result.path), result.snapshot)
+}
+
+/** Runs a structural write and records its outcome in the audit log. */
+export async function auditedStructureWrite<T> (opened: OpenedTarget, details: Record<string, unknown>, run: () => Promise<T>): Promise<T> {
+  try {
+    const result = await run()
+    await opened.auditWrite('success', details)
+    return result
+  } catch (error) {
+    await opened.auditWrite('failure', { ...details, code: error instanceof StudioProblem ? error.code : 'internal_error' })
+    throw error
   }
 }

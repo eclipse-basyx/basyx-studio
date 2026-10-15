@@ -1,15 +1,5 @@
 <template>
-  <!-- Editable types get the edit area's editor instead of their view -->
-  <ElementEditArea
-    v-if="editable"
-    :detail="detail"
-    :explicit-save="explicitSave"
-    :submodel-key="submodelKey"
-    :target-id="targetId"
-    @changed="value => emit('changed', value)"
-  />
-
-  <v-card v-else-if="modelType === 'Property'" border="0" color="surface-light">
+  <v-card v-if="modelType === 'Property'" border="0" color="surface-light">
     <v-card-item>
       <v-card-subtitle class="text-label-medium">{{ t('details.valueOf', { type: element.valueType ?? '' }) }}</v-card-subtitle>
 
@@ -130,8 +120,6 @@
     history: number[]
     /** Values are re-read right now. */
     refreshing: boolean
-    editable: boolean
-    explicitSave: boolean
     canReplace: boolean
     canInvoke: boolean
   }>()

@@ -7,6 +7,27 @@
       :text="t(target.workspace?.unsavedChanges ? 'workspace.unsaved' : 'workspace.saved')"
     />
 
+    <!-- Undo and redo of applied changes until Save or Close (W8) -->
+    <v-btn-toggle v-if="target.capabilities.undo && ui.editing" class="flex-grow-0">
+      <v-btn
+        v-tooltip="t('workspace.undo')"
+        :aria-label="t('workspace.undo')"
+        :disabled="!target.workspace?.canUndo || busy !== null"
+        icon="mdi-undo"
+        size="small"
+        @click="restore('undos')"
+      />
+
+      <v-btn
+        v-tooltip="t('workspace.redo')"
+        :aria-label="t('workspace.redo')"
+        :disabled="!target.workspace?.canRedo || busy !== null"
+        icon="mdi-redo"
+        size="small"
+        @click="restore('redos')"
+      />
+    </v-btn-toggle>
+
     <v-btn-primary
       :disabled="!target.workspace?.unsavedChanges || busy !== null"
       :loading="busy === 'save'"
@@ -55,7 +76,11 @@
   import { StudioApiError } from '~/composables/useStudioApi'
 
   const props = defineProps<{ target: Target }>()
-  const emit = defineEmits<{ error: [error: unknown] }>()
+  const emit = defineEmits<{
+    error: [error: unknown]
+    /** An undo or redo changed the package; reload what shows it. */
+    restored: []
+  }>()
 
   const { t } = useI18n()
   const api = useStudioApi()
@@ -65,10 +90,11 @@
   const drafts = useDraftStore()
   const queryCache = useQueryCache()
 
-  const busy = ref<'save' | 'saveAs' | 'close' | null>(null)
+  const ui = useUiStore()
+  const busy = ref<'save' | 'saveAs' | 'close' | 'restore' | null>(null)
   const confirmClose = ref(false)
 
-  async function run (action: 'save' | 'saveAs' | 'close', task: () => Promise<void>) {
+  async function run (action: 'save' | 'saveAs' | 'close' | 'restore', task: () => Promise<void>) {
     busy.value = action
     emit('error', null)
     try {
@@ -85,7 +111,18 @@
     void queryCache.invalidateQueries({ key: ['targets'], exact: true })
   }
 
+  function restore (kind: 'undos' | 'redos') {
+    return run('restore', async () => {
+      updateTarget(await api<Target>(`/workspaces/${props.target.id}/${kind}`, { method: 'POST' }))
+      emit('restored')
+    })
+  }
+
   function save () {
+    // A package that was never saved has no file: *Save* is *Save as*.
+    if (props.target.workspace?.isNew && bridge.value) {
+      return saveAs()
+    }
     return run('save', async () => {
       updateTarget(await api<Target>(`/workspaces/${props.target.id}/saves`, { method: 'POST' }))
     })

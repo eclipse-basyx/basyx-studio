@@ -113,7 +113,6 @@
     "more": "Plus d'actions",
     "delete": "Supprimer l'AAS",
     "deleteTitle": "Supprimer l'AAS ?",
-    "deleteText": "Cela retire {name} de l'infrastructure. Ses {count} sous-modèles restent dans le dépôt de sous-modèles.",
     "deleted": "{name} supprimée",
     "assetKind": "Nature de l'actif : {kind}",
     "assetType": "Type d'actif",

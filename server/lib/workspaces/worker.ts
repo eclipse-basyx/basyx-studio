@@ -9,9 +9,17 @@ import { basename, dirname, join } from 'node:path'
 import { StudioProblem } from '../problem'
 import { defaultArchiveLimits } from './archive'
 import { WorkspaceModel } from './model'
-import { inspectEnvironment, readPackage, writePackage } from './package'
+import { inspectEnvironment, newPackageBytes, readPackage, writePackage } from './package'
+
+/** Operations that change the environment; each one goes into the undo log (W8). */
+const mutating = new Set<string>([
+  'setElementValue', 'addElement', 'replaceElement', 'deleteElement', 'moveElement', 'replaceSubmodelMetadata',
+  'createSubmodel', 'deleteSubmodel', 'createShell', 'replaceShell', 'replaceSubmodel', 'addSubmodelRef',
+  'removeSubmodelRef', 'deleteShell', 'replaceAttachment', 'setThumbnail',
+])
 
 interface OpenWorkspace {
+  /** Empty for a package that was never saved. */
   path: string
   opened: OpenedPackage
   model: WorkspaceModel
@@ -20,6 +28,9 @@ interface OpenWorkspace {
 
 const callable = new Set<string>([
   'listShells', 'shell', 'submodelIds', 'submodelMetadata', 'submodel', 'element', 'setElementValue',
+  'addElement', 'replaceElement', 'deleteElement', 'moveElement', 'replaceSubmodelMetadata',
+  'undo', 'redo', 'setThumbnail',
+  'createSubmodel', 'deleteSubmodel', 'createShell', 'replaceShell', 'addSubmodelRef', 'removeSubmodelRef', 'replaceSubmodel',
   'deleteShell', 'thumbnail', 'attachment', 'replaceAttachment', 'conceptDescriptions', 'searchShells', 'searchElements',
 ])
 
@@ -78,7 +89,15 @@ export class WorkspaceWorker {
           throw new StudioProblem('invalid_request', 'Unknown workspace operation.')
         }
         const method = workspace.model[request.method] as (...args: unknown[]) => ReturnType<WorkspaceCalls[WorkspaceMethod]>
-        return await method.apply(workspace.model, request.args)
+        const before = mutating.has(request.method) ? workspace.model.snapshot() : null
+        const result = await method.apply(workspace.model, request.args)
+        if (before) {
+          workspace.model.recordChange(before)
+        }
+        return result
+      }
+      case 'create': {
+        return this.#create()
       }
       case 'save': {
         return this.#save(request.workspaceId, request.path)
@@ -107,10 +126,23 @@ export class WorkspaceWorker {
     return this.#info(workspaceId)
   }
 
+  async #create (): Promise<WorkspaceInfo> {
+    const opened = await readPackage(await newPackageBytes())
+    const workspaceId = `ws-${randomBytes(9).toString('base64url')}`
+    const model = new WorkspaceModel(opened.environment, packageFiles(opened))
+    // Never saved: it counts as changed, so closing it asks first.
+    model.revision = 1
+    this.#workspaces.set(workspaceId, { path: '', opened, model, diagnostics: [] })
+    return this.#info(workspaceId)
+  }
+
   /** Writes a temporary file next to the target and renames it over it, so a crash never leaves a partial package. */
   async #save (workspaceId: string, target: string | undefined): Promise<WorkspaceInfo> {
     const workspace = this.#get(workspaceId)
     const path = target ?? workspace.path
+    if (!path) {
+      throw new StudioProblem('invalid_request', 'A new package has no file yet. Use Save as.')
+    }
     const revision = workspace.model.revision
     const bytes = await writePackage(workspace.opened, workspace.model.environment)
     const temporary = join(dirname(path), `.${basename(path)}.${randomBytes(6).toString('hex')}.tmp`)
@@ -138,8 +170,11 @@ export class WorkspaceWorker {
     const workspace = this.#get(workspaceId)
     return {
       workspaceId,
-      fileName: basename(workspace.path),
+      fileName: workspace.path ? basename(workspace.path) : 'Untitled.aasx',
       unsavedChanges: workspace.model.unsavedChanges,
+      isNew: workspace.path === '',
+      canUndo: workspace.model.canUndo,
+      canRedo: workspace.model.canRedo,
       diagnostics: workspace.diagnostics,
     }
   }

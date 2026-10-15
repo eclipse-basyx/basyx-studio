@@ -113,7 +113,6 @@
     "more": "Más acciones",
     "delete": "Eliminar AAS",
     "deleteTitle": "¿Eliminar la AAS?",
-    "deleteText": "Esto quita {name} de la infraestructura. Sus {count} submodelos permanecen en el repositorio de submodelos.",
     "deleted": "{name} eliminada",
     "assetKind": "Clase de activo: {kind}",
     "assetType": "Tipo de activo",

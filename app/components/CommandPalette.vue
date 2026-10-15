@@ -139,6 +139,8 @@
     void router.push({ path: `/targets/${props.targetId}/shells/${shellKey}`, query: location })
   }
 
+  const structureActions = useStructureActionsStore()
+
   const actions = computed<PaletteItem[]>(() => {
     const base = props.targetId ? `/targets/${props.targetId}` : null
     const items: PaletteItem[] = [
@@ -155,6 +157,10 @@
       if (target.data.value?.capabilities.conceptDescriptions) {
         items.push({ key: 'concepts', group: '', title: t('palette.actions.concepts'), icon: 'mdi-book-open-page-variant-outline', run: () => router.push(`${base}/concepts`) })
       }
+    }
+    // The selected node's structure actions, in edit mode.
+    if (ui.editing) {
+      items.push(...structureActions.actions.map(action => ({ ...action, group: '' })))
     }
     if (session.isAdmin) {
       items.push({ key: 'infrastructures', group: '', title: t('palette.actions.infrastructures'), icon: 'mdi-server-plus-outline', run: () => router.push('/admin/infrastructures') })

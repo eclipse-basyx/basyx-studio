@@ -56,6 +56,47 @@ describe('Workspace Worker process', () => {
     throw new Error('The fixture has no string property at the top level.')
   }
 
+  it('creates a new package, builds a shell, undoes, attaches a file, saves as and reopens', async () => {
+    const workspaces = manager()
+    const info = await workspaces.create()
+    expect(info).toMatchObject({ isNew: true, unsavedChanges: true, canUndo: false })
+    const target = workspaces.target(info.workspaceId)
+
+    const shellId = 'urn:studio:test:new:aas'
+    const submodelId = 'urn:studio:test:new:sm'
+    await target.createSubmodel({ modelType: 'Submodel', id: submodelId, idShort: 'Docs' })
+    await target.createShell({
+      modelType: 'AssetAdministrationShell',
+      id: shellId,
+      idShort: 'NewShell',
+      assetInformation: { assetKind: 'Instance', globalAssetId: 'urn:studio:test:new:asset' },
+      submodels: [{ type: 'ModelReference', keys: [{ type: 'Submodel', value: submodelId }] }],
+    })
+    expect((await workspaces.info(info.workspaceId)).canUndo).toBe(true)
+
+    // Undo takes the shell back, redo returns it.
+    await target.undo()
+    await expect(target.shell(shellId)).rejects.toMatchObject({ code: 'target_resource_not_found' })
+    await target.redo()
+    expect(await target.shell(shellId)).toMatchObject({ idShort: 'NewShell' })
+
+    // A File element gets an attachment that did not exist in the package.
+    const { revision: top } = { revision: (await import('~~/server/lib/targets/revision')).structureRevisionOf([]) }
+    const added = await target.addElement(submodelId, null, { modelType: 'File', idShort: 'Manual', contentType: 'text/plain' }, null, top)
+    await target.replaceAttachment(submodelId, 'Manual', { bytes: new TextEncoder().encode('hello'), contentType: 'text/plain', fileName: 'manual.txt' }, added.snapshot!.revision)
+
+    await expect(workspaces.save(info.workspaceId)).rejects.toMatchObject({ code: 'invalid_request' })
+    const path = join(directory, 'created.aasx')
+    const grant = await workspaces.grant(path, 'save')
+    const saved = await workspaces.saveAs(info.workspaceId, grant.handle)
+    expect(saved).toMatchObject({ isNew: false, unsavedChanges: false, fileName: 'created.aasx' })
+
+    const reopened = await workspaces.open((await workspaces.grant(path, 'open')).handle)
+    const again = workspaces.target(reopened.workspaceId)
+    expect(await again.shell(shellId)).toMatchObject({ idShort: 'NewShell' })
+    expect(new TextDecoder().decode((await again.attachment(submodelId, 'Manual')).bytes)).toBe('hello')
+  })
+
   it('opens, edits, detects conflicts, saves atomically and reopens a package', async () => {
     const workspaces = manager()
     const path = await copyOfFixture('edit.aasx')

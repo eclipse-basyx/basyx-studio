@@ -13,8 +13,8 @@ function elementUrl (element: string) {
 }
 
 /** The value editor of the selected element in the details drawer (edit mode). */
-async function valueField (page: Page, idShort: string) {
-  const field = page.getByRole('textbox', { name: idShort, exact: true })
+async function valueField (page: Page) {
+  const field = page.getByRole('textbox', { name: 'Value', exact: true })
   await expect(field).toBeVisible()
   return field
 }
@@ -22,7 +22,7 @@ async function valueField (page: Page, idShort: string) {
 async function openInEditMode (page: Page, element: string) {
   await page.goto(elementUrl(element))
   await setMode(page, 'Edit')
-  return valueField(page, element)
+  return valueField(page)
 }
 
 test.beforeEach(async ({ page }) => {
@@ -52,7 +52,7 @@ test('edits a property value and shows it after a reload', async ({ page }) => {
 
   await page.reload()
   await setMode(page, 'Edit')
-  await expect(await valueField(page, 'SimpleString')).toHaveValue('edited end to end')
+  await expect(await valueField(page)).toHaveValue('edited end to end')
 })
 
 test('keeps the draft on a conflict and applies it only when asked', async ({ page, request }) => {
@@ -70,7 +70,7 @@ test('keeps the draft on a conflict and applies it only when asked', async ({ pa
   await expect(page.getByText('Applied.')).toBeVisible()
   await page.reload()
   await setMode(page, 'Edit')
-  await expect(await valueField(page, 'SimpleString')).toHaveValue('my draft')
+  await expect(await valueField(page)).toHaveValue('my draft')
 })
 
 test('explains values that do not match the value type', async ({ page }) => {

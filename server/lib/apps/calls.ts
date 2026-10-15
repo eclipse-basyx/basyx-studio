@@ -59,7 +59,7 @@ export async function executeAasMethod (target: AasTarget, method: AasMethodName
     }
     case 'studio.aas.listSubmodels': {
       const refs = await resolveSubmodelRefs(target, await target.submodelIds(params.shellId))
-      return { items: refs.map(({ key: _key, submodelId, ...ref }) => ({ id: submodelId, ...ref })) }
+      return { items: refs.map(({ key: _key, kind: _kind, submodelId, ...ref }) => ({ id: submodelId, ...ref })) }
     }
     case 'studio.aas.getSubmodel': {
       return target.submodel(params.submodelId)

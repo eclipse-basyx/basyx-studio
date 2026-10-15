@@ -43,9 +43,28 @@
 
             <template #append>
               <div class="d-flex align-center ga-1">
-                <WorkspaceActions v-if="target.data.value.workspace" :target="target.data.value" @error="error => (actionError = error)" />
+                <WorkspaceActions
+                  v-if="target.data.value.workspace"
+                  :target="target.data.value"
+                  @error="error => (actionError = error)"
+                  @restored="onRestored"
+                />
 
                 <template v-if="smAndUp">
+                  <v-btn
+                    v-if="canEditShell"
+                    prepend-icon="mdi-pencil-outline"
+                    :text="t('shell.edit')"
+                    @click="editShell"
+                  />
+
+                  <v-btn
+                    v-if="canEditShell && assetKind === 'Type'"
+                    prepend-icon="mdi-content-copy"
+                    :text="t('instance.create')"
+                    @click="instanceOpen = true"
+                  />
+
                   <v-btn
                     v-if="canShare"
                     prepend-icon="mdi-account-multiple-plus-outline"
@@ -89,6 +108,15 @@
                   <v-card>
                     <v-list>
                       <template v-if="!smAndUp">
+                        <v-list-item v-if="canEditShell" prepend-icon="mdi-pencil-outline" :title="t('shell.edit')" @click="editShell" />
+
+                        <v-list-item
+                          v-if="canEditShell && assetKind === 'Type'"
+                          prepend-icon="mdi-content-copy"
+                          :title="t('instance.create')"
+                          @click="instanceOpen = true"
+                        />
+
                         <template v-if="capabilities.export">
                           <v-list-subheader :title="t('shell.export')" />
 
@@ -236,6 +264,14 @@
                 />
 
                 <v-btn
+                  v-if="canEditShell"
+                  prepend-icon="mdi-plus"
+                  size="small"
+                  :text="t('shell.addSubmodel')"
+                  @click="addSubmodelOpen = true"
+                />
+
+                <v-btn
                   v-tooltip="t('shell.expandAll')"
                   :aria-label="t('shell.expandAll')"
                   icon="mdi-unfold-more-horizontal"
@@ -310,6 +346,8 @@
                   <span v-else :class="item.modelType === 'Submodel' ? 'font-weight-semibold' : undefined">
                     {{ item.variableGroup ? t(`variables.${item.variableGroup}`) : item.title }}
                   </span>
+
+                  <v-chip v-if="item.draft" class="ms-2" color="warning" :text="t('edit.draftNode')" />
                 </template>
 
                 <template #append="{ item }">
@@ -327,6 +365,26 @@
                   </template>
 
                   <span v-else-if="item.preview" class="text-body-small text-medium-emphasis text-truncate ms-2">{{ item.preview }}</span>
+
+                  <v-icon
+                    v-if="hasDraft(item)"
+                    v-tooltip="t('edit.unsaved')"
+                    class="ms-1"
+                    color="warning"
+                    icon="mdi-circle-medium"
+                  />
+
+                  <!-- Structure actions: edit mode only (UX-006). One menu for the page (below), so
+                       a refresh of the rows never closes it. -->
+                  <v-btn
+                    v-if="canEditStructure && hasActions(item)"
+                    :aria-label="t('edit.rowMenu')"
+                    class="ms-1"
+                    density="comfortable"
+                    icon="mdi-dots-vertical"
+                    size="x-small"
+                    @click.stop="openRowMenu($event, item)"
+                  />
                 </template>
               </v-treeview>
             </v-card>
@@ -363,9 +421,172 @@
           :target-id="targetId"
         />
 
+        <v-menu v-model="rowMenuOpen" :activator="rowMenuActivator ?? undefined" :close-on-content-click="false" :open-on-click="false">
+          <v-card v-if="menuItem" @click="closeRowMenu">
+            <v-list>
+              <v-list-item
+                v-if="menuItem.modelType === 'Submodel'"
+                prepend-icon="mdi-pencil-outline"
+                :title="t('edit.editSubmodel')"
+                @click="select(menuItem.id)"
+              />
+
+              <v-list-group v-if="isContainerItem(menuItem) && menuItem.modelType !== 'SubmodelElementList'">
+                <template #activator="{ props: group }">
+                  <v-list-item v-bind="group" prepend-icon="mdi-plus" :title="t('edit.addElement')" />
+                </template>
+
+                <v-list-item
+                  v-for="type in addableTypes(menuItem)"
+                  :key="type"
+                  :prepend-icon="modelTypeIcon(type)"
+                  :title="type"
+                  @click="startCreate(menuItem, type)"
+                />
+              </v-list-group>
+
+              <v-list-item
+                v-else-if="isContainerItem(menuItem)"
+                prepend-icon="mdi-plus"
+                :title="t('edit.addElement')"
+                @click="startCreate(menuItem, null)"
+              />
+
+              <v-list-item
+                v-if="isContainerItem(menuItem) && clipboardStore.copied"
+                prepend-icon="mdi-content-paste"
+                :subtitle="clipboardStore.copied.label"
+                :title="t('edit.paste')"
+                @click="pasteInto(menuItem)"
+              />
+
+              <v-list-item
+                v-if="isContainerItem(menuItem)"
+                prepend-icon="mdi-code-json"
+                :title="t('edit.insertJson')"
+                @click="jsonTarget = menuItem"
+              />
+
+              <template v-if="menuItem.modelType === 'Submodel' && capabilities.createResources">
+                <v-list-item
+                  v-if="menuItem.kind === 'Template'"
+                  prepend-icon="mdi-file-replace-outline"
+                  :title="t('edit.convert')"
+                  @click="convertTarget = menuItem"
+                />
+
+                <v-list-item base-color="error" prepend-icon="mdi-file-remove-outline" :title="t('edit.removeSubmodel')" @click="removeSubmodelTarget = menuItem" />
+              </template>
+
+              <template v-if="menuItem.elementKey">
+                <v-divider v-if="isContainerItem(menuItem)" class="my-1" />
+                <v-list-item prepend-icon="mdi-content-copy" :title="t('edit.copy')" @click="copyElement(menuItem)" />
+                <v-list-item prepend-icon="mdi-link-variant" :title="t('edit.copyReference')" @click="copyReference(menuItem)" />
+                <v-list-item prepend-icon="mdi-content-duplicate" :title="t('edit.duplicate')" @click="duplicate(menuItem)" />
+
+                <v-divider class="my-1" />
+                <v-list-item :disabled="!canMove(menuItem) || position(menuItem) <= 0" prepend-icon="mdi-arrow-up" :title="t('edit.moveUp')" @click="move(menuItem, -1)" />
+                <v-list-item :disabled="!canMove(menuItem) || position(menuItem) < 0 || position(menuItem) >= siblingCount(menuItem) - 1" prepend-icon="mdi-arrow-down" :title="t('edit.moveDown')" @click="move(menuItem, 1)" />
+
+                <v-divider class="my-1" />
+                <v-list-item base-color="error" prepend-icon="mdi-delete-outline" :title="t('edit.delete')" @click="pendingDelete = menuItem" />
+              </template>
+            </v-list>
+          </v-card>
+        </v-menu>
+
+        <v-dialog max-width="460" :model-value="convertTarget !== null" @update:model-value="open => { if (!open) convertTarget = null }">
+          <DialogCard :title="t('edit.convertTitle')">
+            {{ t('edit.convertText', { name: convertTarget?.title ?? '' }) }}
+
+            <template #actions>
+              <v-btn :text="t('common.cancel')" @click="convertTarget = null" />
+              <v-btn-primary :loading="converting" :text="t('edit.convert')" @click="convertToInstance" />
+            </template>
+          </DialogCard>
+        </v-dialog>
+
+        <v-dialog max-width="480" :model-value="removeSubmodelTarget !== null" @update:model-value="open => { if (!open) removeSubmodelTarget = null }">
+          <DialogCard :title="t('edit.removeSubmodelTitle', { name: removeSubmodelTarget?.title ?? '' })">
+            {{ t('edit.removeSubmodelText') }}
+
+            <v-checkbox v-model="alsoDelete" class="mt-2" :label="t('edit.alsoDelete')" />
+
+            <template #actions>
+              <v-btn :text="t('common.cancel')" @click="removeSubmodelTarget = null" />
+              <v-btn-primary color="error" :loading="removingSubmodel" :text="t('edit.removeSubmodel')" @click="removeSubmodel" />
+            </template>
+          </DialogCard>
+        </v-dialog>
+
+        <SubmodelAddDialog v-model="addSubmodelOpen" :shell-key="shellKey" :target-id="targetId" @added="afterShellChange" />
+
+        <InstanceDialog
+          v-model="instanceOpen"
+          :name="shellLabel"
+          :shell-key="shellKey"
+          :target-id="targetId"
+          @created="onInstanceCreated"
+        />
+
+        <JsonInsertDialog
+          :kind="'element'"
+          :model-value="jsonTarget !== null"
+          :submit="insertJson"
+          :target-id="targetId"
+          :title="t('edit.insertJsonTitle', { name: jsonTarget?.title ?? '' })"
+          @update:model-value="open => { if (!open) jsonTarget = null }"
+        />
+
+        <v-dialog max-width="420" :model-value="pendingDelete !== null" @update:model-value="open => { if (!open) pendingDelete = null }">
+          <DialogCard :title="t('edit.deleteTitle')">
+            {{ t('edit.deleteText', { name: pendingDelete?.title ?? '', type: pendingDelete?.modelType ?? '' }) }}
+
+            <template #actions>
+              <v-btn :text="t('common.cancel')" @click="pendingDelete = null" />
+              <v-btn-primary color="error" :loading="removing" :text="t('edit.delete')" @click="removeElement" />
+            </template>
+          </DialogCard>
+        </v-dialog>
+
         <v-dialog v-model="confirmDelete" max-width="420">
           <DialogCard :title="t('shell.deleteTitle')">
-            {{ t('shell.deleteText', { name: shellLabel, count: submodelRefs.length }) }}
+            <p class="text-body-medium mb-2">{{ t('shell.deleteText', { name: shellLabel }) }}</p>
+
+            <template v-if="submodelRefs.length > 0">
+              <v-checkbox v-model="alsoDeleteSubmodels" :label="t('shell.alsoDeleteSubmodels', submodelRefs.length)" />
+
+              <v-expand-transition>
+                <v-sheet
+                  v-if="alsoDeleteSubmodels"
+                  border
+                  class="overflow-y-auto"
+                  color="transparent"
+                  max-height="200"
+                  rounded="lg"
+                >
+                  <v-list>
+                    <v-list-subheader>{{ t('shell.affectedSubmodels') }}</v-list-subheader>
+
+                    <v-list-item
+                      v-for="submodelRef in submodelRefs"
+                      :key="submodelRef.key"
+                      prepend-icon="mdi-file-tree-outline"
+                      :subtitle="submodelRef.submodelId"
+                      :title="submodelRef.idShort ?? submodelRef.submodelId"
+                    />
+                  </v-list>
+                </v-sheet>
+              </v-expand-transition>
+
+              <v-alert
+                v-if="alsoDeleteSubmodels"
+                class="mt-3"
+                density="compact"
+                :text="t('shell.sharedWarning')"
+                type="warning"
+              />
+            </template>
 
             <template #actions>
               <v-btn :text="t('common.cancel')" @click="confirmDelete = false" />
@@ -384,29 +605,40 @@
       :can-invoke="canInvoke"
       :can-write="canWrite"
       :capabilities="capabilities"
+      :creating="creating"
+      :editing-shell="editingShell"
       :history="selectedItem ? (trees.history.value.get(selectedItem.id) ?? []) : []"
       :item="selectedItem"
       :refreshing="Boolean(refreshSeconds)"
+      :shell-detail="shell.data.value"
       :shell-id="shellId"
       :submodel-label="selectedSubmodelLabel"
       :submodel-ref="selectedRef"
       :target="target.data.value"
+      @cancel-create="creating = null"
       @changed="onElementChanged"
+      @close-shell="editingShell = false"
+      @created="onCreated"
       @select="select"
+      @shell-changed="onShellChanged"
     />
   </div>
 </template>
 
 <script lang="ts" setup>
-  import type { DeleteResult, EffectiveRights, ElementDetail, ShellDetail, SubmodelRef, TargetCapabilities } from '#shared/contract'
+  import type { ElementModelType } from '#shared/aas/defaults'
+  import type { DeleteResult, EffectiveRights, ElementDetail, ShellCreateResult, ShellDetail, SubmodelRef, Target, TargetCapabilities } from '#shared/contract'
   import type { ShellTreeItem } from '~/composables/useShellTrees'
+  import type { StructureAction } from '~/stores/structureActions'
   import type { DetailsMode } from '~/utils/aas'
+  import type { CreatingElement } from '~/utils/editor'
   import { useQuery, useQueryCache } from '@pinia/colada'
   import { useDisplay } from 'vuetify'
+  import { childTypesFor, isContainerType, newElement, uniqueIdShort } from '#shared/aas/defaults'
   import { apiBasePath, noCapabilities } from '#shared/contract'
   import { expandAllCap, itemId, levelPageSize } from '~/composables/useShellTrees'
   import { StudioApiError } from '~/composables/useStudioApi'
-  import { detailsModes, langText, modelTypeIcon } from '~/utils/aas'
+  import { decodeResourceKey, detailsModes, langText, modelTypeIcon } from '~/utils/aas'
   import { identificationLinkSvg, svgDataUrl } from '~/utils/qr'
 
   const { t, locale } = useI18n()
@@ -420,6 +652,7 @@
   const preferences = usePreferences()
   const notifications = useNotificationsStore()
   const { smAndUp, mdAndUp } = useDisplay()
+  const draftSuffix = '#draft'
 
   const targetId = computed(() => String(route.params.targetId))
   const shellKey = computed(() => String(route.params.shellKey))
@@ -478,6 +711,9 @@
   // In view mode nothing can be changed (plan D8); with sharing, the user's rights decide (D15).
   const asOf = ref<Date | null>(null)
   const canWrite = computed(() => ui.editing && capabilities.value.write && can('update') && !asOf.value)
+  // Structure actions need the target to accept structural writes (MVP-5 plan, P1).
+  const canEditShell = computed(() => ui.editing && capabilities.value.createResources && can('update') && !asOf.value)
+  const canEditStructure = computed(() => ui.editing && capabilities.value.writeStructure && can('update') && !asOf.value)
   const canDelete = computed(() => ui.editing && capabilities.value.deleteShells && can('delete'))
   const canInvoke = computed(() => capabilities.value.operations && can('execute') && !asOf.value)
   const canShare = computed(() => capabilities.value.sharing && can('manage'))
@@ -524,7 +760,33 @@
     opened: () => opened.value,
     unpaged: () => Boolean(treeSearch.value),
   })
-  const treeItems = computed(() => trees.items.value.map(item => item.unavailable ? { ...item, disabled: true } : item))
+  const treeItems = computed(() => {
+    const items = trees.items.value.map(item => item.unavailable ? { ...item, disabled: true } : item)
+    const draft = creating.value
+    if (!draft) {
+      return items
+    }
+    // The element being created is a row of its own, marked as a draft (U4).
+    const parentId = draft.parentKey ? itemId(draft.submodelKey, draft.parentKey) : draft.submodelKey
+    const row: ShellTreeItem = {
+      id: `${parentId}${draftSuffix}`,
+      title: String(draft.element.idShort ?? draft.element.modelType),
+      modelType: String(draft.element.modelType),
+      submodelKey: draft.submodelKey,
+      elementKey: null,
+      semanticId: null,
+      preview: null,
+      valueType: null,
+      variableGroup: null,
+      unavailable: null,
+      refreshable: false,
+      draft: true,
+    }
+    const insert = (list: ShellTreeItem[]): ShellTreeItem[] => list.map(item => item.id === parentId
+      ? { ...item, children: [...(item.children ?? []), row] }
+      : (item.children ? { ...item, children: insert(item.children) } : item))
+    return insert(items)
+  })
 
   async function loadChildren (raw: unknown) {
     await trees.loadChildren(raw as ShellTreeItem)
@@ -585,6 +847,12 @@
       trees.showMore(found.more.parent)
       return
     }
+    // A new element's draft stays in the draft store; the form closes.
+    if (id?.endsWith(draftSuffix)) {
+      return
+    }
+    creating.value = null
+    editingShell.value = false
     void router.replace({ query: { ...route.query, submodel: found?.submodelKey, element: found?.elementKey ?? undefined } })
     ui.detailsDrawer = Boolean(found)
   }
@@ -661,12 +929,342 @@
   }, { immediate: true })
 
   async function onElementChanged (detail: ElementDetail) {
-    if (selectedItem.value) {
-      await trees.refresh(selectedItem.value.submodelKey)
+    const item = selectedItem.value
+    if (item) {
+      await trees.refresh(item.submodelKey)
     }
     // A workspace now has unsaved changes.
     await queryCache.invalidateQueries({ key: ['targets', targetId.value], exact: true })
-    void detail
+    // A rename or move gives the element a new path: the selection and URL follow (W3).
+    if (item?.elementKey && detail.key !== item.elementKey) {
+      select(itemId(item.submodelKey, detail.key))
+    }
+  }
+
+  // Structure editing (MVP-5 plan, U3, U4, U6, C1)
+  const clipboardStore = useClipboardStore()
+  const drafts = useDraftStore()
+  const structure = useStructureEdits(() => targetId.value)
+  const creating = ref<CreatingElement | null>(null)
+  const editingShell = ref(false)
+  const rowMenuOpen = ref(false)
+  const rowMenuActivator = ref<HTMLElement | null>(null)
+  const rowMenuItem = ref<ShellTreeItem | null>(null)
+  // A snapshot of the row: refreshes of the tree do not rebuild the open menu.
+  const menuItem = computed(() => rowMenuItem.value)
+
+  /** Choosing an action closes the menu; opening the type group does not. */
+  function closeRowMenu (event: MouseEvent) {
+    if (!(event.target as HTMLElement).closest('.v-list-group__header')) {
+      rowMenuOpen.value = false
+    }
+  }
+
+  function openRowMenu (event: MouseEvent, item: ShellTreeItem) {
+    rowMenuItem.value = item
+    rowMenuActivator.value = event.currentTarget as HTMLElement
+    rowMenuOpen.value = true
+  }
+  const addSubmodelOpen = ref(false)
+  const instanceOpen = ref(false)
+  const jsonTarget = ref<ShellTreeItem | null>(null)
+  const convertTarget = ref<ShellTreeItem | null>(null)
+  const converting = ref(false)
+  const removeSubmodelTarget = ref<ShellTreeItem | null>(null)
+  const alsoDelete = ref(false)
+  const removingSubmodel = ref(false)
+  const pendingDelete = ref<ShellTreeItem | null>(null)
+  const removing = ref(false)
+
+  const hasDraft = (item: ShellTreeItem) => !item.more && !item.draft && drafts.has(targetId.value, item.submodelKey, item.elementKey ?? 'submodel')
+  const isContainerItem = (item: ShellTreeItem) => item.modelType === 'Submodel' || isContainerType(item.modelType)
+  function hasActions (item: ShellTreeItem) {
+    return !item.more && !item.unavailable && !item.variableGroup && item.modelType !== 'OperationVariables'
+      && (item.modelType === 'Submodel' ? isContainerItem(item) : !item.elementKey?.includes('@'))
+  }
+  const addableTypes = (item: ShellTreeItem) => childTypesFor(item.modelType === 'Submodel' ? null : { modelType: item.modelType })
+
+  const siblings = (item: ShellTreeItem) => (trees.parentOf(item.id)?.children ?? []).filter(child => !child.more)
+  // Named children keep an order only where the target stores one; list items always do.
+  const canMove = (item: ShellTreeItem) => capabilities.value.orderedChildren || (decodeResourceKey(item.elementKey ?? '') ?? '').endsWith(']')
+  const position = (item: ShellTreeItem) => siblings(item).findIndex(child => child.id === item.id)
+  const siblingCount = (item: ShellTreeItem) => siblings(item).length
+
+  /** The revision of the children of a container, loading its level first. */
+  async function structureRevisionOf (item: Pick<ShellTreeItem, 'id' | 'submodelKey' | 'elementKey'>): Promise<string> {
+    await trees.loadChildren(item)
+    const revision = trees.structureRevision(item.id)
+    if (!revision) {
+      throw new StudioApiError({ type: 'about:blank', title: 'The structure is not known yet', status: 412, code: 'structure_conflict', requestId: '', retryable: true })
+    }
+    return revision
+  }
+
+  async function guard (work: () => Promise<void>) {
+    actionError.value = null
+    try {
+      await work()
+    } catch (error) {
+      actionError.value = error
+      // A conflict means the tree is out of date.
+      if (error instanceof StudioApiError && ['structure_conflict', 'revision_conflict'].includes(error.code) && selectedItem.value) {
+        await trees.refresh(selectedItem.value.submodelKey)
+      }
+    }
+  }
+
+  function editShell () {
+    creating.value = null
+    editingShell.value = true
+    ui.detailsDrawer = true
+  }
+
+  /** Something about the shell changed: its header, references and tree are read again. */
+  async function afterShellChange () {
+    await queryCache.invalidateQueries({ key: ['targets', targetId.value] })
+    await trees.reload()
+  }
+
+  async function onShellChanged () {
+    await queryCache.invalidateQueries({ key: ['targets', targetId.value] })
+  }
+
+  async function onRestored () {
+    await afterShellChange()
+  }
+
+  async function onInstanceCreated (result: ShellCreateResult) {
+    await queryCache.invalidateQueries({ key: ['targets', targetId.value] })
+    notifications.notify({ text: t('instance.created', { name: result.shell.idShort ?? result.shell.id }), color: 'success' })
+    await router.push(`/targets/${targetId.value}/shells/${result.shell.key}`)
+  }
+
+  async function insertJson (value: Record<string, unknown>) {
+    const parent = jsonTarget.value!
+    const revision = await structureRevisionOf(parent)
+    const names = (parent.children ?? []).filter(child => !child.more).map(child => child.title)
+    const added = await structure.paste(parent.submodelKey, parent.elementKey, revision, value, names, parent.modelType === 'SubmodelElementList')
+    opened.value = [...new Set([...opened.value, parent.id])]
+    await afterStructureChange(parent.submodelKey)
+    select(itemId(parent.submodelKey, added.key))
+  }
+
+  async function convertToInstance () {
+    const item = convertTarget.value
+    if (!item) {
+      return
+    }
+    converting.value = true
+    await guard(async () => {
+      const result = await api<{ removedQualifiers: number }>(`/targets/${targetId.value}/submodels/${item.submodelKey}/instance-conversions`, { method: 'POST' })
+      notifications.notify({ text: t('edit.converted', { name: item.title, count: result.removedQualifiers }), color: 'success' })
+      await afterShellChange()
+    })
+    converting.value = false
+    convertTarget.value = null
+  }
+
+  async function removeSubmodel () {
+    const item = removeSubmodelTarget.value
+    if (!item) {
+      return
+    }
+    removingSubmodel.value = true
+    await guard(async () => {
+      await api(`/targets/${targetId.value}/shells/${shellKey.value}/submodel-refs/${item.submodelKey}`, {
+        method: 'DELETE',
+        query: { deleteSubmodel: String(alsoDelete.value) },
+      })
+      if (selectedItem.value?.submodelKey === item.submodelKey) {
+        select(null)
+      }
+      await afterShellChange()
+    })
+    removingSubmodel.value = false
+    removeSubmodelTarget.value = null
+    alsoDelete.value = false
+  }
+
+  // ⌘Z and ⇧⌘Z undo and redo on workspaces, until Save or Close (W8); live
+  // targets have no undo, and text fields keep their own.
+  const workspaceId = computed(() => target.data.value?.workspace ? targetId.value : null)
+  function onKeydown (event: KeyboardEvent) {
+    if (!ui.editing || !workspaceId.value || !capabilities.value.undo || !(event.metaKey || event.ctrlKey) || event.key.toLowerCase() !== 'z') {
+      return
+    }
+    const active = event.target as HTMLElement | null
+    if (active?.closest('input, textarea, [contenteditable="true"], .monaco-editor')) {
+      return
+    }
+    event.preventDefault()
+    const workspace = target.data.value?.workspace
+    const kind = event.shiftKey ? 'redos' : 'undos'
+    if ((kind === 'undos' && !workspace?.canUndo) || (kind === 'redos' && !workspace?.canRedo)) {
+      return
+    }
+    void guard(async () => {
+      const updated = await api<Target>(`/workspaces/${workspaceId.value}/${kind}`, { method: 'POST' })
+      queryCache.setQueryData(['targets', updated.id], updated)
+      await afterShellChange()
+    })
+  }
+  onMounted(() => globalThis.addEventListener('keydown', onKeydown))
+  onBeforeUnmount(() => globalThis.removeEventListener('keydown', onKeydown))
+
+  // The selected node's actions are in the command palette too (U3).
+  const structureActions = useStructureActionsStore()
+  watchEffect(() => {
+    const item = selectedItem.value
+    if (!canEditStructure.value || !item || !hasActions(item)) {
+      structureActions.set([])
+      return
+    }
+    const actions: StructureAction[] = []
+    if (isContainerItem(item)) {
+      actions.push(
+        { key: 'add', title: t('palette.structure.add', { name: item.title }), icon: 'mdi-plus', run: () => void startCreate(item, item.modelType === 'SubmodelElementList' ? null : 'Property') },
+        { key: 'json', title: t('palette.structure.json', { name: item.title }), icon: 'mdi-code-json', run: () => (jsonTarget.value = item) },
+        ...(clipboardStore.copied
+          ? [{ key: 'paste', title: t('palette.structure.paste', { name: item.title }), icon: 'mdi-content-paste', run: () => void pasteInto(item) }]
+          : []),
+      )
+    }
+    if (item.elementKey) {
+      actions.push(
+        { key: 'copy', title: t('palette.structure.copy', { name: item.title }), icon: 'mdi-content-copy', run: () => void copyElement(item) },
+        { key: 'duplicate', title: t('palette.structure.duplicate', { name: item.title }), icon: 'mdi-content-duplicate', run: () => void duplicate(item) },
+        { key: 'delete', title: t('palette.structure.delete', { name: item.title }), icon: 'mdi-delete-outline', run: () => (pendingDelete.value = item) },
+      )
+    }
+    structureActions.set(actions)
+  })
+  onBeforeUnmount(() => structureActions.set([]))
+
+  async function startCreate (item: ShellTreeItem, modelType: ElementModelType | null) {
+    await guard(async () => {
+      const revision = await structureRevisionOf(item)
+      const parent = item.elementKey ? (await structure.read(item.submodelKey, item.elementKey)).value as Record<string, unknown> : null
+      const inList = parent?.modelType === 'SubmodelElementList'
+      const type = (inList ? parent.typeValueListElement : modelType) as ElementModelType
+      const taken = (item.children ?? []).filter(child => !child.more).map(child => child.title)
+      creating.value = {
+        submodelKey: item.submodelKey,
+        parentKey: item.elementKey,
+        parentLabel: item.title,
+        structureRevision: revision,
+        index: null,
+        element: newElement(type, inList ? null : uniqueIdShort(type, taken), parent),
+        isListChild: inList,
+      }
+      opened.value = [...new Set([...opened.value, item.id])]
+      ui.detailsDrawer = true
+    })
+  }
+
+  async function afterStructureChange (submodelKey: string) {
+    await trees.refresh(submodelKey)
+    await queryCache.invalidateQueries({ key: ['targets', targetId.value], exact: true })
+  }
+
+  async function onCreated (detail: ElementDetail) {
+    const submodelKey = creating.value?.submodelKey
+    creating.value = null
+    if (submodelKey) {
+      await afterStructureChange(submodelKey)
+      select(itemId(submodelKey, detail.key))
+    }
+  }
+
+  async function removeElement () {
+    const item = pendingDelete.value
+    if (!item?.elementKey) {
+      return
+    }
+    removing.value = true
+    await guard(async () => {
+      await structure.remove(item.submodelKey, item.elementKey!)
+      notifications.notify({ text: t('edit.deleted', { name: item.title }), color: 'success' })
+      const parent = trees.parentOf(item.id)
+      const wasSelected = selectedId.value === item.id || selectedId.value?.startsWith(`${item.id}/`)
+      await afterStructureChange(item.submodelKey)
+      if (wasSelected) {
+        select(parent?.id ?? null)
+      }
+    })
+    removing.value = false
+    pendingDelete.value = null
+  }
+
+  async function move (item: ShellTreeItem, delta: -1 | 1) {
+    await guard(async () => {
+      const parent = trees.parentOf(item.id)
+      if (!parent || !item.elementKey) {
+        return
+      }
+      const revision = await structureRevisionOf(parent)
+      const moved = await structure.move(item.submodelKey, item.elementKey, position(item) + delta, revision)
+      await afterStructureChange(item.submodelKey)
+      if (selectedId.value === item.id) {
+        select(itemId(item.submodelKey, moved.key))
+      }
+    })
+  }
+
+  async function copyElement (item: ShellTreeItem) {
+    await guard(async () => {
+      const detail = await structure.read(item.submodelKey, item.elementKey!)
+      const element = detail.value as Record<string, unknown>
+      clipboardStore.copy({ element, label: `${item.modelType} ${item.title}` })
+      // As AAS JSON on the system clipboard too (C1).
+      await copy(JSON.stringify(element, null, 2), item.title)
+    })
+  }
+
+  /** A model reference to an element, for reference fields (C2). */
+  async function copyReference (item: ShellTreeItem) {
+    const submodelId = decodeResourceKey(item.submodelKey)
+    const locator = decodeResourceKey(item.elementKey!)
+    if (!submodelId || !locator) {
+      return
+    }
+    const segments = locator.match(/[^.[\]]+/g) ?? []
+    const keys = [
+      { type: 'Submodel', value: submodelId },
+      ...segments.map((segment, index) => ({ type: index === segments.length - 1 ? item.modelType : 'SubmodelElement', value: segment })),
+    ]
+    clipboardStore.copyReference({ type: 'ModelReference', keys })
+    notifications.notify({ text: t('edit.referenceCopied', { name: item.title }), color: 'info' })
+  }
+
+  async function pasteInto (parent: ShellTreeItem) {
+    const copied = clipboardStore.copied
+    if (!copied) {
+      return
+    }
+    await guard(async () => {
+      const revision = await structureRevisionOf(parent)
+      const names = (parent.children ?? []).filter(child => !child.more).map(child => child.title)
+      const added = await structure.paste(parent.submodelKey, parent.elementKey, revision, copied.element, names, parent.modelType === 'SubmodelElementList')
+      notifications.notify({ text: t('edit.pasted', { name: String(added.path) }), color: 'success' })
+      opened.value = [...new Set([...opened.value, parent.id])]
+      await afterStructureChange(parent.submodelKey)
+      select(itemId(parent.submodelKey, added.key))
+    })
+  }
+
+  async function duplicate (item: ShellTreeItem) {
+    await guard(async () => {
+      const parent = trees.parentOf(item.id)
+      if (!parent) {
+        return
+      }
+      const element = (await structure.read(item.submodelKey, item.elementKey!)).value as Record<string, unknown>
+      const revision = await structureRevisionOf(parent)
+      const names = (parent.children ?? []).filter(child => !child.more).map(child => child.title)
+      const added = await structure.paste(item.submodelKey, parent.elementKey, revision, element, names, parent.modelType === 'SubmodelElementList')
+      await afterStructureChange(item.submodelKey)
+      select(itemId(item.submodelKey, added.key))
+    })
   }
 
   const shareOpen = ref(false)
@@ -675,6 +1273,7 @@
   const globalAssetId = computed(() => typeof shellJson.value.assetInformation?.globalAssetId === 'string' ? shellJson.value.assetInformation.globalAssetId as string : null)
   const qrPreview = computed(() => globalAssetId.value ? svgDataUrl(identificationLinkSvg(globalAssetId.value)) : '')
   const confirmDelete = ref(false)
+  const alsoDeleteSubmodels = ref(false)
   const deleting = ref(false)
   const actionError = ref<unknown>(null)
 
@@ -682,7 +1281,7 @@
     deleting.value = true
     actionError.value = null
     try {
-      const result = await api<DeleteResult>(`/targets/${targetId.value}/shells/${shellKey.value}`, { method: 'DELETE' })
+      const result = await api<DeleteResult>(`/targets/${targetId.value}/shells/${shellKey.value}`, { method: 'DELETE', query: { deleteSubmodels: String(alsoDeleteSubmodels.value) } })
       confirmDelete.value = false
       const failed = result.sync.filter(step => step.outcome === 'failed').length
       notifications.notify(failed > 0
