@@ -36,6 +36,13 @@ export async function launchStudio (): Promise<{ app: ElectronApplication, windo
     env: { ...process.env, STUDIO_USER_DATA_DIR: join(directory, 'user-data') },
   })
   const window = await app.firstWindow()
+  // A new profile starts with the welcome screen over the app; a click skips
+  // its intro, and Enter Studio closes it for this start.
+  const welcome = window.getByRole('dialog')
+  await expect(welcome).toBeVisible({ timeout: 30_000 })
+  await welcome.click()
+  await welcome.getByRole('button', { name: 'Enter Studio' }).click()
+  await expect(welcome).toBeHidden()
   await expect(window.getByRole('heading', { name: 'AAS targets' })).toBeVisible({ timeout: 30_000 })
   return { app, window, directory }
 }
