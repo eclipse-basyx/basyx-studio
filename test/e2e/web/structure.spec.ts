@@ -21,6 +21,9 @@ async function cleanup () {
   }
   await fetch(`${openTargetUrl}/shell-descriptors`, { method: 'POST', headers, body: JSON.stringify({ id: shellId, endpoints: [{ interface: 'AAS-3.0', protocolInformation: { href: `${openTargetUrl}/shells/${key(shellId)}` } }] }) })
   await fetch(`${openTargetUrl}/shells/${key(shellId)}`, { method: 'DELETE' })
+  // The repository registers every new shell, so a descriptor left behind
+  // makes the next create of this identifier fail with 409.
+  await fetch(`${openTargetUrl}/shell-descriptors/${key(shellId)}`, { method: 'DELETE' })
   for (const id of ids) {
     await fetch(`${openTargetUrl}/submodels/${key(id)}`, { method: 'DELETE' })
   }
