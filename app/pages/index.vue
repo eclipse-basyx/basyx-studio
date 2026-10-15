@@ -190,8 +190,9 @@
     return target.securityMode ?? 'workspace'
   }
 
-  const search = ref<string | null>(null)
-  const selected = ref<string[]>([])
+  // Kept while the user visits other pages (usePageState).
+  const search = usePageState<string | null>('targets:search', () => null)
+  const selected = usePageState<string[]>('targets:filters', () => [])
 
   // Filters for the states and kinds of access that occur; a group with a
   // single option would not filter anything. Local packages are an access kind.
@@ -213,11 +214,11 @@
   ].filter(group => group.options.length > 1))
 
   // Cards for a few targets, rows for many, until the user picks a view;
-  // the choice is kept in a cookie, so server rendering shows it too.
-  const viewCookie = useCookie<'grid' | 'list' | null>('studio-targets-view', { default: () => null, maxAge: 60 * 60 * 24 * 365 })
+  // the choice is a user preference, saved in the background.
+  const preferences = usePreferences()
   const view = computed({
-    get: () => viewCookie.value ?? (items.value.length > 6 ? 'list' : 'grid'),
-    set: value => (viewCookie.value = value),
+    get: () => preferences.preferences.value.targetsView ?? (items.value.length > 6 ? 'list' : 'grid'),
+    set: value => void preferences.update(current => ({ ...current, targetsView: value })),
   })
 
   const filtered = computed(() => filterRecords(items.value, search.value, selected.value, target => ({

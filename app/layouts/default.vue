@@ -254,6 +254,7 @@
   import { useQuery } from '@pinia/colada'
   import { useDisplay, useHotkey, useTheme } from 'vuetify'
   import basyxLogo from '~/assets/basyx-logo.svg'
+  import { sectionOf } from '~/stores/navigation'
 
   const { t } = useI18n()
   const theme = useTheme()
@@ -327,8 +328,20 @@
         items.push({ key: 'concepts', title: t('nav.concepts'), short: t('nav.conceptsShort'), icon: 'mdi-book-open-page-variant-outline', to: `${base}/concepts` })
       }
     }
-    return [...items, ...moduleItems.value]
+    // Returning to another section continues where the user left it (an
+    // open panel covers the current section too); inside the section, the
+    // item leads to its start.
+    const currentSection = panel.current.value ? null : sectionOf(route.path)
+    return [...items, ...moduleItems.value].map(item => typeof item.to === 'string' && !item.exact && sectionOf(item.to) !== currentSection
+      ? { ...item, to: navigation.resume(item.to) }
+      : item)
   })
+
+  const navigation = useNavigationStore()
+  watch(() => route.fullPath, () => {
+    const { panel: _, ...query } = route.query
+    navigation.remember(route.path, router.resolve({ path: route.path, query, hash: route.hash }).fullPath)
+  }, { immediate: true })
 
   // Settings and administration are panels over the current page: their
   // items open and close them instead of navigating.

@@ -108,8 +108,9 @@
   const loading = ref(false)
   const truncated = ref(false)
   const error = ref<unknown>(null)
-  const search = ref<string | null>('')
-  const source = ref<string | null>(null)
+  // Kept per target while the user visits other pages (usePageState).
+  const search = usePageState<string | null>(() => `concepts:${targetId.value}:search`, () => '')
+  const source = usePageState<string | null>(() => `concepts:${targetId.value}:source`, () => null)
 
   // Columns and filters only for what the data has (D18).
   const sources = computed(() => [...new Set(rows.value.map(row => row.source))].filter(entry => entry !== 'Other').toSorted())

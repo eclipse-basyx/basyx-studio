@@ -27,6 +27,8 @@ export const preferencesSchema = z.object({
   uiLanguage: z.enum(localeCodes).nullable().default(null).catch(null),
   valueLanguage: z.string().regex(/^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})?$/).default('en'),
   theme: z.enum(['system', 'light', 'dark']).default('system'),
+  /** View of the AAS targets list; `null` picks cards for a few targets and rows for many. */
+  targetsView: z.enum(['grid', 'list']).nullable().default(null).catch(null),
   /** Off by default, as auto-sync in the BaSyx Web UI: every open shell would poll its infrastructure. */
   autoRefresh: z.boolean().default(false),
   refreshIntervalSeconds: z.number().int().min(1).max(300).default(5),
