@@ -90,8 +90,8 @@
           <v-spacer />
 
           <v-btn-toggle v-model="view" :aria-label="t('home.view.label')" mandatory>
-            <v-btn v-tooltip="t('home.view.grid')" :aria-label="t('home.view.grid')" icon="mdi-view-grid-outline" value="grid" />
-            <v-btn v-tooltip="t('home.view.list')" :aria-label="t('home.view.list')" icon="mdi-view-list-outline" value="list" />
+            <v-btn-toggle-icon v-tooltip="t('home.view.grid')" :aria-label="t('home.view.grid')" icon="mdi-view-grid-outline" value="grid" />
+            <v-btn-toggle-icon v-tooltip="t('home.view.list')" :aria-label="t('home.view.list')" icon="mdi-view-list-outline" value="list" />
           </v-btn-toggle>
         </div>
 

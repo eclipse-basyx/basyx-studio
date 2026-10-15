@@ -94,6 +94,11 @@ export default defineVuetifyConfiguration({
     // A further action beside the main one, e.g. on the left of a dialog's
     // actions: bordered and filled, as in the BaSyx AAS Web UI and shadcn.
     VBtnSecondary: 'VBtn',
+    // An icon-only button in a v-btn-toggle. The toggle hands its compact
+    // density to every v-btn, which squeezes an icon button to 28 px around a
+    // 24 px icon; an alias only reads its own defaults, so this one keeps room
+    // around a smaller icon.
+    VBtnToggleIcon: 'VBtn',
     // Pane container of a full-height page area: fixed height, scrolling body.
     VCardPane: 'VCard',
     // Records in a bordered card (infrastructures, targets, apps), divided by
@@ -115,6 +120,8 @@ export default defineVuetifyConfiguration({
     // One bordered group, divided between its buttons. Only the group is
     // rounded: the buttons' own rounding (VBtn above) would show at the dividers.
     VBtnToggle: { density: 'compact', rounded: 'lg', color: 'primary', border: true, divided: true, variant: 'text', VBtn: { rounded: false } },
+    // As the toggle's own buttons (VBtnGroup sets height, flat and the rest).
+    VBtnToggleIcon: { color: 'primary', variant: 'text', flat: true, height: 'auto', rounded: false, density: 'comfortable', VIcon: { size: 'small' } },
     VCard: { flat: true, border: true, rounded: 'lg' },
     VCardPane: {
       flat: true,

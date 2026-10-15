@@ -9,21 +9,19 @@
 
     <!-- Undo and redo of applied changes until Save or Close (W8) -->
     <v-btn-toggle v-if="target.capabilities.undo && ui.editing" class="flex-grow-0">
-      <v-btn
+      <v-btn-toggle-icon
         v-tooltip="t('workspace.undo')"
         :aria-label="t('workspace.undo')"
         :disabled="!target.workspace?.canUndo || busy !== null"
         icon="mdi-undo"
-        size="small"
         @click="restore('undos')"
       />
 
-      <v-btn
+      <v-btn-toggle-icon
         v-tooltip="t('workspace.redo')"
         :aria-label="t('workspace.redo')"
         :disabled="!target.workspace?.canRedo || busy !== null"
         icon="mdi-redo"
-        size="small"
         @click="restore('redos')"
       />
     </v-btn-toggle>
