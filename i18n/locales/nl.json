@@ -713,6 +713,7 @@
   },
   "settings": {
     "title": "Instellingen",
+    "close": "Instellingen sluiten",
     "subtitle": "Weergave en live gegevens, opgeslagen voor je account",
     "appearance": "Weergave",
     "theme": "Thema",

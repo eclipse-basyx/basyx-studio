@@ -13,6 +13,8 @@ export const useUiStore = defineStore('ui', () => {
   const detailsDrawer = ref(false)
   /** Easter egg: the arcade theme, toggled with the Konami code until the next reload. */
   const arcade = ref(false)
+  /** The page Settings was opened from; closing Settings returns there. */
+  const settingsReturn = ref<string | null>(null)
 
   const editing = computed(() => mode.value === 'edit')
 
@@ -20,5 +22,5 @@ export const useUiStore = defineStore('ui', () => {
     mode.value = mode.value === 'edit' ? 'view' : 'edit'
   }
 
-  return { mode, editing, commandOpen, listDrawer, detailsDrawer, arcade, toggleMode }
+  return { mode, editing, commandOpen, listDrawer, detailsDrawer, arcade, settingsReturn, toggleMode }
 })

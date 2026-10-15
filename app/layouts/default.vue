@@ -202,6 +202,7 @@
             v-for="item in footerItems"
             :key="item.key"
             v-tooltip:end="item.title"
+            :active="item.active"
             :aria-label="item.title"
             :prepend-icon="item.icon"
             :to="item.to"
@@ -274,6 +275,8 @@
     icon: string
     to: string | { path: string, query: Record<string, string> }
     exact?: boolean
+    /** Set where `to` is not the page the item stands for. */
+    active?: boolean
   }
 
   // Modules of installed apps, for the current context (MVP-3): global ones
@@ -313,6 +316,15 @@
     return [...items, ...moduleItems.value]
   })
 
+  // Settings is a detour: remember where it was opened from, so that closing
+  // it (its close button, or the rail item again) returns there.
+  const inSettings = computed(() => route.path === '/settings')
+  watch(() => route.fullPath, (_, from) => {
+    if (inSettings.value && from && !from.startsWith('/settings')) {
+      ui.settingsReturn = from
+    }
+  })
+
   const adminItems = computed<NavItem[]>(() => session.isAdmin
     ? [
       { key: 'infrastructures', title: t('app.infrastructures'), short: t('app.infrastructures'), icon: 'mdi-server-plus-outline', to: '/admin/infrastructures' },
@@ -321,7 +333,10 @@
     : [])
   const footerItems = computed<NavItem[]>(() => [
     ...adminItems.value,
-    { key: 'settings', title: t('settings.title'), short: t('settings.title'), icon: 'mdi-cog-outline', to: '/settings' },
+    // On the settings page, the item closes it again.
+    inSettings.value
+      ? { key: 'settings', title: t('settings.close'), short: t('settings.title'), icon: 'mdi-cog-outline', to: ui.settingsReturn ?? '/', active: true }
+      : { key: 'settings', title: t('settings.title'), short: t('settings.title'), icon: 'mdi-cog-outline', to: '/settings' },
   ])
 
   const preferences = usePreferences()

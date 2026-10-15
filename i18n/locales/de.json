@@ -808,6 +808,7 @@
   },
   "settings": {
     "title": "Einstellungen",
+    "close": "Einstellungen schließen",
     "subtitle": "Darstellung und Live-Daten, gespeichert für Ihr Konto",
     "appearance": "Darstellung",
     "theme": "Design",

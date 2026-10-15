@@ -808,6 +808,7 @@
   },
   "settings": {
     "title": "Settings",
+    "close": "Close settings",
     "subtitle": "Appearance and live data, saved for your account",
     "appearance": "Appearance",
     "theme": "Theme",

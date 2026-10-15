@@ -713,6 +713,7 @@
   },
   "settings": {
     "title": "设置",
+    "close": "关闭设置",
     "subtitle": "外观和实时数据，保存在你的账户中",
     "appearance": "外观",
     "theme": "主题",

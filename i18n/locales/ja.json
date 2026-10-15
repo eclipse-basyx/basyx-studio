@@ -713,6 +713,7 @@
   },
   "settings": {
     "title": "設定",
+    "close": "設定を閉じる",
     "subtitle": "外観とライブデータ。アカウントに保存されます",
     "appearance": "外観",
     "theme": "テーマ",

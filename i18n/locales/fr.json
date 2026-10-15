@@ -713,6 +713,7 @@
   },
   "settings": {
     "title": "Paramètres",
+    "close": "Fermer les paramètres",
     "subtitle": "Apparence et données en direct, enregistrées pour votre compte",
     "appearance": "Apparence",
     "theme": "Thème",

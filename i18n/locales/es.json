@@ -713,6 +713,7 @@
   },
   "settings": {
     "title": "Configuración",
+    "close": "Cerrar configuración",
     "subtitle": "Apariencia y datos en directo, guardados para tu cuenta",
     "appearance": "Apariencia",
     "theme": "Tema",

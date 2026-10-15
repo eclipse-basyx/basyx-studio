@@ -1,6 +1,16 @@
 <template>
   <v-container max-width="960">
-    <PageHeader :subtitle="t('settings.subtitle')" :title="t('settings.title')" />
+    <PageHeader :subtitle="t('settings.subtitle')" :title="t('settings.title')">
+      <template #actions>
+        <!-- Back to where Settings was opened (default layout). -->
+        <v-btn
+          v-tooltip="t('settings.close')"
+          :aria-label="t('settings.close')"
+          icon="mdi-close"
+          :to="ui.settingsReturn ?? '/'"
+        />
+      </template>
+    </PageHeader>
 
     <v-row>
       <v-col cols="12" md="6">
@@ -125,6 +135,7 @@
 
   const { t, locale, localeCodes, setLocale } = useI18n()
   const session = useSessionStore()
+  const ui = useUiStore()
   const notifications = useNotificationsStore()
   const store = usePreferences()
   const preferences = computed(() => store.preferences.value)
