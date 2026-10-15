@@ -1,5 +1,5 @@
 import { defineVuetifyConfiguration } from 'vuetify-nuxt-module/custom-configuration'
-import { paletteNames, palettes, themeName } from './shared/appearance.ts'
+import { themeColors, withOnColors } from './shared/appearance.ts'
 
 // The single place for Studio's look and feel. Components rely on these
 // defaults instead of repeating props, and on Vuetify utility classes instead
@@ -14,34 +14,15 @@ const status = {
   dark: { error: '#CF6679', info: '#2196F3', success: '#4CAF50', warning: '#FB8C00' },
 }
 
-function luminance (hex: string): number {
-  const [r, g, b] = [1, 3, 5].map(start => Number.parseInt(hex.slice(start, start + 2), 16) / 255).map(channel => channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4)
-  return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!
-}
-
-/**
- * Text colours on filled theme colours (`on-primary`, …): white where it
- * reaches 4.5:1 (WCAG AA), black otherwise. Vuetify's own choice (APCA) puts
- * white on the bright dark-theme cyan and orange, which is hard to read.
- */
-function withOnColors (colors: Record<string, string>): Record<string, string> {
-  const onColors = Object.entries(colors).map(([name, hex]) => [`on-${name}`, 1.05 / (luminance(hex) + 0.05) >= 4.5 ? '#FFFFFF' : '#000000'])
-  return { ...colors, ...Object.fromEntries(onColors) }
-}
-
 const field = { variant: 'outlined', density: 'comfortable', hideDetails: 'auto' } as const
 
-// A light and a dark theme per palette of Settings (shared/appearance.ts):
-// the palette's accents with Vuetify's surfaces and status colours. The BaSyx
-// palette keeps the plain `light` and `dark` names.
-const paletteThemes = Object.fromEntries(paletteNames.flatMap(name => [false, true].map(dark => [themeName(name, dark), {
+// Studio's light and dark themes: the BaSyx accent on Vuetify's own
+// surfaces, with the status colours. The accent and background chosen in
+// Settings (shared/appearance.ts) are laid over them in app.vue.
+const modeThemes = Object.fromEntries([false, true].map(dark => [dark ? 'dark' : 'light', {
   dark,
-  colors: {
-    ...withOnColors({ ...palettes[name][dark ? 'dark' : 'light'], ...status[dark ? 'dark' : 'light'] }),
-    // Dialog headers, a shade off the card, as in the BaSyx AAS Web UI (DialogCard).
-    'dialog-header': dark ? '#282828' : '#F5F5F5',
-  },
-}])))
+  colors: { ...themeColors('basyx', 'neutral', dark), ...withOnColors(status[dark ? 'dark' : 'light']) },
+}]))
 
 export default defineVuetifyConfiguration({
   theme: {
@@ -52,7 +33,7 @@ export default defineVuetifyConfiguration({
     // (including "system") is applied in app.vue after hydration.
     defaultTheme: 'light',
     themes: {
-      ...paletteThemes,
+      ...modeThemes,
       // Easter egg: the Konami code (default layout) applies it to the app for
       // the session, scoped through <v-app :theme>, so the color-scheme cookie
       // and the stored theme stay as they are.

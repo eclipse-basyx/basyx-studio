@@ -1,42 +1,52 @@
 import { describe, expect, it } from 'vitest'
-import { paletteNames, palettes, themeName } from '#shared/appearance'
+import { accentNames, accents, accentShade, backgroundNames, backgrounds, contrast, readableShade, themeColors } from '#shared/appearance'
 import { preferencesSchema } from '#shared/contract'
 import config from '../../vuetify.config'
 
-function luminance (hex: string): number {
-  const [r, g, b] = [1, 3, 5].map(start => Number.parseInt(hex.slice(start, start + 2), 16) / 255).map(channel => channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4)
-  return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!
-}
-
-function contrast (a: string, b: string): number {
-  const [high, low] = [luminance(a), luminance(b)].toSorted((x, y) => y - x)
-  return (high! + 0.05) / (low! + 0.05)
-}
-
 describe('appearance', () => {
-  it('builds a light and a dark theme for every palette, BaSyx under the plain names', () => {
+  it('builds Studio\'s light and dark themes from the BaSyx accent on the neutral background', () => {
     const themes = (config as { theme: { themes: Record<string, { dark?: boolean, colors: Record<string, string> }> } }).theme.themes
-    expect(themeName('basyx', false)).toBe('light')
-    expect(themeName('ocean', true)).toBe('ocean-dark')
-    for (const name of paletteNames) {
-      expect(themes[themeName(name, false)]?.colors.primary).toBe(palettes[name].light.primary)
-      expect(themes[themeName(name, true)]?.dark).toBe(true)
+    expect(themes.light?.colors.primary).toBe(accents.basyx.light)
+    expect(themes.dark?.colors.primary).toBe(accents.basyx.dark)
+    expect(themes.dark?.colors.surface).toBe(backgrounds.neutral.dark.surface)
+    expect(themes.dark?.dark).toBe(true)
+  })
+
+  it('keeps preset accents readable (WCAG AA) on every background of their mode', () => {
+    for (const accent of accentNames) {
+      for (const background of backgroundNames) {
+        const { light, dark } = backgrounds[background]
+        for (const surface of [light.background, light.surface]) {
+          expect(contrast(accents[accent].light, surface)).toBeGreaterThanOrEqual(4.5)
+        }
+        for (const surface of [dark.background, dark.surface]) {
+          expect(contrast(accents[accent].dark, surface)).toBeGreaterThanOrEqual(4.5)
+        }
+      }
     }
   })
 
-  it('keeps accents readable (WCAG AA): light on white, dark on the dark surface', () => {
-    for (const name of paletteNames) {
-      for (const color of Object.values(palettes[name].light)) {
-        expect(contrast(color, '#FFFFFF')).toBeGreaterThanOrEqual(4.5)
-      }
-      for (const color of Object.values(palettes[name].dark)) {
-        expect(contrast(color, '#212121')).toBeGreaterThanOrEqual(4.5)
+  it('shades a custom accent until it is readable in each mode', () => {
+    for (const picked of ['#FFEB3B', '#00FF00', '#1A1A1A', '#7F7F7F']) {
+      expect(contrast(readableShade(picked, false), '#FFFFFF')).toBeGreaterThanOrEqual(4.5)
+      for (const background of backgroundNames) {
+        expect(contrast(readableShade(picked, true), backgrounds[background].dark.surface)).toBeGreaterThanOrEqual(4.5)
       }
     }
+    // A readable colour stays as picked.
+    expect(accentShade('#0077A6', false)).toBe('#0077A6')
   })
 
-  it('falls back to BaSyx and the normal shape for unknown stored values', () => {
-    expect(preferencesSchema.parse({})).toMatchObject({ palette: 'basyx', shape: 'normal' })
-    expect(preferencesSchema.parse({ palette: 'sunset', shape: 'square' })).toMatchObject({ palette: 'basyx', shape: 'normal' })
+  it('sets accent, background and their text colours together', () => {
+    const colors = themeColors('violet', 'midnight', true)
+    expect(colors.primary).toBe(accents.violet.dark)
+    expect(colors.background).toBe(backgrounds.midnight.dark.background)
+    expect(colors['on-surface']).toBe('#FFFFFF')
+  })
+
+  it('falls back to BaSyx, the neutral background and the normal shape for unknown stored values', () => {
+    expect(preferencesSchema.parse({})).toMatchObject({ accent: 'basyx', background: 'neutral', shape: 'normal' })
+    expect(preferencesSchema.parse({ accent: '#12abef', background: 'warm' })).toMatchObject({ accent: '#12abef', background: 'warm' })
+    expect(preferencesSchema.parse({ accent: 'sunset', background: 'plaid', shape: 'square' })).toMatchObject({ accent: 'basyx', background: 'neutral', shape: 'normal' })
   })
 })

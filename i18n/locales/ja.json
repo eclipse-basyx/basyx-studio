@@ -748,13 +748,24 @@
       "autoCreate": "エントリを作成・削除する",
       "dontCreate": "変更しない"
     },
-    "palette": "カラー",
-    "palettes": {
+    "accent": "アクセントカラー",
+    "accents": {
       "basyx": "BaSyx",
-      "ocean": "オーシャン",
-      "forest": "フォレスト",
+      "blue": "ブルー",
+      "teal": "ティール",
+      "green": "グリーン",
       "violet": "バイオレット",
+      "pink": "ピンク",
       "graphite": "グラファイト"
+    },
+    "customAccent": "カスタムカラー",
+    "background": "背景",
+    "backgrounds": {
+      "neutral": "ニュートラル",
+      "slate": "スレート",
+      "warm": "ウォーム",
+      "midnight": "ミッドナイト",
+      "contrast": "ハイコントラスト"
     },
     "shape": "形状",
     "shapes": {

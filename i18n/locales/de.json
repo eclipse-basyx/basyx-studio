@@ -844,13 +844,24 @@
       "autoCreate": "Einträge anlegen und entfernen",
       "dontCreate": "Unverändert lassen"
     },
-    "palette": "Farben",
-    "palettes": {
+    "accent": "Akzentfarbe",
+    "accents": {
       "basyx": "BaSyx",
-      "ocean": "Ozean",
-      "forest": "Wald",
+      "blue": "Blau",
+      "teal": "Petrol",
+      "green": "Grün",
       "violet": "Violett",
+      "pink": "Pink",
       "graphite": "Graphit"
+    },
+    "customAccent": "Eigene Farbe",
+    "background": "Hintergrund",
+    "backgrounds": {
+      "neutral": "Neutral",
+      "slate": "Schiefer",
+      "warm": "Warm",
+      "midnight": "Mitternacht",
+      "contrast": "Hoher Kontrast"
     },
     "shape": "Form",
     "shapes": {

@@ -748,13 +748,24 @@
       "autoCreate": "Créer et retirer les entrées",
       "dontCreate": "Les laisser inchangées"
     },
-    "palette": "Couleurs",
-    "palettes": {
+    "accent": "Couleur d'accent",
+    "accents": {
       "basyx": "BaSyx",
-      "ocean": "Océan",
-      "forest": "Forêt",
+      "blue": "Bleu",
+      "teal": "Sarcelle",
+      "green": "Vert",
       "violet": "Violet",
+      "pink": "Rose",
       "graphite": "Graphite"
+    },
+    "customAccent": "Couleur personnalisée",
+    "background": "Arrière-plan",
+    "backgrounds": {
+      "neutral": "Neutre",
+      "slate": "Ardoise",
+      "warm": "Chaud",
+      "midnight": "Minuit",
+      "contrast": "Contraste élevé"
     },
     "shape": "Forme",
     "shapes": {

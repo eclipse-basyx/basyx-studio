@@ -844,13 +844,24 @@
       "autoCreate": "Create and remove entries",
       "dontCreate": "Leave them unchanged"
     },
-    "palette": "Colours",
-    "palettes": {
+    "accent": "Accent colour",
+    "accents": {
       "basyx": "BaSyx",
-      "ocean": "Ocean",
-      "forest": "Forest",
+      "blue": "Blue",
+      "teal": "Teal",
+      "green": "Green",
       "violet": "Violet",
+      "pink": "Pink",
       "graphite": "Graphite"
+    },
+    "customAccent": "Custom colour",
+    "background": "Background",
+    "backgrounds": {
+      "neutral": "Neutral",
+      "slate": "Slate",
+      "warm": "Warm",
+      "midnight": "Midnight",
+      "contrast": "High contrast"
     },
     "shape": "Shape",
     "shapes": {

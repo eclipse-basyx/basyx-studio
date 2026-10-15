@@ -32,25 +32,90 @@
               <v-btn class="flex-grow-1" prepend-icon="mdi-monitor" :text="t('settings.system')" value="system" />
             </v-btn-toggle>
 
-            <!-- Accent colours and shape (shared/appearance.ts). -->
-            <div class="text-label-large mb-2">{{ t('settings.palette') }}</div>
+            <!-- Accent and background are chosen apart from the mode, as in
+                 Slack (shared/appearance.ts); the swatches show the mode in use. -->
+            <div class="text-label-large mb-2">{{ t('settings.accent') }}</div>
 
-            <v-chip-group
-              class="mb-4"
-              column
-              mandatory
-              :model-value="preferences.palette"
-              selected-class="text-primary"
-              @update:model-value="value => save({ palette: value })"
-            >
-              <v-chip v-for="name in paletteNames" :key="name" filter :value="name">
-                <template #prepend>
-                  <v-avatar class="me-1" :color="palettes[name][dark ? 'dark' : 'light'].primary" size="14" />
-                  <v-avatar class="me-2" :color="palettes[name][dark ? 'dark' : 'light'].secondary" size="14" />
+            <div class="d-flex flex-wrap align-center ga-2 mb-6">
+              <v-btn
+                v-for="name in accentNames"
+                :key="name"
+                v-tooltip="t(`settings.accents.${name}`)"
+                :aria-label="t(`settings.accents.${name}`)"
+                :aria-pressed="preferences.accent === name"
+                icon
+                rounded="circle"
+                @click="save({ accent: name })"
+              >
+                <v-avatar :color="accents[name][mode]" rounded="circle" size="32">
+                  <v-icon v-if="preferences.accent === name" icon="mdi-check" size="small" />
+                </v-avatar>
+              </v-btn>
+
+              <!-- Any other colour, kept readable in both modes (readableShade). -->
+              <v-menu :close-on-content-click="false" location="bottom start">
+                <template #activator="{ props: activator }">
+                  <v-btn
+                    v-tooltip="t('settings.customAccent')"
+                    v-bind="activator"
+                    :aria-label="t('settings.customAccent')"
+                    :aria-pressed="customSelected"
+                    icon
+                    rounded="circle"
+                  >
+                    <v-avatar
+                      border
+                      :color="customSelected ? accentShade(preferences.accent, dark) : undefined"
+                      rounded="circle"
+                      size="32"
+                    >
+                      <v-icon :icon="customSelected ? 'mdi-check' : 'mdi-eyedropper-variant'" size="small" />
+                    </v-avatar>
+                  </v-btn>
                 </template>
-                {{ t(`settings.palettes.${name}`) }}
-              </v-chip>
-            </v-chip-group>
+
+                <v-card>
+                  <v-color-picker
+                    mode="hex"
+                    :model-value="customAccent"
+                    :modes="['hex']"
+                    @update:model-value="pickAccent"
+                  />
+                </v-card>
+              </v-menu>
+            </div>
+
+            <div class="text-label-large mb-2">{{ t('settings.background') }}</div>
+
+            <v-item-group
+              class="d-flex flex-wrap ga-2 mb-6"
+              mandatory
+              :model-value="preferences.background"
+              @update:model-value="value => save({ background: value })"
+            >
+              <v-item v-for="name in backgroundNames" :key="name" v-slot="{ isSelected, toggle }" :value="name">
+                <!-- A small page: a card with an accent dot and a raised control on the background. -->
+                <v-card
+                  :aria-pressed="isSelected"
+                  :border="isSelected ? 'primary md opacity-100' : true"
+                  :color="backgrounds[name][mode].background"
+                  width="104"
+                  @click="toggle"
+                >
+                  <v-sheet
+                    border
+                    class="d-flex align-center ga-1 ma-2 mb-1 pa-2"
+                    :color="backgrounds[name][mode].surface"
+                    rounded
+                  >
+                    <v-avatar :color="accentShade(preferences.accent, dark)" size="10" />
+                    <v-sheet class="flex-grow-1" :color="backgrounds[name][mode]['surface-light']" height="6" rounded />
+                  </v-sheet>
+
+                  <div class="text-body-small text-truncate px-2 pb-2">{{ t(`settings.backgrounds.${name}`) }}</div>
+                </v-card>
+              </v-item>
+            </v-item-group>
 
             <div class="text-label-large mb-2">{{ t('settings.shape') }}</div>
 
@@ -171,7 +236,7 @@
   import type { LocaleCode } from '#shared/i18n/locales'
   import { useQuery } from '@pinia/colada'
   import { useTheme } from 'vuetify'
-  import { paletteNames, palettes } from '#shared/appearance'
+  import { accentNames, accents, accentShade, backgroundNames, backgrounds, hexColorPattern } from '#shared/appearance'
   import { locales } from '#shared/i18n/locales'
 
   const { t, locale, localeCodes, setLocale } = useI18n()
@@ -183,6 +248,21 @@
   // Swatches in the brightness shown now.
   const theme = useTheme()
   const dark = computed(() => theme.current.value.dark)
+  const mode = computed(() => dark.value ? 'dark' : 'light')
+
+  // A custom accent is saved once the picker rests, not on every move.
+  const customSelected = computed(() => hexColorPattern.test(preferences.value.accent))
+  const customAccent = ref(customSelected.value ? preferences.value.accent : accents.basyx.dark)
+  let accentTimer: ReturnType<typeof setTimeout> | undefined
+  function pickAccent (value: string) {
+    customAccent.value = value
+    clearTimeout(accentTimer)
+    accentTimer = setTimeout(() => {
+      if (hexColorPattern.test(value)) {
+        void save({ accent: value.toUpperCase() })
+      }
+    }, 300)
+  }
 
   // Easter egg: typing "basyx" on this page (outside a field) reveals the
   // hidden German dialects (shared/i18n/locales.ts) until the next reload.

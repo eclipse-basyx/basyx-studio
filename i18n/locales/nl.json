@@ -748,13 +748,24 @@
       "autoCreate": "Items aanmaken en verwijderen",
       "dontCreate": "Ongewijzigd laten"
     },
-    "palette": "Kleuren",
-    "palettes": {
+    "accent": "Accentkleur",
+    "accents": {
       "basyx": "BaSyx",
-      "ocean": "Oceaan",
-      "forest": "Bos",
+      "blue": "Blauw",
+      "teal": "Petrol",
+      "green": "Groen",
       "violet": "Violet",
+      "pink": "Roze",
       "graphite": "Grafiet"
+    },
+    "customAccent": "Eigen kleur",
+    "background": "Achtergrond",
+    "backgrounds": {
+      "neutral": "Neutraal",
+      "slate": "Leisteen",
+      "warm": "Warm",
+      "midnight": "Middernacht",
+      "contrast": "Hoog contrast"
     },
     "shape": "Vorm",
     "shapes": {

@@ -120,15 +120,19 @@ writes.
 - Look: Studio's colours, small radii (at most 8 px), outlined fields, borders
   instead of shadows. All of it lives in `vuetify.config.ts` defaults and
   aliases.
-- Appearance settings: users choose light, dark or system, a colour palette
-  (BaSyx by default, plus Ocean, Forest, Violet and Graphite) and a shape
-  (*Normal*, the small radii above, or *More rounded*: 24 px surfaces and
-  fields, pill-shaped buttons and chips). Palettes only change the accents;
-  each has a light and a dark variant with at least 4.5:1 contrast and is
-  defined in `shared/appearance.ts`, from which `vuetify.config.ts` builds the
-  themes. The rounded shape is a defaults provider in `app.vue` that changes
-  radii only. New components set radii through defaults, never in templates,
-  so both shapes follow.
+- Appearance settings: users choose each part on its own, as in Slack: the
+  mode (light, dark or system), an accent colour (BaSyx by default, six more
+  presets, or any colour from a simple picker), a background (*Neutral*,
+  Vuetify's own surfaces, plus *Slate*, *Warm*, *Midnight* and *High
+  contrast*) and a shape (*Normal*, the small radii above, or *More rounded*:
+  24 px surfaces and fields, pill-shaped buttons and chips). Every accent and
+  background has a light and a dark shade; preset accents reach 4.5:1 on every
+  background of their mode, and a custom accent is darkened or lightened until
+  it does. All of it is defined in `shared/appearance.ts`: `vuetify.config.ts`
+  builds the light and dark themes from the defaults, and `app.vue` lays the
+  user's accent and background over both. The rounded shape is a defaults
+  provider in `app.vue` that changes radii only. New components set radii
+  through defaults, never in templates, so both shapes follow.
 - The details drawer shows the selection in modes: *Details*, *Visualization*
   (app views), *JSON*, *XML* and *UML*. The mode and the selection are in the
   URL, so links reproduce what the user saw.

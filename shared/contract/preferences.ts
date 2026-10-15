@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { paletteNames, shapes } from '../appearance'
+import { accentNames, backgroundNames, hexColorPattern, shapes } from '../appearance'
 import { localeCodes } from '../i18n/locales'
 import { syncModes } from './infrastructure'
 
@@ -28,8 +28,10 @@ export const preferencesSchema = z.object({
   uiLanguage: z.enum(localeCodes).nullable().default(null).catch(null),
   valueLanguage: z.string().regex(/^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})?$/).default('en'),
   theme: z.enum(['system', 'light', 'dark']).default('system'),
-  /** Accent colours (shared/appearance.ts); an unknown palette falls back to BaSyx. */
-  palette: z.enum(paletteNames).default('basyx').catch('basyx'),
+  /** Accent colour (shared/appearance.ts): a preset or a custom `#RRGGBB`; anything else falls back to BaSyx. */
+  accent: z.union([z.enum(accentNames), z.string().regex(hexColorPattern)]).default('basyx').catch('basyx'),
+  /** Page and card colours (shared/appearance.ts), in a light and a dark tone. */
+  background: z.enum(backgroundNames).default('neutral').catch('neutral'),
   /** `normal`: small radii; `rounded`: large radii, pill-shaped buttons and chips. */
   shape: z.enum(shapes).default('normal').catch('normal'),
   /** View of the AAS targets list; `null` picks cards for a few targets and rows for many. */

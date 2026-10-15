@@ -13,7 +13,7 @@
 
 <script lang="ts" setup>
   import { useTheme } from 'vuetify'
-  import { roundedDefaults, themeName } from '#shared/appearance'
+  import { roundedDefaults, themeColors } from '#shared/appearance'
   import { locales } from '#shared/i18n/locales'
 
   // `<html lang>` from the locale's BCP 47 tag, so screen readers and the
@@ -23,12 +23,13 @@
   const { locale, localeCodes, setLocale } = useI18n()
   useHead(() => ({ htmlAttrs: { lang: locales.find(entry => entry.code === locale.value)?.language ?? 'en-US', dir: 'ltr' } }))
 
-  // The user's theme preference (Settings): a palette, and light, dark or
-  // "system", which follows the OS. Like the shape, it is applied only after
-  // hydration: a theme change while the page hydrates leaves server-rendered
-  // parts in the server's theme, because Vue keeps mismatching attributes.
-  // Vuetify's color-scheme cookie then lets the next server render start in
-  // the same theme.
+  // The user's appearance (Settings): light, dark or "system", which follows
+  // the OS, and an accent and a background laid over both the light and the
+  // dark theme. Like the shape, it is applied only after hydration: a theme
+  // change while the page hydrates leaves server-rendered parts in the
+  // server's theme, because Vue keeps mismatching attributes. Vuetify's
+  // color-scheme cookie then lets the next server render start in the same
+  // light or dark theme.
   const theme = useTheme()
   const preferences = usePreferences()
   const shapeDefaults = ref<typeof roundedDefaults | undefined>(undefined)
@@ -45,13 +46,15 @@
 
     const dark = window.matchMedia('(prefers-color-scheme: dark)')
     const apply = () => {
-      const value = preferences.query.data.value?.theme
-      if (value) {
-        const isDark = value === 'system' ? dark.matches : value === 'dark'
-        theme.change(themeName(preferences.query.data.value?.palette ?? 'basyx', isDark))
+      const stored = preferences.query.data.value
+      if (stored) {
+        for (const mode of ['light', 'dark'] as const) {
+          Object.assign(theme.themes.value[mode]!.colors, themeColors(stored.accent, stored.background, mode === 'dark'))
+        }
+        theme.change((stored.theme === 'system' ? dark.matches : stored.theme === 'dark') ? 'dark' : 'light')
       }
     }
-    watch(() => [preferences.query.data.value?.theme, preferences.query.data.value?.palette], apply, { immediate: true })
+    watch(() => [preferences.query.data.value?.theme, preferences.query.data.value?.accent, preferences.query.data.value?.background], apply, { immediate: true })
     dark.addEventListener('change', apply)
 
     watch(() => preferences.query.data.value?.shape, shape => {

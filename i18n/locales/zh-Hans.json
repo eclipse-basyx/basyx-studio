@@ -748,13 +748,24 @@
       "autoCreate": "创建和移除条目",
       "dontCreate": "保持不变"
     },
-    "palette": "颜色",
-    "palettes": {
+    "accent": "强调色",
+    "accents": {
       "basyx": "BaSyx",
-      "ocean": "海洋",
-      "forest": "森林",
-      "violet": "紫罗兰",
+      "blue": "蓝色",
+      "teal": "青色",
+      "green": "绿色",
+      "violet": "紫色",
+      "pink": "粉色",
       "graphite": "石墨"
+    },
+    "customAccent": "自定义颜色",
+    "background": "背景",
+    "backgrounds": {
+      "neutral": "中性",
+      "slate": "石板",
+      "warm": "暖色",
+      "midnight": "午夜",
+      "contrast": "高对比度"
     },
     "shape": "形状",
     "shapes": {
