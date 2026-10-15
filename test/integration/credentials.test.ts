@@ -3,7 +3,7 @@ import type { DatabaseHandle } from '~~/server/lib/database/client'
 import type { StudioDeps } from '~~/server/lib/deps'
 import { randomBytes } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { infrastructures } from '~~/server/database/schema'
+import { infrastructures, targetCredentials } from '~~/server/database/schema'
 import { SecretCipher } from '~~/server/lib/crypto/cipher'
 import { openDatabase } from '~~/server/lib/database/client'
 import { applyMigrations, loadMigrationsFromDirectory } from '~~/server/lib/database/migrate'
@@ -98,5 +98,22 @@ describe.runIf(testenvAvailable)('CredentialBroker against the test environment'
     // The IdP accepts this loopback redirect and shows its login page.
     const response = await fetch(url, { redirect: 'manual' })
     expect(response.status).toBe(200)
+  })
+
+  it('asks for authorization again when the stored refresh token is rejected', async () => {
+    const broker = new CredentialBroker(deps)
+    const record = await getInfrastructure(deps, 'delegated')
+    await handle.db.insert(targetCredentials).values({
+      sessionId: 'desktop-local',
+      targetId: 'delegated',
+      accessTokenCiphertext: deps.cipher.encrypt('expired-access-token', 'target_credentials.access_token'),
+      refreshTokenCiphertext: deps.cipher.encrypt('revoked-refresh-token', 'target_credentials.refresh_token'),
+      accessTokenExpiresAt: new Date(Date.now() - 60_000),
+    })
+
+    // Stored, the credentials look usable; tried, the IdP rejects the refresh.
+    expect(await broker.authenticationState(record, 'desktop-local')).toBe('authenticated')
+    expect(await broker.verifiedAuthenticationState(record, 'desktop-local')).toBe('required')
+    expect(await broker.authenticationState(record, 'desktop-local')).toBe('required')
   })
 })

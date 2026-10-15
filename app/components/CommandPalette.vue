@@ -224,7 +224,8 @@
       run: () => openShell(hit.shellKey!, { submodel: hit.submodelKey, element: hit.elementKey }),
     }))
     // Targets by name or description; without a search, all of them outside a
-    // target, so the palette switches targets. Enter opens a target's shells.
+    // target, so the palette switches targets. Enter opens a target's shells,
+    // which starts its authorization first where it needs one.
     const matchingTargets = (targets.data.value?.items ?? [])
       .filter(item => item.id !== props.targetId)
       .filter(item => needle ? [item.name, item.description].some(value => value?.toLowerCase().includes(needle)) : !props.targetId)
@@ -235,7 +236,7 @@
         title: item.name,
         subtitle: targetSubtitle(item, t('landing.subtitle')),
         icon: targetIcon(item),
-        run: () => router.push(item.authenticationState === 'required' ? `/targets/${item.id}` : `/targets/${item.id}/shells`),
+        run: () => router.push(`/targets/${item.id}/shells`),
       }))
     // Outside a target, targets are what the palette is mostly for, so they come first.
     if (!props.targetId) {

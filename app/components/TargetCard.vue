@@ -27,7 +27,7 @@
         v-if="target.authenticationState === 'required'"
         prepend-icon="mdi-key-outline"
         :text="t('target.authorize')"
-        @click.stop.prevent="navigateTo(`/targets/${target.id}`)"
+        @click.stop.prevent="navigateTo(`/targets/${target.id}/shells`)"
       />
 
       <v-btn-primary

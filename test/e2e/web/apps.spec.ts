@@ -155,8 +155,8 @@ test('limits app writes to the user\'s own rights on the target (DoD 4)', async 
   for (const [username, expected] of [['alice', 'You are not permitted to change this value.'], ['dave', 'Serial number saved.']] as const) {
     const user = await (await browser.newContext()).newPage()
     await signIn(user, username)
+    // Opening the target starts its authorization; the IdP session signs in right away.
     await user.goto(`/targets/${delegatedTargetId}/shells`)
-    await user.getByRole('button', { name: 'Authorize' }).click()
     await expect(user.getByText('SecuredPublicShell').first()).toBeVisible()
     await openNameplateView(user, delegatedTargetId, securedShell)
     await editInNameplate(user, 'Serial number', `SEC-E2E-${username}-${Date.now()}`)

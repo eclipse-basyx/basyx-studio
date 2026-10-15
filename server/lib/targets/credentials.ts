@@ -68,6 +68,26 @@ export class CredentialBroker {
     return expired && !credentials.refreshTokenCiphertext ? 'required' : 'authenticated'
   }
 
+  /**
+   * The authentication state after trying the stored credentials: an expired
+   * access token is refreshed now, and a refresh the identity provider
+   * rejects means `required`, so a target asks for authorization when it is
+   * opened rather than on its first failing request. An unreachable identity
+   * provider leaves the state as stored; the next request reports it.
+   */
+  async verifiedAuthenticationState (record: InfrastructureRecord, sessionId: string): Promise<AuthenticationState> {
+    const state = await this.authenticationState(record, sessionId)
+    if (state !== 'authenticated') {
+      return state
+    }
+    try {
+      await this.access(record, sessionId)
+      return 'authenticated'
+    } catch (error) {
+      return error instanceof StudioProblem && error.code === 'target_auth_required' ? 'required' : 'authenticated'
+    }
+  }
+
   /** Returns the credentials for one downstream request. */
   access (record: InfrastructureRecord, sessionId: string): Promise<TargetAccess> {
     const { security } = record

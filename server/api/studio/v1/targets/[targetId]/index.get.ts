@@ -7,7 +7,10 @@ import { defineStudioHandler, routeParam } from '~~/server/utils/handler'
 import { useStudio } from '~~/server/utils/studio'
 import { toTarget } from '~~/server/utils/target'
 
-/** One target with its capabilities. */
+/**
+ * One target with its capabilities. Opening a target checks its stored
+ * authorization (refreshing it if needed); the target list does not.
+ */
 export default defineStudioHandler(async (event): Promise<Target> => {
   const actor = await requireActor(event)
   const studio = await useStudio()
@@ -16,5 +19,5 @@ export default defineStudioHandler(async (event): Promise<Target> => {
     return toWorkspaceTarget(await requireWorkspaces(studio).info(targetId))
   }
   const record = await getInfrastructure(studio, targetId)
-  return toTarget(record, await studio.broker.authenticationState(record, actor.sessionId))
+  return toTarget(record, await studio.broker.verifiedAuthenticationState(record, actor.sessionId))
 })
