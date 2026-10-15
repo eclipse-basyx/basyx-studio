@@ -3,7 +3,7 @@
     <div class="d-flex flex-column h-100">
       <!-- The search of the Web UI: suggestions for filters, the advanced query in its menu. -->
       <div class="px-3 pt-3 pb-1">
-        <ShellSearchField
+        <SearchExpressionField
           v-model="search"
           :advanced-enabled="Boolean(queryTarget)"
           :loading="searching && found.isLoading.value"

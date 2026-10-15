@@ -9,14 +9,14 @@
       <div ref="container">
         <v-text-field
           v-bind="activator"
-          :aria-label="t('shells.search')"
-          :clearable="draft.length > 0 || filters.length > 0 || queryActive"
+          :aria-label="label"
+          :clearable="draft.length > 0 || filterCount > 0 || queryActive"
           density="compact"
-          :dirty="draft.length > 0 || filters.length > 0 || queryActive"
+          :dirty="draft.length > 0 || filterCount > 0 || queryActive"
           :loading="loading"
           :model-value="draft"
-          :persistent-clear="filters.length > 0 || queryActive"
-          :placeholder="queryActive || filters.length > 0 ? undefined : t('shells.search')"
+          :persistent-clear="filterCount > 0 || queryActive"
+          :placeholder="queryActive || filterCount > 0 ? undefined : label"
           prepend-inner-icon="mdi-magnify"
           :readonly="queryActive"
           @click="menu = true"
@@ -26,7 +26,7 @@
           @keydown.space="commitOnSpace"
           @update:model-value="updateDraft"
         >
-          <template v-if="queryActive || filters.length > 0" #default>
+          <template v-if="queryActive || filterCount > 0" #default>
             <v-chip
               v-if="queryActive"
               class="ms-n1 me-2"
@@ -40,11 +40,11 @@
 
             <v-chip
               v-else
-              :aria-label="t('shells.filters.show', filters.length)"
+              :aria-label="t('shells.filters.show', filterCount)"
               class="ms-n1 me-2"
               color="primary"
               prepend-icon="mdi-filter-variant"
-              :text="t('shells.filters.count', filters.length)"
+              :text="t('shells.filters.count', filterCount)"
               @click.stop="menu = true"
             />
           </template>
@@ -144,6 +144,26 @@
               </template>
             </v-list-item>
           </template>
+
+          <!-- Filters by facet, e.g. the source of a concept description. -->
+          <template v-for="group in groups" :key="group.title">
+            <v-divider class="my-1" />
+
+            <v-list-subheader :title="group.title" />
+
+            <v-list-item
+              v-for="option in group.options"
+              :key="option.value"
+              :active="selected.includes(option.value)"
+              :prepend-icon="option.icon"
+              :title="option.title"
+              @click="toggleFacet(option.value)"
+            >
+              <template #append>
+                <v-icon v-if="selected.includes(option.value)" color="primary" icon="mdi-check" size="small" />
+              </template>
+            </v-list-item>
+          </template>
         </template>
 
         <template v-if="advancedEnabled">
@@ -162,24 +182,33 @@
 
 <script lang="ts" setup>
   import type { SearchField, SearchFilter, SearchOperator } from '#shared/search/expression'
+  import type { FilterGroup } from '~/utils/records'
   import { formatFilter, parseSearch, searchFields, searchFieldValues } from '#shared/search/expression'
 
-  // The shell search of the BaSyx AAS Web UI (MVP-4 plan, S2): free text, with
-  // filters built from suggestions (field, operator, value) and shown as one
-  // chip; the menu lists them and leads to the advanced query. The model is
-  // the search expression, e.g. `motor assetKind=Type`.
-  const props = defineProps<{
+  // The search of the BaSyx AAS Web UI (MVP-4 plan, S2), for shells and
+  // concept descriptions: free text, with filters built from suggestions
+  // (field, operator, value) and shown as one chip; the menu lists them,
+  // offers facet filters where there are any, and leads to the advanced
+  // query. The model is the search expression, e.g. `motor assetKind=Type`.
+  const props = withDefaults(defineProps<{
     loading?: boolean
     /** A raw query from the advanced dialog replaces the expression. */
     queryActive: boolean
     advancedEnabled: boolean
     /** Offer the QR code scanner (asset ID lookup). */
     scannable?: boolean
-  }>()
+    /** The fields the expression knows; those of the shell search by default. */
+    fields?: readonly SearchField[]
+    /** Facet filters below the fields, as `group:value` in `selected`. */
+    groups?: FilterGroup[]
+    placeholder?: string
+  }>(), { fields: () => searchFields, groups: () => [], placeholder: undefined })
   const emit = defineEmits<{ 'advanced': [], 'clear-query': [], 'scan': [] }>()
   const expression = defineModel<string>({ required: true })
+  const selected = defineModel<string[]>('selected', { default: () => [] })
 
   const { t } = useI18n()
+  const label = computed(() => props.placeholder ?? t('shells.search'))
 
   const symbols: Record<SearchOperator, string> = { 'contains': ':', 'equals': '=', 'not-equals': '!=' }
 
@@ -203,7 +232,7 @@
   function lastField (text: string): { field: SearchField, start: number } | null {
     const lower = text.toLowerCase()
     let best: { field: SearchField, start: number } | null = null
-    for (const field of searchFields) {
+    for (const field of props.fields) {
       const key = field.toLowerCase()
       for (let index = lower.lastIndexOf(key); index >= 0; index = index > 0 ? lower.lastIndexOf(key, index - 1) : -1) {
         const before = index === 0 ? ' ' : lower[index - 1]!
@@ -250,8 +279,8 @@
 
   const fieldOptions = computed(() => {
     const fragment = state.value.fragment.toLowerCase()
-    const matches = searchFields.filter(field => field.toLowerCase().startsWith(fragment) || t(`shells.fields.${field}`).toLowerCase().includes(fragment))
-    return fragment && matches.length > 0 ? matches : searchFields
+    const matches = props.fields.filter(field => field.toLowerCase().startsWith(fragment) || t(`shells.fields.${field}`).toLowerCase().includes(fragment))
+    return fragment && matches.length > 0 ? matches : props.fields
   })
 
   const operatorOptions = computed(() => {
@@ -277,7 +306,7 @@
     if (value === lastEmitted) {
       return
     }
-    const parsed = parseSearch(value)
+    const parsed = parseSearch(value, props.fields)
     filters.value = parsed.filters
     draft.value = parsed.text
   }, { immediate: true })
@@ -349,6 +378,13 @@
     menu.value = false
   }
 
+  /** Field filters and facet filters, for the chip in the field. */
+  const filterCount = computed(() => filters.value.length + selected.value.length)
+
+  function toggleFacet (value: string) {
+    selected.value = selected.value.includes(value) ? selected.value.filter(candidate => candidate !== value) : [...selected.value, value]
+  }
+
   function removeFilter (index: number) {
     filters.value = filters.value.filter((_, position) => position !== index)
     emitExpression()
@@ -357,6 +393,7 @@
 
   function clear () {
     filters.value = []
+    selected.value = []
     draft.value = ''
     emitExpression()
     if (props.queryActive) {

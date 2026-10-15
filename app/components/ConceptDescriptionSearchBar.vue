@@ -1,36 +1,26 @@
 <template>
-  <!-- The search of the record lists (infrastructures, targets, apps), with
-       the source in its filter menu and the advanced query beside it; the
-       Concepts page and the link picker share it (MVP-6 plan, S1). -->
-  <ListFilterBar
-    v-model:search="search"
-    v-model:selected="selected"
-    :groups="state.filterGroups.value"
-    :placeholder="t('concepts.search')"
-  >
-    <template #append>
-      <v-chip
-        v-if="state.rawQuery.value"
-        closable
-        color="primary"
-        prepend-icon="mdi-code-braces"
-        :text="t('shells.query.active')"
-        @click="queryDialog = true"
-        @click:close="rawQuery = null"
+  <!-- The search of the shell list, with the fields the query language knows
+       for concept descriptions (id, idShort), the source as a facet filter
+       and the advanced query in its menu; the Concepts page and the link
+       picker share it (MVP-6 plan, S1). -->
+  <div class="d-flex align-center ga-2 pa-2">
+    <div class="flex-grow-1">
+      <SearchExpressionField
+        v-model="search"
+        v-model:selected="selected"
+        :advanced-enabled="state.queryable.value"
+        :fields="conceptDescriptionSearchFields"
+        :groups="state.filterGroups.value"
+        :loading="state.loading.value"
+        :placeholder="t('concepts.search')"
+        :query-active="state.rawQuery.value !== null"
+        @advanced="queryDialog = true"
+        @clear-query="rawQuery = null"
       />
+    </div>
 
-      <v-btn
-        v-if="state.queryable.value"
-        v-tooltip="t('shells.query.title')"
-        :aria-label="t('shells.query.title')"
-        :color="state.rawQuery.value ? 'primary' : undefined"
-        icon="mdi-code-braces"
-        @click="queryDialog = true"
-      />
-
-      <slot name="append" />
-    </template>
-  </ListFilterBar>
+    <slot name="append" />
+  </div>
 
   <v-alert
     v-if="state.pageFilterOnly.value"
@@ -53,6 +43,7 @@
 
 <script lang="ts" setup>
   import type { ConceptDescriptionSearch } from '~/composables/useConceptDescriptionSearch'
+  import { conceptDescriptionSearchFields } from '#shared/search/expression'
 
   const props = defineProps<{
     targetId: string
@@ -65,7 +56,7 @@
   const queryDialog = ref(false)
 
   // The search belongs to the page or dialog around; the bar changes it through its setters.
-  const search = computed({ get: () => props.state.search.value, set: value => props.state.setSearch(value) })
+  const search = computed({ get: () => props.state.search.value ?? '', set: value => props.state.setSearch(value) })
   const selected = computed({ get: () => props.state.selected.value, set: value => props.state.setSelected(value) })
   const rawQuery = computed({ get: () => props.state.rawQuery.value, set: value => props.state.setRawQuery(value) })
 </script>
