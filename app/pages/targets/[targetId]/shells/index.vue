@@ -1,6 +1,13 @@
 <template>
-  <div>
-    <!-- The drawers register with the app layout from inside the page. -->
+  <FileDropZone
+    class="h-100"
+    :disabled="!target.canImport.value"
+    :text="t('upload.dropTypes')"
+    :title="t('upload.dropHere', { name: target.data.value?.name ?? '' })"
+    @file="ui.openUpload($event)"
+  >
+    <!-- Files dropped on the welcome page are imported into the target.
+         The drawers register with the app layout from inside the page. -->
     <ShellListDrawer :active-key="null" :target-id="targetId" />
 
     <v-container class="fill-height" max-width="720">
@@ -54,6 +61,14 @@
             />
 
             <v-btn prepend-icon="mdi-magnify" :text="t('viewer.search')" variant="tonal" @click="ui.commandOpen = true" />
+
+            <v-btn
+              v-if="target.canImport.value"
+              prepend-icon="mdi-tray-arrow-up"
+              :text="t('upload.action')"
+              variant="tonal"
+              @click="ui.openUpload()"
+            />
           </template>
         </v-empty-state>
 
@@ -74,7 +89,7 @@
         </div>
       </template>
     </v-container>
-  </div>
+  </FileDropZone>
 </template>
 
 <script lang="ts" setup>

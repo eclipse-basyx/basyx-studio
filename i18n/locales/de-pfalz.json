@@ -681,21 +681,23 @@
   },
   "landing": {
     "subtitle": "AAS-Infrastruktur",
-    "upload": "Nuffschicke",
     "openViewer": "Verwaltungsschale uffmache",
     "status": "Verbindung unn was geht",
     "dashboardTitle": "Do kummt bald ebbes",
     "dashboardText": "Do siehscht bald, was uff de Infrastruktur los is. Bis dohie mach die Verwaltungsschale uff."
   },
   "upload": {
-    "title": "AAS-Sache nuffschicke",
+    "title": "AAS-Sache roihole",
     "into": "Noch {name}",
     "drop": "Schmeiß do e .aasx-, .json- odder .xml-Datei noi",
     "browse": "Dateie suche",
     "or": "odder",
     "hint": "Mer gucke die Datei vorher oo. Was diesellwe Identifikatore hot, werd ausgetauscht.",
-    "upload": "Nuffschicke",
-    "added": "Do is kä Verwaltungsschal dezukumme. | {count} Verwaltungsschal is dezukumme. | {count} Verwaltungsschale sinn dezukumme."
+    "upload": "Roihole",
+    "added": "Do is kä Verwaltungsschal dezukumme. | {count} Verwaltungsschal is dezukumme. | {count} Verwaltungsschale sinn dezukumme.",
+    "action": "Roihole",
+    "dropHere": "Loslosse, donn kummt's noch {name}",
+    "imported": "{name} is roigeholt"
   },
   "concepts": {
     "title": "Konzeptbeschreiwunge",

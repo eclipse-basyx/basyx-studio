@@ -893,12 +893,13 @@
     set: (ids: unknown[]) => select((ids[0] as string | undefined) ?? null),
   })
 
-  // Open the first submodel when the tree appears.
+  // Open the first submodel when the tree appears, including a tree already
+  // populated by SSR or the query cache before this watcher is installed.
   watch(() => trees.items.value.length, (count, before) => {
     if (count > 0 && !before && opened.value.length === 0) {
       opened.value = trees.items.value.filter(item => !item.unavailable).slice(0, 1).map(item => item.id)
     }
-  })
+  }, { immediate: true })
 
   // A selection made elsewhere (deep link, search): load and open its path,
   // which the element's ancestors name.

@@ -1,6 +1,13 @@
 <template>
   <v-navigation-drawer v-model="open" width="340">
-    <div class="d-flex flex-column h-100">
+    <!-- Files dropped on the list are imported into the target. -->
+    <FileDropZone
+      class="d-flex flex-column h-100"
+      :disabled="!canImport"
+      :text="t('upload.dropTypes')"
+      :title="t('upload.dropHere', { name: target?.name ?? '' })"
+      @file="ui.openUpload($event)"
+    >
       <!-- The search of the Web UI: suggestions for filters, the advanced query in its menu. -->
       <div class="px-3 pt-3 pb-1">
         <SearchExpressionField
@@ -16,14 +23,24 @@
 
         <div v-if="localOnly && search" class="text-body-small text-medium-emphasis mt-1">{{ t('shells.localOnly') }}</div>
 
-        <v-btn-secondary
-          v-if="canCreate"
-          block
-          class="mt-2"
-          prepend-icon="mdi-plus"
-          :text="t('wizard.newShell')"
-          @click="wizardOpen = true"
-        />
+        <!-- Importing adds content without editing any, so it is offered in view mode too. -->
+        <div v-if="canCreate || canImport" class="d-flex ga-2 mt-2">
+          <v-btn-secondary
+            v-if="canCreate"
+            class="flex-grow-1"
+            prepend-icon="mdi-plus"
+            :text="t('wizard.newShell')"
+            @click="wizardOpen = true"
+          />
+
+          <v-btn-secondary
+            v-if="canImport"
+            :class="canCreate ? undefined : 'flex-grow-1'"
+            prepend-icon="mdi-tray-arrow-up"
+            :text="t('upload.action')"
+            @click="ui.openUpload()"
+          />
+        </div>
 
         <v-chip-group v-model="filter" class="mt-1" mandatory selected-class="text-primary">
           <v-chip filter :text="t('shells.all')" value="all" />
@@ -104,6 +121,19 @@
         </v-virtual-scroll>
       </v-list>
 
+      <!-- A target without any shell yet: the ways to add the first one. -->
+      <v-empty-state
+        v-else-if="source.data.value && unfiltered"
+        icon="mdi-tray-arrow-down"
+        size="64"
+        :text="canImport ? t('shells.emptyTextImport') : t('shells.emptyText')"
+        :title="t('shells.empty')"
+      >
+        <template v-if="canImport" #actions>
+          <v-btn :text="t('upload.action')" variant="tonal" @click="ui.openUpload()" />
+        </template>
+      </v-empty-state>
+
       <v-empty-state
         v-else-if="source.data.value"
         icon="mdi-cube-off-outline"
@@ -118,7 +148,7 @@
 
       <!-- Outside the v-if chain above: the next page is loading below the rows. -->
       <v-progress-linear v-if="loadingMore" class="flex-shrink-0" />
-    </div>
+    </FileDropZone>
 
     <template #append>
       <v-divider />
@@ -164,13 +194,15 @@
   const ui = useUiStore()
   const preferences = usePreferences()
   const { mdAndUp, mobile } = useDisplay()
-  const target = useTarget(() => props.targetId).data
+  const targetQuery = useTarget(() => props.targetId)
+  const target = targetQuery.data
   // Lookup by asset ID needs discovery or queries on the repository (lookupShells).
   const canScan = computed(() => Boolean(target.value?.capabilities.discovery || target.value?.capabilities.queryTarget === 'repository'))
   const scanOpen = ref(false)
   // The creation wizard (MVP-5 plan, T3), in edit mode only.
   const canCreate = computed(() => ui.editing && Boolean(target.value?.capabilities.createResources))
   const wizardOpen = ref(false)
+  const canImport = targetQuery.canImport
 
   async function onCreated (result: ShellCreateResult) {
     await queryCache.invalidateQueries({ key: ['targets', props.targetId] })
@@ -240,6 +272,7 @@
   const kindFilter = computed(() => (filter.value === 'Instance' || filter.value === 'Type' ? `assetKind=${filter.value}` : ''))
   const expression = computed(() => [applied.value, kindFilter.value].filter(Boolean).join(' '))
   const searching = computed(() => serverSearch.value && (rawQuery.value !== null || expression.value !== ''))
+  const unfiltered = computed(() => applied.value === '' && rawQuery.value === null && filter.value === 'all')
 
   const shells = useInfiniteQuery({
     key: () => ['targets', props.targetId, 'shells'],

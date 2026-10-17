@@ -244,6 +244,15 @@
 
     <CommandPalette v-if="!session.needsLogin" :target-id="targetId" />
 
+    <!-- One import dialog for the current target: the dashboard, the shell list,
+         drops and the command palette open it through the UI store. -->
+    <UploadDialog
+      v-if="routeTarget.data.value?.capabilities.upload"
+      v-model="ui.uploadOpen"
+      :initial-file="ui.uploadFile"
+      :target="routeTarget.data.value"
+    />
+
     <v-snackbar-queue v-model="notifications.queue" location="bottom right" />
   </v-app>
 </template>
@@ -273,6 +282,7 @@
   // Outside any target (the targets list, global modules) the last opened
   // target stays current, so its navigation and controls do not disappear.
   const rememberedTargetId = computed(() => targetId.value ?? navigation.currentTarget)
+  const routeTarget = useTarget(() => targetId.value ?? '')
   const inShellBrowser = computed(() => targetId.value !== null && route.path.startsWith(`/targets/${targetId.value}/shells`))
 
   const targets = useQuery({

@@ -15,5 +15,7 @@ export function useTarget (targetId: MaybeRefOrGetter<string>) {
     enabled: () => toValue(targetId) !== '',
   })
   const needsAuthorization = computed(() => query.data.value?.authenticationState === 'required')
-  return { ...query, needsAuthorization }
+  /** Files can be imported into the target now: it accepts uploads and the user is signed in to it. */
+  const canImport = computed(() => Boolean(query.data.value?.capabilities.upload) && !needsAuthorization.value)
+  return { ...query, needsAuthorization, canImport }
 }

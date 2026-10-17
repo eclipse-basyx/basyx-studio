@@ -448,7 +448,8 @@
       "refresh": "Automatisch vernieuwen aan- of uitzetten",
       "dashboard": "Naar de startpagina van het doel",
       "concepts": "Naar conceptbeschrijvingen",
-      "infrastructures": "Infrastructuren beheren"
+      "infrastructures": "Infrastructuren beheren",
+      "import": "AASX-, JSON- of XML-bestand importeren"
     }
   },
   "capabilities": {
@@ -526,7 +527,10 @@
       "assetType": "Assettype",
       "globalAssetId": "Globale asset-ID",
       "specificAssetId": "Specifieke asset-ID"
-    }
+    },
+    "empty": "Nog geen AAS'en",
+    "emptyText": "Dit doel heeft nog geen AAS'en.",
+    "emptyTextImport": "Importeer een AASX-, JSON- of XML-bestand, of zet het neer op deze lijst."
   },
   "viewer": {
     "headline": "Kies een AAS om te verkennen",
@@ -688,21 +692,24 @@
   },
   "landing": {
     "subtitle": "AAS-infrastructuur",
-    "upload": "Uploaden",
     "openViewer": "AAS'en openen",
     "status": "Verbinding en functies",
     "dashboardTitle": "Dashboard volgt binnenkort",
     "dashboardText": "Deze pagina gaat tonen wat er op de infrastructuur gebeurt. Open tot die tijd de AAS'en om de inhoud te doorzoeken."
   },
   "upload": {
-    "title": "AAS-inhoud uploaden",
+    "title": "AAS-inhoud importeren",
     "into": "Naar {name}",
     "drop": "Zet hier een .aasx-, .json- of .xml-bestand neer",
     "browse": "Bestanden zoeken",
     "or": "of",
     "hint": "Het bestand wordt gecontroleerd voordat het wordt toegevoegd. Inhoud met dezelfde identifiers wordt vervangen.",
-    "upload": "Uploaden",
-    "added": "Er zijn geen AAS'en toegevoegd. | {count} AAS toegevoegd. | {count} AAS'en toegevoegd."
+    "upload": "Importeren",
+    "added": "Er zijn geen AAS'en toegevoegd. | {count} AAS toegevoegd. | {count} AAS'en toegevoegd.",
+    "action": "Importeren",
+    "dropHere": "Neerzetten om te importeren in {name}",
+    "dropTypes": ".aasx, .json of .xml",
+    "imported": "{name} geïmporteerd"
   },
   "concepts": {
     "title": "Conceptbeschrijvingen",

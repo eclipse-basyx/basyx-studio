@@ -448,7 +448,8 @@
       "refresh": "Activar o desactivar la actualización automática",
       "dashboard": "Ir a la página de inicio del destino",
       "concepts": "Ir a las descripciones de conceptos",
-      "infrastructures": "Gestionar infraestructuras"
+      "infrastructures": "Gestionar infraestructuras",
+      "import": "Importar un archivo AASX, JSON o XML"
     }
   },
   "capabilities": {
@@ -526,7 +527,10 @@
       "assetType": "Tipo de activo",
       "globalAssetId": "ID global del activo",
       "specificAssetId": "ID específico del activo"
-    }
+    },
+    "empty": "Aún no hay AAS",
+    "emptyText": "Este destino aún no tiene AAS.",
+    "emptyTextImport": "Importa un archivo AASX, JSON o XML, o suéltalo sobre esta lista."
   },
   "viewer": {
     "headline": "Elige una AAS para explorarla",
@@ -688,21 +692,24 @@
   },
   "landing": {
     "subtitle": "Infraestructura AAS",
-    "upload": "Subir",
     "openViewer": "Abrir AAS",
     "status": "Conexión y funciones",
     "dashboardTitle": "Panel próximamente",
     "dashboardText": "Esta página mostrará lo que ocurre en la infraestructura. Mientras tanto, abre las AAS para explorar el contenido."
   },
   "upload": {
-    "title": "Subir contenido AAS",
-    "into": "A {name}",
+    "title": "Importar contenido AAS",
+    "into": "En {name}",
     "drop": "Suelta aquí un archivo .aasx, .json o .xml",
     "browse": "Buscar archivos",
     "or": "o",
     "hint": "El archivo se comprueba antes de añadirlo. El contenido con los mismos identificadores se reemplaza.",
-    "upload": "Subir",
-    "added": "No se añadió ninguna AAS. | Se añadió {count} AAS. | Se añadieron {count} AAS."
+    "upload": "Importar",
+    "added": "No se añadió ninguna AAS. | Se añadió {count} AAS. | Se añadieron {count} AAS.",
+    "action": "Importar",
+    "dropHere": "Suelta para importar en {name}",
+    "dropTypes": ".aasx, .json o .xml",
+    "imported": "{name} importada"
   },
   "concepts": {
     "title": "Descripciones de conceptos",

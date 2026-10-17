@@ -536,7 +536,8 @@
       "refresh": "Automatische Aktualisierung ein- oder ausschalten",
       "dashboard": "Zur Startseite des Ziels",
       "concepts": "Zu den Konzeptbeschreibungen",
-      "infrastructures": "Infrastrukturen verwalten"
+      "infrastructures": "Infrastrukturen verwalten",
+      "import": "AASX-, JSON- oder XML-Datei importieren"
     },
     "structure": {
       "add": "Element zu {name} hinzufügen",
@@ -622,7 +623,10 @@
       "assetType": "Asset-Typ",
       "globalAssetId": "Globale Asset-ID",
       "specificAssetId": "Spezifische Asset-ID"
-    }
+    },
+    "empty": "Noch keine Shells",
+    "emptyText": "Dieses Ziel hat noch keine Shells.",
+    "emptyTextImport": "Importieren Sie eine AASX-, JSON- oder XML-Datei, oder legen Sie sie auf dieser Liste ab."
   },
   "viewer": {
     "headline": "Wählen Sie eine Verwaltungsschale",
@@ -784,21 +788,24 @@
   },
   "landing": {
     "subtitle": "AAS-Infrastruktur",
-    "upload": "Hochladen",
     "openViewer": "Verwaltungsschalen öffnen",
     "status": "Verbindung und Funktionen",
     "dashboardTitle": "Dashboard folgt bald",
     "dashboardText": "Diese Seite wird zeigen, was auf der Infrastruktur passiert. Bis dahin öffnen Sie die Verwaltungsschalen, um den Inhalt zu durchsuchen."
   },
   "upload": {
-    "title": "AAS-Inhalte hochladen",
+    "title": "AAS-Inhalte importieren",
     "into": "Nach {name}",
     "drop": "Legen Sie hier eine .aasx-, .json- oder .xml-Datei ab",
     "browse": "Dateien durchsuchen",
     "or": "oder",
     "hint": "Die Datei wird vor dem Hinzufügen geprüft. Inhalte mit denselben Identifikatoren werden ersetzt.",
-    "upload": "Hochladen",
-    "added": "Es wurden keine Verwaltungsschalen hinzugefügt. | {count} Verwaltungsschale hinzugefügt. | {count} Verwaltungsschalen hinzugefügt."
+    "upload": "Importieren",
+    "added": "Es wurden keine Verwaltungsschalen hinzugefügt. | {count} Verwaltungsschale hinzugefügt. | {count} Verwaltungsschalen hinzugefügt.",
+    "action": "Importieren",
+    "dropHere": "Zum Importieren in {name} ablegen",
+    "dropTypes": ".aasx, .json oder .xml",
+    "imported": "{name} importiert"
   },
   "concepts": {
     "title": "Konzeptbeschreibungen",

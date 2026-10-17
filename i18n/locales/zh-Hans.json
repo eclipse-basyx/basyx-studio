@@ -448,7 +448,8 @@
       "refresh": "开启或关闭自动刷新",
       "dashboard": "前往目标的首页",
       "concepts": "前往概念描述",
-      "infrastructures": "管理基础设施"
+      "infrastructures": "管理基础设施",
+      "import": "导入 AASX、JSON 或 XML 文件"
     }
   },
   "capabilities": {
@@ -526,7 +527,10 @@
       "assetType": "资产类型",
       "globalAssetId": "全局资产 ID",
       "specificAssetId": "特定资产 ID"
-    }
+    },
+    "empty": "还没有管理壳",
+    "emptyText": "此目标还没有管理壳。",
+    "emptyTextImport": "导入 AASX、JSON 或 XML 文件，或将其拖放到此列表上。"
   },
   "viewer": {
     "headline": "选择要浏览的管理壳",
@@ -688,21 +692,24 @@
   },
   "landing": {
     "subtitle": "AAS 基础设施",
-    "upload": "上传",
     "openViewer": "打开管理壳",
     "status": "连接和功能",
     "dashboardTitle": "仪表板即将推出",
     "dashboardText": "此页面将显示基础设施上发生的情况。在此之前，请打开管理壳浏览内容。"
   },
   "upload": {
-    "title": "上传 AAS 内容",
-    "into": "上传到 {name}",
+    "title": "导入 AAS 内容",
+    "into": "导入到 {name}",
     "drop": "将 .aasx、.json 或 .xml 文件拖放到此处",
     "browse": "浏览文件",
     "or": "或",
     "hint": "文件在添加前会先经过检查。标识符相同的内容将被替换。",
-    "upload": "上传",
-    "added": "没有添加任何管理壳。 | 已添加 {count} 个管理壳。 | 已添加 {count} 个管理壳。"
+    "upload": "导入",
+    "added": "没有添加任何管理壳。 | 已添加 {count} 个管理壳。 | 已添加 {count} 个管理壳。",
+    "action": "导入",
+    "dropHere": "拖放以导入到 {name}",
+    "dropTypes": ".aasx、.json 或 .xml",
+    "imported": "已导入 {name}"
   },
   "concepts": {
     "title": "概念描述",

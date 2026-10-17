@@ -17,9 +17,9 @@
           <v-btn
             v-if="capabilities.upload"
             prepend-icon="mdi-upload"
-            :text="t('landing.upload')"
+            :text="t('upload.action')"
             variant="tonal"
-            @click="uploadOpen = true"
+            @click="ui.openUpload()"
           />
 
           <v-btn-primary prepend-icon="$aas" :text="t('landing.openViewer')" :to="`/targets/${targetId}/shells`" />
@@ -52,8 +52,6 @@
         :text="t('landing.dashboardText')"
         :title="t('landing.dashboardTitle')"
       />
-
-      <UploadDialog v-if="capabilities.upload" v-model="uploadOpen" :target="target.data.value" />
     </template>
   </v-container>
 </template>
@@ -68,9 +66,9 @@
   const route = useRoute()
   const invalidate = useInvalidate()
   const { mdAndUp } = useDisplay()
+  const ui = useUiStore()
 
   const targetId = computed(() => String(route.params.targetId))
   const target = useTarget(targetId)
   const capabilities = computed<TargetCapabilities>(() => target.data.value?.capabilities ?? noCapabilities)
-  const uploadOpen = ref(false)
 </script>

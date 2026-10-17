@@ -448,7 +448,8 @@
       "refresh": "自動更新のオン/オフを切り替え",
       "dashboard": "ターゲットのホームページへ移動",
       "concepts": "コンセプト記述へ移動",
-      "infrastructures": "インフラストラクチャを管理"
+      "infrastructures": "インフラストラクチャを管理",
+      "import": "AASX、JSON、XML ファイルをインポート"
     }
   },
   "capabilities": {
@@ -526,7 +527,10 @@
       "assetType": "アセットタイプ",
       "globalAssetId": "グローバルアセット ID",
       "specificAssetId": "固有アセット ID"
-    }
+    },
+    "empty": "管理シェルはまだありません",
+    "emptyText": "このターゲットにはまだ管理シェルがありません。",
+    "emptyTextImport": "AASX、JSON、XML ファイルをインポートするか、この一覧にドロップしてください。"
   },
   "viewer": {
     "headline": "参照する管理シェルを選択",
@@ -688,21 +692,24 @@
   },
   "landing": {
     "subtitle": "AAS インフラストラクチャ",
-    "upload": "アップロード",
     "openViewer": "管理シェルを開く",
     "status": "接続と機能",
     "dashboardTitle": "ダッシュボードは近日公開予定です",
     "dashboardText": "このページには、インフラストラクチャで起きていることが表示される予定です。それまでは、管理シェルを開いてコンテンツを参照してください。"
   },
   "upload": {
-    "title": "AAS コンテンツをアップロード",
-    "into": "アップロード先: {name}",
+    "title": "AAS コンテンツをインポート",
+    "into": "インポート先: {name}",
     "drop": ".aasx、.json、.xml ファイルをここにドロップ",
     "browse": "ファイルを参照",
     "or": "または",
     "hint": "ファイルは追加前に確認されます。同じ識別子を持つコンテンツは置き換えられます。",
-    "upload": "アップロード",
-    "added": "管理シェルは追加されませんでした。 | {count} 件の管理シェルを追加しました。 | {count} 件の管理シェルを追加しました。"
+    "upload": "インポート",
+    "added": "管理シェルは追加されませんでした。 | {count} 件の管理シェルを追加しました。 | {count} 件の管理シェルを追加しました。",
+    "action": "インポート",
+    "dropHere": "ドロップして {name} にインポート",
+    "dropTypes": ".aasx、.json、.xml",
+    "imported": "{name} をインポートしました"
   },
   "concepts": {
     "title": "コンセプト記述",

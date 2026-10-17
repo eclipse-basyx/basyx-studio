@@ -155,6 +155,9 @@
         { key: 'refresh', group: '', title: t('palette.actions.refresh'), icon: 'mdi-refresh-auto', run: () => preferences.update(current => ({ ...current, autoRefresh: !current.autoRefresh })) },
         { key: 'dashboard', group: '', title: t('palette.actions.dashboard'), icon: 'mdi-view-dashboard-outline', run: () => router.push(base) },
       )
+      if (target.canImport.value) {
+        items.push({ key: 'import', group: '', title: t('palette.actions.import'), icon: 'mdi-tray-arrow-up', run: () => ui.openUpload() })
+      }
       if (target.data.value?.capabilities.conceptDescriptions) {
         items.push({ key: 'concepts', group: '', title: t('palette.actions.concepts'), icon: 'mdi-book-open-page-variant-outline', run: () => router.push(`${base}/concepts`) })
       }

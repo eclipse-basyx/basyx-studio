@@ -681,21 +681,23 @@
   },
   "landing": {
     "subtitle": "AAS-Infrastruktur",
-    "upload": "Hochladen",
     "openViewer": "Verwaltungsschalen uffmachen",
     "status": "Verbindung und wat jeht",
     "dashboardTitle": "Hier kommt bald wat",
     "dashboardText": "Hier siehste bald, wat uff de Infrastruktur los is. Bis dahin mach die Verwaltungsschalen uff."
   },
   "upload": {
-    "title": "AAS-Sachen hochladen",
+    "title": "AAS-Sachen rinholen",
     "into": "Nach {name}",
     "drop": "Schmeiß hier 'ne .aasx-, .json- oder .xml-Datei rin",
     "browse": "Dateien suchen",
     "or": "oder",
     "hint": "Wa kieken uns die Datei vorher an. Wat dieselben Identifikatoren hat, wird ausjetauscht.",
-    "upload": "Hochladen",
-    "added": "Da is keene Verwaltungsschale dazujekommen. | {count} Verwaltungsschale is dazujekommen. | {count} Verwaltungsschalen sind dazujekommen."
+    "upload": "Rinholen",
+    "added": "Da is keene Verwaltungsschale dazujekommen. | {count} Verwaltungsschale is dazujekommen. | {count} Verwaltungsschalen sind dazujekommen.",
+    "action": "Rinholen",
+    "dropHere": "Loslassen, denn kommt's nach {name}",
+    "imported": "{name} is rinjeholt"
   },
   "concepts": {
     "title": "Konzeptbeschreibungen",

@@ -11,6 +11,9 @@ export const useUiStore = defineStore('ui', () => {
   /** `null` lets the drawer decide by screen size. */
   const listDrawer = ref<boolean | null>(null)
   const detailsDrawer = ref(false)
+  /** The import dialog of the current target, with a file dropped on the page if any. */
+  const uploadOpen = ref(false)
+  const uploadFile = shallowRef<File | null>(null)
   /** Easter egg: the arcade theme, toggled with the Konami code until the next reload. */
   const arcade = ref(false)
 
@@ -20,5 +23,10 @@ export const useUiStore = defineStore('ui', () => {
     mode.value = mode.value === 'edit' ? 'view' : 'edit'
   }
 
-  return { mode, editing, commandOpen, listDrawer, detailsDrawer, arcade, toggleMode }
+  function openUpload (file: File | null = null) {
+    uploadFile.value = file
+    uploadOpen.value = true
+  }
+
+  return { mode, editing, commandOpen, listDrawer, detailsDrawer, uploadOpen, uploadFile, arcade, toggleMode, openUpload }
 })

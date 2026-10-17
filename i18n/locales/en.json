@@ -536,7 +536,8 @@
       "refresh": "Turn auto-refresh on or off",
       "dashboard": "Go to the target's home page",
       "concepts": "Go to concept descriptions",
-      "infrastructures": "Manage infrastructures"
+      "infrastructures": "Manage infrastructures",
+      "import": "Import AASX, JSON or XML file"
     },
     "structure": {
       "add": "Add element to {name}",
@@ -622,7 +623,10 @@
       "assetType": "Asset type",
       "globalAssetId": "Global asset ID",
       "specificAssetId": "Specific asset ID"
-    }
+    },
+    "empty": "No shells yet",
+    "emptyText": "This target has no shells yet.",
+    "emptyTextImport": "Import an AASX, JSON or XML file, or drop it on this list."
   },
   "viewer": {
     "headline": "Pick a shell to explore",
@@ -784,21 +788,24 @@
   },
   "landing": {
     "subtitle": "AAS infrastructure",
-    "upload": "Upload",
     "openViewer": "Open shells",
     "status": "Connection and features",
     "dashboardTitle": "Dashboard coming soon",
     "dashboardText": "This page will show what happens on the infrastructure. Until then, open the shells to browse the content."
   },
   "upload": {
-    "title": "Upload AAS content",
+    "title": "Import AAS content",
     "into": "Into {name}",
     "drop": "Drop an .aasx, .json or .xml file here",
     "browse": "Browse files",
     "or": "or",
     "hint": "The file is checked before it is added. Content with the same identifiers is replaced.",
-    "upload": "Upload",
-    "added": "No shells were added. | Added {count} shell. | Added {count} shells."
+    "upload": "Import",
+    "added": "No shells were added. | Added {count} shell. | Added {count} shells.",
+    "action": "Import",
+    "dropHere": "Drop to import into {name}",
+    "dropTypes": ".aasx, .json or .xml",
+    "imported": "Imported {name}"
   },
   "concepts": {
     "title": "Concept descriptions",

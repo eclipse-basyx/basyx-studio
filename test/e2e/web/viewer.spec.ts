@@ -80,7 +80,7 @@ test('shows a read-only past state', async ({ page }) => {
   await expect(page.getByText(/Read-only view of the state on/)).toHaveCount(0)
 })
 
-test('exports a shell and uploads the export again', async ({ page }) => {
+test('exports a shell and imports the export again', async ({ page }) => {
   await page.goto(`/targets/${targetId}/shells/${key(edgeCasesShell)}`)
   await page.getByRole('button', { name: 'Export' }).click()
   const download = page.waitForEvent('download')
@@ -90,10 +90,12 @@ test('exports a shell and uploads the export again', async ({ page }) => {
   const content = await readFile((await file.path())!)
 
   await page.goto(`/targets/${targetId}`)
-  await page.getByRole('button', { name: 'Upload' }).click()
+  await page.getByRole('button', { name: 'Import' }).click()
   await page.locator('input[type="file"]').setInputFiles({ name: 'edge-cases.json', mimeType: 'application/json', buffer: content })
-  await page.getByRole('dialog').getByRole('button', { name: 'Upload' }).click()
-  await expect(page.getByText('Added 1 shell.')).toBeVisible()
+  await page.getByRole('dialog').getByRole('button', { name: 'Import' }).click()
+  // A single imported shell opens right away.
+  await expect(page).toHaveURL(new RegExp(`/shells/${key(edgeCasesShell)}$`))
+  await expect(page.getByText(/^Imported /)).toBeVisible()
 })
 
 test('deletes a shell only in edit mode and after confirmation', async ({ page }) => {
