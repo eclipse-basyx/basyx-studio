@@ -56,7 +56,7 @@
     "jsqr": "1.4.0",
     "monaco-editor": "^0.56.0",
     "node-forge": "^1.4.0",
-    "nuxt": "^4.6.1",
+    "nuxt": "^4.6.2",
     "openid-client": "^6.8.8",
     "pg": "^8.23.1",
     "pinia": "^4.1.0",
