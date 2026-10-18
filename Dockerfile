@@ -13,7 +13,7 @@ FROM denoland/deno:bin-2.9.6 AS deno
 
 # The build emits platform-independent JavaScript and WebAssembly, so it runs
 # once on the build host's architecture.
-FROM --platform=$BUILDPLATFORM node:24-trixie-slim AS build
+FROM --platform=$BUILDPLATFORM node:26-trixie-slim AS build
 
 ARG STUDIO_VERSION=""
 ARG STUDIO_COMMIT_SHA=""
@@ -43,7 +43,7 @@ RUN STUDIO_VERSION="${STUDIO_VERSION}" \
     STUDIO_BUILD_DATE="${STUDIO_BUILD_DATE}" \
     pnpm build
 
-FROM node:24-trixie-slim AS runtime
+FROM node:26-trixie-slim AS runtime
 
 ARG STUDIO_VERSION=""
 ARG STUDIO_COMMIT_SHA=""
