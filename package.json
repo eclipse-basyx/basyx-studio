@@ -94,7 +94,7 @@
     "typescript": "^6.0.3",
     "vite-plugin-electron": "^1.1.2",
     "vite-plugin-electron-renderer": "^1.0.0",
-    "vitest": "^5.0.4",
+    "vitest": "^5.0.5",
     "vue-tsc": "^3.3.12"
   },
   "build": {
