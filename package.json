@@ -73,7 +73,7 @@
     "@basyx/model-viewer": "workspace:*",
     "@basyx/studio-sdk": "workspace:*",
     "@electric-sql/pglite-tools": "^0.4.10",
-    "@intlify/message-compiler": "^11.4.13",
+    "@intlify/message-compiler": "^11.4.16",
     "@nuxt/eslint": "^1.17.0",
     "@nuxt/fonts": "^1.0.1",
     "@pinia/nuxt": "^1.0.3",
