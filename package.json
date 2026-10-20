@@ -54,7 +54,7 @@
     "fflate": "^0.8.3",
     "grid-layout-plus": "1.1.1",
     "jsqr": "1.4.0",
-    "monaco-editor": "^0.56.0",
+    "monaco-editor": "^0.57.0",
     "node-forge": "^1.4.0",
     "nuxt": "^4.6.2",
     "openid-client": "^6.8.8",
