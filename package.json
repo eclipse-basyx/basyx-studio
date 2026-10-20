@@ -45,7 +45,7 @@
     "@nuxtjs/i18n": "^10.6.0",
     "@pinia/colada": "1.4.8",
     "@pinia/colada-nuxt": "1.2.0",
-    "@plantuml/core": "^1.2026.8",
+    "@plantuml/core": "^1.2026.9",
     "aas-package3-typescript": "^1.1.0",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
