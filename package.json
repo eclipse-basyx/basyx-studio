@@ -85,7 +85,7 @@
     "@types/semver": "^7.7.1",
     "@vuetify/mcp": "^0.12.2",
     "drizzle-kit": "^0.31.11",
-    "electron": "^44.9.0",
+    "electron": "^44.9.1",
     "electron-builder": "^26.15.3",
     "esbuild": "0.28.2",
     "eslint": "^10.12.0",
