@@ -11,7 +11,7 @@
     "@basyx/studio-app-kit": "workspace:*",
     "@basyx/studio-sdk": "workspace:*",
     "@mdi/font": "7.4.47",
-    "apexcharts": "7.1.0",
+    "apexcharts": "8.3.1",
     "vue": "^3.5.44",
     "vuetify": "^4.2.6"
   },
