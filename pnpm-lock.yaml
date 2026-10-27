@@ -562,8 +562,8 @@ importers:
         specifier: 7.4.47
         version: 7.4.47
       apexcharts:
-        specifier: 8.3.1
-        version: 8.3.1
+        specifier: 8.5.0
+        version: 8.5.0
       vue:
         specifier: ^3.5.44
         version: 3.5.44(typescript@6.0.3)
@@ -3726,11 +3726,11 @@ packages:
     resolution: {integrity: sha512-KMReFUr0B4t+D+OBkjR3KYqvocp2XaSzO55UcB6mgQMd3KbcE+mWTyvVV7D/zsdEbNnV6acZUutkiHQXvTr1Rw==}
     engines: {node: '>= 8'}
 
-  apex-commons@0.8.2:
-    resolution: {integrity: sha512-XTaIc8S8YEJ6gjNMvnY2Eq5X8UM2IstpYaVSh7iERBUXIefJ8hjUR2nGhWr9guZuQpFvG9NFca9arhrDdYSgIQ==}
+  apex-commons@0.8.3:
+    resolution: {integrity: sha512-WdU5lblyL1ByI/nkFOJkSgJYenCsHmay0P3UIcnSeUiCyF1b30SvPSZLbyxOCUOry8IlL7M0/3GvsGbZTMm8FA==}
 
-  apexcharts@8.3.1:
-    resolution: {integrity: sha512-Z0LX1rPyXBe85082t9EqUWzikOdLy3Z184cvL+4uYS7J4kyLAzK50JBtAGKH5OU8Y6EOPqiH8BqjxjMIBF2+gw==}
+  apexcharts@8.5.0:
+    resolution: {integrity: sha512-mH9QiOwIeRGg635OzAc2mznuwrK9XHr9S1RcC26GNNOU6fUPe64cMc7hXGcM9bXz92nO4Ax7P6uxSYaTA7gBDw==}
     engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
 
   app-builder-lib@26.18.0:
@@ -10961,11 +10961,11 @@ snapshots:
       normalize-path: 3.0.0
       picomatch: 2.3.2
 
-  apex-commons@0.8.2: {}
+  apex-commons@0.8.3: {}
 
-  apexcharts@8.3.1:
+  apexcharts@8.5.0:
     dependencies:
-      apex-commons: 0.8.2
+      apex-commons: 0.8.3
 
   app-builder-lib@26.18.0(dmg-builder@26.18.0)(electron-builder-squirrel-windows@26.18.0)(supports-color@10.2.2):
     dependencies:
