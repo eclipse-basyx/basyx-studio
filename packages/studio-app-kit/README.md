@@ -26,7 +26,9 @@ await mountApp(App, { VApp, VList, VListItem })
 
 `mountApp` connects to Studio, creates Vuetify with Studio's defaults,
 aliases (`<v-btn-primary>`, `<v-btn-link>` for values that open something,
-`<v-table-details>` for label and value rows, `<v-card-header>` for the
+`<v-table-details>` for label and value rows, `<v-table-sheet>` for a table
+with column headers and group rows such as a data sheet, `<v-text-field-search>`
+for a search over what a view shows, as Studio's shell list search, `<v-card-header>` for the
 tinted header of a dialog's or section's card, `<v-card-section>` for a part
 of a view in a card of its own, `<v-btn-toggle-icon>` for icon-only choices in a
 `<v-btn-toggle>`, `<v-card-fullscreen>` for a view that fills the window,
@@ -40,8 +42,9 @@ the app mounts.
 | Entry | What |
 | --- | --- |
 | `@basyx/studio-app-kit` | `mountApp`, `loadSubmodel`, and the AAS helpers below |
-| `@basyx/studio-app-kit/aas` | Reading AAS JSON without Vue: `childrenOf`, `child`, `langText`, `textOf`, `humanize`; elements of a template across its versions by idShort or semantic ID (`ElementSpec`, `childrenMatching`, `childMatching`, `matchesSpec`, `hasSpecName`, `conceptOf`; an idShort wins over a semantic ID) and `TextField`s to show and change (`textFieldOf`, `fieldText`) |
+| `@basyx/studio-app-kit/aas` | Reading AAS JSON without Vue: `childrenOf`, `child`, `langText`, `textOf`, `humanize`, `fileRef`; elements of a template across its versions by idShort or semantic ID (`ElementSpec`, `childrenMatching`, `childMatching`, `matchesSpec`, `hasSpecName`, `conceptOf`; an idShort wins over a semantic ID) and `TextField`s and `RangeField`s to show and change (`textFieldOf`, `rangeFieldOf`, `fieldText`) |
 | `@basyx/studio-app-kit/contacts` | IDTA 02002 contact information without Vue: `parseContactInformations`, `parseContactInformation` (also a nameplate's address), `contactName`, `addressLines`, `contactRows` in Studio's seven locales, value lists (`contactRole`, `channelType`), `telUrl`, `mailtoUrl`, `mapUrl`, `contactVCard` ([Contacts](#contacts)) |
+| `@basyx/studio-app-kit/editing` | Changing values in place in Studio's edit mode, with Vue: `useFieldEditor` for Properties, MultiLanguageProperties (in the language shown) and Ranges, and `provideRowActions` / `useRowActions` for what rows do ([Editing values](#editing-values)) |
 | `@basyx/studio-app-kit/i18n` | `provideI18n(client, base, translations, { baseLocale })` and `useI18n()`: texts that follow Studio's locale, the base catalog as fallback ([Texts](#texts)) |
 | `@basyx/studio-app-kit/router` | `createStudioHistory(client, { history })`: a Vue Router history over a module's sub-path ([Modules with pages](#modules-with-pages)) |
 | `@basyx/studio-app-kit/defaults` | The Vuetify defaults of `mountApp`, e.g. for lint rules |
@@ -106,6 +109,33 @@ one row per element instead, each with the `TextField` to change through
 `aas.setElementValue`. The vCard is version 3.0 (RFC 2426); saving it needs
 `studio.ui.saveFiles`, opening `mailto:` and `tel:` URLs
 `studio.ui.navigation` (Studio app API 0.1.14).
+
+## Editing values
+
+`@basyx/studio-app-kit/editing` changes values in place in Studio's edit
+mode, as the Digital Nameplate, Contacts and Technical Data apps do:
+
+```ts
+import { textFieldOf, rangeFieldOf } from '@basyx/studio-app-kit/aas'
+import { provideRowActions, useFieldEditor } from '@basyx/studio-app-kit/editing'
+
+const editor = useFieldEditor({ client, t, locale: () => formatLocale.value, submodelId: () => submodelId, onSaved: async () => reload() })
+await editor.start(textFieldOf(node) ?? rangeFieldOf(node)!, 'Rated power')
+editor.draft.value!.value = '3.2' // a Range's lower bound; `max` its upper one
+await editor.save()
+```
+
+- `start` reads the element again for its revision, and `save` writes based
+  on it, so a change made in the meantime is a conflict (`edit.conflict` of
+  the app's catalog), not overwritten; `edit.forbidden` is shown where the
+  user may not change it.
+- A MultiLanguageProperty changes in the language the view shows, else
+  English, else the first; its other languages stay.
+- A Property and a MultiLanguageProperty are written with
+  `aas.setElementValue`, a Range with `aas.putElement`, which needs Studio's
+  edit mode (Studio app API 0.1.15). An empty bound is left out.
+- `provideRowActions({ canEdit, editor, open, copy, preview })` in the root
+  component hands every row what it can do; `useRowActions()` takes it.
 
 ## Dialogs
 

@@ -477,7 +477,7 @@ test('runs a backend app in Deno with the user\'s rights (DoD 8)', async ({ page
   const frame = appFrame(page)
 
   await frame.getByRole('button', { name: 'Summarize target' }).click()
-  await expect(frame.locator('[data-test="summary"]')).toContainText('68 shells', { timeout: 30_000 })
+  await expect(frame.locator('[data-test="summary"]')).toContainText('70 shells', { timeout: 30_000 })
   await expect(frame.locator('[data-test="summary"]')).toContainText('Deno 2.')
 
   await frame.getByRole('button', { name: 'Check isolation' }).click()

@@ -1,4 +1,4 @@
-import type { ElementSnapshot, ElementValue, FileContent, JsonObject, ShellSummary, SpecificAssetId, SubmodelSnapshot, SubmodelSummary, WriteStep } from './protocol.ts'
+import type { ConceptInfo, ElementSnapshot, ElementValue, FileContent, JsonObject, ShellSummary, SpecificAssetId, SubmodelSnapshot, SubmodelSummary, WriteStep } from './protocol.ts'
 import type { TestHandlers } from './testing.ts'
 import { putAttachmentMaxBytes } from './protocol.ts'
 import { StudioError } from './transport.ts'
@@ -15,6 +15,8 @@ import { StudioError } from './transport.ts'
 export interface MemoryAasOptions {
   shells?: JsonObject[]
   submodels?: JsonObject[]
+  /** Concept descriptions for `studio.aas.describeConcepts` (Studio app API 0.1.15). */
+  conceptDescriptions?: JsonObject[]
 }
 
 export interface MemoryAas {
@@ -42,6 +44,26 @@ const titles: Record<string, { status: number, title: string }> = {
 function refuse (code: keyof typeof titles, detail?: string): StudioError {
   const { status, title } = titles[code]!
   return new StudioError({ code, title, status, retryable: false, ...(detail === undefined ? {} : { detail }) })
+}
+
+type LangStrings = ConceptInfo['preferredName']
+
+function langStrings (value: unknown): LangStrings {
+  return Array.isArray(value) ? (value as LangStrings).filter(entry => typeof entry?.language === 'string' && typeof entry.text === 'string').map(({ language, text }) => ({ language, text })) : []
+}
+
+/** A concept description's IEC 61360 content, as Studio answers `describeConcepts`. */
+function conceptInfo (id: string, cd: JsonObject): ConceptInfo {
+  const specifications = Array.isArray(cd.embeddedDataSpecifications) ? cd.embeddedDataSpecifications as JsonObject[] : []
+  const content = (specifications.map(spec => spec?.dataSpecificationContent).find(value => typeof value === 'object' && value !== null) ?? {}) as JsonObject
+  return {
+    id,
+    preferredName: langStrings(content.preferredName),
+    shortName: langStrings(content.shortName),
+    definition: langStrings(content.definition),
+    unit: typeof content.unit === 'string' ? content.unit : null,
+    dataType: typeof content.dataType === 'string' ? content.dataType : null,
+  }
 }
 
 /** Key-order independent JSON, so equal content has equal revisions. */
@@ -142,6 +164,7 @@ function joinPath (parentPath: string | null, child: JsonObject, index: number, 
 export function memoryAas (options: MemoryAasOptions = {}): MemoryAas {
   const shells: JsonObject[] = structuredClone(options.shells ?? [])
   const submodels: JsonObject[] = structuredClone(options.submodels ?? [])
+  const conceptDescriptions: JsonObject[] = structuredClone(options.conceptDescriptions ?? [])
   // Contents belong to the File's value, as in a workspace package: an
   // element that keeps its value keeps its content, also through a rename
   // or a replaced submodel.
@@ -253,6 +276,12 @@ export function memoryAas (options: MemoryAasOptions = {}): MemoryAas {
     'studio.aas.getSubmodel': ({ submodelId }) => structuredClone(submodelOf(submodelId)),
     'studio.aas.getSubmodelSnapshot': ({ submodelId }) => submodelSnapshot(submodelOf(submodelId)),
     'studio.aas.getElement': ({ submodelId, idShortPath }) => snapshot(locate(submodelId, idShortPath).element),
+    'studio.aas.describeConcepts': ({ ids }) => ({
+      concepts: ids.map(id => {
+        const cd = conceptDescriptions.find(candidate => candidate.id === id)
+        return cd ? conceptInfo(id, cd) : null
+      }),
+    }),
     'studio.aas.setElementValue': ({ submodelId, idShortPath, value, revision: expected }) => {
       const { element } = locate(submodelId, idShortPath)
       checkRevision(element, expected)

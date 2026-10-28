@@ -1,12 +1,14 @@
 {
   "name": "@basyx/studio-app-technical-data",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vite build"
+    "build": "vite build",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@basyx/file-viewer": "workspace:*",
     "@basyx/studio-app-kit": "workspace:*",
     "@basyx/studio-sdk": "workspace:*",
     "@mdi/font": "7.4.47",

@@ -5,13 +5,15 @@ import type { SyncPlan } from '../aas/sync'
 import type { AasTarget, ElementSnapshot, StructureResult } from '../targets/aas-target'
 import type { AppInstallationRecord } from './store'
 import type { TrustStore } from './trust'
-import type { Methods } from '@basyx/studio-sdk/protocol'
+import type { ConceptInfo, Methods } from '@basyx/studio-sdk/protocol'
 import { editModeMethods, methodPermissions } from '#shared/contract'
+import { toConceptInfo } from '../aas/basyx-go'
 import { addSubmodel, createShell, createStandaloneSubmodel, deleteShellWithSubmodels, deleteSubmodelWithReferences } from '../aas/creation'
 import { childProperty, containerChildren, verifySubmodel } from '../aas/edits'
 import { parseLocator, splitAddressable } from '../aas/keys'
 import { firstKeyValue } from '../aas/outline'
 import { resolveSubmodelRefs } from '../aas/submodel-refs'
+import { isAbsent } from '../copies/plan'
 import { StudioProblem } from '../problem'
 import { revisionOf, structureRevisionOf } from '../targets/revision'
 import { installationTrust, revocationReason } from './trust'
@@ -176,6 +178,39 @@ function submodelJson (submodel: JsonObject): JsonObject {
   return { modelType: 'Submodel', ...submodel }
 }
 
+/** Concept descriptions read at once for `describeConcepts`. */
+const conceptReads = 8
+
+/**
+ * The concept descriptions for semantic IDs, in their order (app API 0.1.15):
+ * each ID read once, a few at a time; `null` for one the target does not
+ * have, and for all on a target without concept descriptions. Other failures
+ * fail the call rather than look like a missing description.
+ */
+async function describeConcepts (target: AasTarget, ids: string[]): Promise<Array<ConceptInfo | null>> {
+  if (!target.capabilities.conceptDescriptions) {
+    return ids.map(() => null)
+  }
+  const unique = [...new Set(ids)]
+  const found = new Map<string, ConceptInfo | null>()
+  let next = 0
+  const read = async () => {
+    while (next < unique.length) {
+      const id = unique[next++]!
+      try {
+        found.set(id, toConceptInfo(id, await target.conceptDescription(id)))
+      } catch (error) {
+        if (!isAbsent(error)) {
+          throw error
+        }
+        found.set(id, null)
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(conceptReads, unique.length) }, read))
+  return ids.map(id => found.get(id) ?? null)
+}
+
 /**
  * Runs an AAS capability method on the caller's target. Parameters are
  * already validated; structural writes use the editor's code paths, so
@@ -214,6 +249,9 @@ export async function executeAasMethod (context: AasCallContext, method: AasMeth
     }
     case 'studio.aas.getElement': {
       return toSnapshot(await target.element(params.submodelId, addressable(params.idShortPath)))
+    }
+    case 'studio.aas.describeConcepts': {
+      return { concepts: await describeConcepts(target, params.ids as string[]) }
     }
     case 'studio.aas.setElementValue': {
       return toSnapshot(await target.setElementValue(params.submodelId, addressable(params.idShortPath), params.value, params.revision))

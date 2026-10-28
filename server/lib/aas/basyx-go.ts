@@ -1,5 +1,6 @@
 import type { AccessGrant, ChangeEvent, ConceptDescriptionSummary, EffectiveRights, LangString, OperationArgument, RightAction } from '#shared/contract'
 import type { JsonObject } from './outline'
+import type { ConceptInfo } from '@basyx/studio-sdk/protocol'
 import { changeActions, changeEntities, rightActions } from '#shared/contract'
 import { encodeKey } from './keys'
 
@@ -51,11 +52,16 @@ export function toChangeEvent (record: JsonObject): ChangeEvent | null {
   }
 }
 
-/** A concept description's IEC 61360 summary for the list view. */
-export function toConceptDescriptionSummary (cd: JsonObject): ConceptDescriptionSummary {
-  const content = objects(cd.embeddedDataSpecifications)
+/** The content of a concept description's (first) data specification, e.g. IEC 61360's. */
+function dataSpecificationContent (cd: JsonObject): JsonObject {
+  return objects(cd.embeddedDataSpecifications)
     .map(spec => spec.dataSpecificationContent)
     .find((value): value is JsonObject => typeof value === 'object' && value !== null) ?? {}
+}
+
+/** A concept description's IEC 61360 summary for the list view. */
+export function toConceptDescriptionSummary (cd: JsonObject): ConceptDescriptionSummary {
+  const content = dataSpecificationContent(cd)
   return {
     id: String(cd.id),
     idShort: typeof cd.idShort === 'string' ? cd.idShort : null,
@@ -64,6 +70,12 @@ export function toConceptDescriptionSummary (cd: JsonObject): ConceptDescription
     dataType: typeof content.dataType === 'string' ? content.dataType : null,
     unit: typeof content.unit === 'string' ? content.unit : null,
   }
+}
+
+/** What an app learns of a concept description (`studio.aas.describeConcepts`, app API 0.1.15), under the ID it asked for. */
+export function toConceptInfo (id: string, cd: JsonObject): ConceptInfo {
+  const { preferredName, definition, unit, dataType } = toConceptDescriptionSummary(cd)
+  return { id, preferredName, shortName: langStrings(dataSpecificationContent(cd).shortName), definition, unit, dataType }
 }
 
 const numericTypes = new Set(['xs:double', 'xs:float', 'xs:decimal', 'xs:int', 'xs:integer', 'xs:long', 'xs:short', 'xs:byte',

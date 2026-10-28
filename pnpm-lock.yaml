@@ -558,6 +558,9 @@ importers:
 
   apps/technical-data:
     dependencies:
+      '@basyx/file-viewer':
+        specifier: workspace:*
+        version: link:../../packages/file-viewer
       '@basyx/studio-app-kit':
         specifier: workspace:*
         version: link:../../packages/studio-app-kit

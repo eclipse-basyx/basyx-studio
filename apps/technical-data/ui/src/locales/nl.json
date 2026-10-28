@@ -1,0 +1,88 @@
+{
+  "technicalData": {
+    "untitled": "Product",
+    "logo": "Logo van {name}",
+    "fullscreen": "Volledig scherm",
+    "empty": "Dit submodel bevat geen technische gegevens."
+  },
+  "sections": {
+    "general": "Algemene informatie",
+    "classifications": "Productclassificaties",
+    "properties": "Technische eigenschappen",
+    "specificDescriptions": "Specifieke beschrijvingen",
+    "further": "Meer informatie"
+  },
+  "general": {
+    "manufacturerName": "Fabrikant",
+    "productDesignation": "Productaanduiding",
+    "articleNumber": "Artikelnummer",
+    "orderCode": "Bestelcode",
+    "articleShort": "Art.nr. {value}",
+    "orderShort": "Bestelcode {value}"
+  },
+  "classification": {
+    "version": "Versie {version}",
+    "showArea": "Eigenschappen van {name} tonen",
+    "fields": {
+      "system": "Classificatiesysteem",
+      "version": "Systeemversie",
+      "url": "Adres van het systeem",
+      "classId": "Klasse-ID",
+      "codedName": "Gecodeerde klassenaam",
+      "className": "Klassenaam"
+    }
+  },
+  "sheet": {
+    "property": "Eigenschap",
+    "value": "Waarde",
+    "unit": "Eenheid",
+    "entry": "Item {number}",
+    "area": "Gebied {number}",
+    "description": "Beschrijving",
+    "search": "Eigenschappen zoeken",
+    "matches": "{count} van {total} eigenschappen",
+    "noMatches": "Geen eigenschap komt overeen met ‘{query}’.",
+    "definition": "Definitie",
+    "collapse": "{label} samenvouwen",
+    "expand": "{label} uitvouwen",
+    "empty": "Geen technische eigenschappen.",
+    "onlyDescriptions": "Geen technische eigenschap komt overeen met ‘{query}’; de specifieke beschrijvingen hieronder wel."
+  },
+  "csv": {
+    "button": "CSV",
+    "download": "Downloaden als CSV",
+    "fileName": "{name} technische gegevens.csv",
+    "area": "Gebied",
+    "section": "Sectie",
+    "min": "Minimum",
+    "max": "Maximum",
+    "semanticId": "Semantische ID"
+  },
+  "further": {
+    "validDate": "Geldig vanaf",
+    "statement": "Verklaring",
+    "validFrom": "Geldig vanaf {date}"
+  },
+  "image": {
+    "open": "{name} tonen"
+  },
+  "value": {
+    "yes": "Ja",
+    "no": "Nee"
+  },
+  "copy": {
+    "copy": "{label} kopiëren",
+    "copied": "Gekopieerd naar het klembord."
+  },
+  "edit": {
+    "edit": "{label} bewerken",
+    "save": "Opslaan",
+    "cancel": "Annuleren",
+    "saved": "{label} opgeslagen.",
+    "conflict": "Iemand anders heeft deze waarde intussen gewijzigd. Annuleer en probeer het opnieuw.",
+    "forbidden": "Je mag deze waarde niet wijzigen.",
+    "language": "Taal: {language}",
+    "min": "Minimum",
+    "max": "Maximum"
+  }
+}

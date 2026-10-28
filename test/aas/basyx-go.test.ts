@@ -8,6 +8,7 @@ import {
   toAccessGrants,
   toChangeEvent,
   toConceptDescriptionSummary,
+  toConceptInfo,
   toEffectiveRights,
   typedValue,
 } from '~~/server/lib/aas/basyx-go'
@@ -71,6 +72,21 @@ describe('BaSyx Go mappings', () => {
       dataType: 'STRING',
       unit: 'kg',
     })
+  })
+
+  it('describes a concept to apps under the ID they asked for, with its short name (app API 0.1.15)', () => {
+    expect(toConceptInfo('0173-1#02-AAB381#005', {
+      id: 'https://api.eclass-cdp.com/0173-1-02-AAB381-005',
+      embeddedDataSpecifications: [{ dataSpecificationContent: { preferredName: [{ language: 'en', text: 'Rated power' }], shortName: [{ language: 'en', text: 'P' }, { language: 'de' }], definition: [{ language: 'en', text: 'Power at rated values.' }], dataType: 'REAL_MEASURE', unit: 'kW' } }],
+    })).toEqual({
+      id: '0173-1#02-AAB381#005',
+      preferredName: [{ language: 'en', text: 'Rated power' }],
+      shortName: [{ language: 'en', text: 'P' }],
+      definition: [{ language: 'en', text: 'Power at rated values.' }],
+      unit: 'kW',
+      dataType: 'REAL_MEASURE',
+    })
+    expect(toConceptInfo('urn:x', { id: 'urn:x' })).toEqual({ id: 'urn:x', preferredName: [], shortName: [], definition: [], unit: null, dataType: null })
   })
 
   it('reads grants and effective rights, ignoring malformed entries', () => {

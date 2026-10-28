@@ -3,8 +3,6 @@ import { readFileSync } from 'node:fs'
 import { fieldText } from '@basyx/studio-app-kit/aas'
 import { addressText } from '@basyx/studio-app-kit/contacts'
 import { describe, expect, it } from 'vitest'
-import { reactive } from 'vue'
-import { draftValue, editLanguage } from '../../apps/nameplate/ui/src/fieldEditor'
 import { isExpired, parseNameplate, templateVersion } from '../../apps/nameplate/ui/src/nameplate'
 import { countryText, dateText, headline, manufacturerRows, markingExpired, markingName, markingRows, markingSubtitle, productRows, propertyGroups, templateLabel, versionChips } from '../../apps/nameplate/ui/src/presentation'
 
@@ -202,31 +200,5 @@ describe('presentation', () => {
     // In edit mode, the guideline is a row too.
     expect(propertyGroups(t, v3.assetSpecificProperties, 'en', true)[1]!.rows[0]!.label).toBe('Guideline for conformity declaration')
     expect(propertyGroups(t, v2.assetSpecificProperties, 'en', false).map(group => group.title)).toEqual(['assetSpecific.guideline{"value":"2006/42/EC"}'])
-  })
-})
-
-describe('changing values in place', () => {
-  const property = { path: 'SerialNumber', modelType: 'Property' as const, values: [], valueId: '' }
-  const mlp = { path: 'ManufacturerProductDesignation', modelType: 'MultiLanguageProperty' as const, values: [], valueId: '' }
-  const texts = [{ language: 'en', text: 'Gear motor' }, { language: 'de', text: 'Getriebemotor' }]
-
-  it('changes a MultiLanguageProperty in the language the view shows, keeping the others', () => {
-    expect(editLanguage(texts, 'de-saar')).toBe('de')
-    expect(editLanguage(texts, 'fr')).toBe('en')
-    expect(editLanguage([], 'fr')).toBe('fr')
-    expect(draftValue({ field: mlp, value: 'Getriebemotor GM-40', language: 'de', values: texts })).toEqual([{ language: 'en', text: 'Gear motor' }, { language: 'de', text: 'Getriebemotor GM-40' }])
-    expect(draftValue({ field: mlp, value: 'Motoréducteur', language: 'fr', values: texts })).toEqual([...texts, { language: 'fr', text: 'Motoréducteur' }])
-    expect(draftValue({ field: mlp, value: ' ', language: 'de', values: texts })).toEqual([{ language: 'en', text: 'Gear motor' }])
-  })
-
-  it('writes plain texts, which postMessage can clone, from the draft\'s reactive ones', () => {
-    const draft = reactive({ field: mlp, value: 'Getriebemotor GM-40', language: 'de', values: texts.map(entry => ({ ...entry })) })
-    expect(() => structuredClone(draftValue(draft))).not.toThrow()
-    expect(() => structuredClone(draftValue({ ...draft, value: '' }))).not.toThrow()
-  })
-
-  it('writes a Property\'s text, and no value for an empty one', () => {
-    expect(draftValue({ field: property, value: ' SN-1 ', language: '', values: [] })).toBe('SN-1')
-    expect(draftValue({ field: property, value: '', language: '', values: [] })).toBeNull()
   })
 })

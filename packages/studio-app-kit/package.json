@@ -17,6 +17,7 @@
     ".": "./src/index.ts",
     "./aas": "./src/aas.ts",
     "./contacts": "./src/contacts.ts",
+    "./editing": "./src/editing.ts",
     "./i18n": "./src/i18n.ts",
     "./router": "./src/router.ts",
     "./defaults": "./src/defaults.ts",
@@ -91,6 +92,10 @@
       "./contacts": {
         "types": "./dist/contacts.d.ts",
         "default": "./dist/contacts.js"
+      },
+      "./editing": {
+        "types": "./dist/editing.d.ts",
+        "default": "./dist/editing.js"
       },
       "./i18n": {
         "types": "./dist/i18n.d.ts",

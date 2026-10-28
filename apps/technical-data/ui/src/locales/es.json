@@ -1,0 +1,88 @@
+{
+  "technicalData": {
+    "untitled": "Producto",
+    "logo": "Logotipo de {name}",
+    "fullscreen": "Pantalla completa",
+    "empty": "Este submodelo no tiene datos técnicos."
+  },
+  "sections": {
+    "general": "Información general",
+    "classifications": "Clasificaciones del producto",
+    "properties": "Propiedades técnicas",
+    "specificDescriptions": "Descripciones específicas",
+    "further": "Más información"
+  },
+  "general": {
+    "manufacturerName": "Fabricante",
+    "productDesignation": "Designación del producto",
+    "articleNumber": "Número de artículo",
+    "orderCode": "Código de pedido",
+    "articleShort": "Art. n.º {value}",
+    "orderShort": "Código de pedido {value}"
+  },
+  "classification": {
+    "version": "Versión {version}",
+    "showArea": "Mostrar las propiedades de {name}",
+    "fields": {
+      "system": "Sistema de clasificación",
+      "version": "Versión del sistema",
+      "url": "Dirección del sistema",
+      "classId": "ID de clase",
+      "codedName": "Nombre codificado de la clase",
+      "className": "Nombre de la clase"
+    }
+  },
+  "sheet": {
+    "property": "Propiedad",
+    "value": "Valor",
+    "unit": "Unidad",
+    "entry": "Entrada {number}",
+    "area": "Área {number}",
+    "description": "Descripción",
+    "search": "Buscar propiedades",
+    "matches": "{count} de {total} propiedades",
+    "noMatches": "Ninguna propiedad coincide con «{query}».",
+    "definition": "Definición",
+    "collapse": "Contraer {label}",
+    "expand": "Expandir {label}",
+    "empty": "No hay propiedades técnicas.",
+    "onlyDescriptions": "Ninguna propiedad técnica coincide con «{query}»; las descripciones específicas de abajo sí."
+  },
+  "csv": {
+    "button": "CSV",
+    "download": "Descargar como CSV",
+    "fileName": "{name} datos técnicos.csv",
+    "area": "Área",
+    "section": "Sección",
+    "min": "Mínimo",
+    "max": "Máximo",
+    "semanticId": "ID semántico"
+  },
+  "further": {
+    "validDate": "Válido desde",
+    "statement": "Declaración",
+    "validFrom": "Válido desde {date}"
+  },
+  "image": {
+    "open": "Mostrar {name}"
+  },
+  "value": {
+    "yes": "Sí",
+    "no": "No"
+  },
+  "copy": {
+    "copy": "Copiar {label}",
+    "copied": "Copiado al portapapeles."
+  },
+  "edit": {
+    "edit": "Editar {label}",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "saved": "{label} guardado.",
+    "conflict": "Otra persona ha cambiado este valor mientras tanto. Cancela e inténtalo de nuevo.",
+    "forbidden": "No tienes permiso para cambiar este valor.",
+    "language": "Idioma: {language}",
+    "min": "Mínimo",
+    "max": "Máximo"
+  }
+}

@@ -8,6 +8,7 @@ import { VBtnGroup } from 'vuetify/components/VBtnGroup'
 import { VBtnToggle } from 'vuetify/components/VBtnToggle'
 import { VCard, VCardItem } from 'vuetify/components/VCard'
 import { VTable } from 'vuetify/components/VTable'
+import { VTextField } from 'vuetify/components/VTextField'
 import { Tooltip } from 'vuetify/directives'
 import { aliases, mdi } from 'vuetify/iconsets/mdi'
 import { appDefaults } from './defaults.ts'
@@ -41,7 +42,7 @@ export async function mountApp (app: Component, components: Record<string, Compo
     components: { ...components, VBtn, VBtnGroup, VBtnToggle, VCard, VCardItem, VTable },
     // `v-tooltip` as Studio uses it, e.g. on icon-only buttons.
     directives: { Tooltip },
-    aliases: { VBtnPrimary: VBtn, VBtnSecondary: VBtn, VBtnToggleIcon: VBtn, VBtnLink: VBtn, VCardFullscreen: VCard, VCardHeader: VCardItem, VCardSection: VCard, VViewCard: VCard, VTableDetails: VTable },
+    aliases: { VBtnPrimary: VBtn, VBtnSecondary: VBtn, VBtnToggleIcon: VBtn, VBtnLink: VBtn, VCardFullscreen: VCard, VCardHeader: VCardItem, VCardSection: VCard, VViewCard: VCard, VTableDetails: VTable, VTableSheet: VTable, VTextFieldSearch: VTextField },
     defaults: appDefaults,
     icons: { defaultSet: 'mdi', aliases, sets: { mdi } },
   })

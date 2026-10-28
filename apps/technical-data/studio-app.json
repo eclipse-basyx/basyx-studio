@@ -2,21 +2,29 @@
   "$schema": "../../packages/studio-sdk/app-manifest.schema.json",
   "manifestVersion": 0,
   "id": "org.eclipse.basyx.studio.technical-data",
-  "version": "1.1.0",
-  "publisher": { "name": "Eclipse BaSyx" },
-  "title": { "en": "Technical Data" },
-  "description": { "en": "Shows the technical properties (IDTA 02003) of an asset on its overview." },
-  "studioApi": "^0.1.0",
+  "version": "2.0.0",
+  "publisher": {"name": "Eclipse BaSyx"},
+  "title": {"en": "Technical Data", "de": "Technische Daten", "es": "Datos técnicos", "fr": "Données techniques", "ja": "技術データ", "nl": "Technische gegevens", "zh-Hans": "技术数据"},
+  "description": {
+    "en": "Shows the technical data of an asset (IDTA 02003 2.0, and the ZVEI templates 1.2 and 1.1) as a data sheet: the product with its manufacturer, logo, images and classes, the technical properties of every area in tables with units, readable names and definitions from the concept descriptions, with search and a CSV download, the specific descriptions, and the further information. In edit mode, its values can be changed.",
+    "de": "Zeigt die technischen Daten eines Assets (IDTA 02003 2.0 sowie die ZVEI-Vorlagen 1.2 und 1.1) als Datenblatt: das Produkt mit Hersteller, Logo, Bildern und Klassen, die technischen Eigenschaften jedes Bereichs in Tabellen mit Einheiten, lesbaren Namen und Definitionen aus den Konzeptbeschreibungen, mit Suche und CSV-Download, die spezifischen Beschreibungen und die weiteren Informationen. Im Bearbeitungsmodus lassen sich die Werte ändern.",
+    "es": "Muestra los datos técnicos de un activo (IDTA 02003 2.0, y las plantillas ZVEI 1.2 y 1.1) como una hoja de datos: el producto con su fabricante, logotipo, imágenes y clases, las propiedades técnicas de cada área en tablas con unidades, nombres legibles y definiciones de las descripciones de conceptos, con búsqueda y descarga en CSV, las descripciones específicas y la información adicional. En el modo de edición se pueden cambiar sus valores.",
+    "fr": "Affiche les données techniques d'un actif (IDTA 02003 2.0, et les modèles ZVEI 1.2 et 1.1) sous forme de fiche technique : le produit avec son fabricant, son logo, ses images et ses classes, les propriétés techniques de chaque zone dans des tableaux avec unités, noms lisibles et définitions issus des descriptions de concepts, avec recherche et téléchargement CSV, les descriptions spécifiques et les informations complémentaires. En mode édition, ses valeurs peuvent être modifiées.",
+    "ja": "資産の技術データ（IDTA 02003 2.0、ZVEI テンプレート 1.2 および 1.1）をデータシートとして表示します。製造元・ロゴ・画像・クラスを含む製品、概念記述からの単位・読みやすい名前・定義を含む各領域の技術特性の表（検索と CSV ダウンロード付き）、固有の説明、その他の情報です。編集モードでは値を変更できます。",
+    "nl": "Toont de technische gegevens van een asset (IDTA 02003 2.0, en de ZVEI-sjablonen 1.2 en 1.1) als datasheet: het product met fabrikant, logo, afbeeldingen en klassen, de technische eigenschappen van elk gebied in tabellen met eenheden, leesbare namen en definities uit de conceptbeschrijvingen, met zoeken en een CSV-download, de specifieke beschrijvingen en de verdere informatie. In de bewerkingsmodus kunnen de waarden worden gewijzigd.",
+    "zh-Hans": "以数据表形式显示资产的技术数据（IDTA 02003 2.0，以及 ZVEI 模板 1.2 和 1.1）：产品及其制造商、徽标、图片和类别，各区域的技术属性表（含来自概念描述的单位、易读名称和定义，可搜索并下载为 CSV），特定描述以及更多信息。在编辑模式下可以更改其值。"
+  },
+  "studioApi": "^0.1.15",
   "runtimes": ["hosted", "desktop"],
-  "permissions": ["studio.aas.read"],
+  "permissions": ["studio.aas.read", "studio.aas.write", "studio.ui.notifications", "studio.ui.navigation", "studio.ui.clipboard", "studio.ui.saveFiles"],
   "contributes": {
     "submodelViews": [
       {
         "id": "technical-data",
-        "title": { "en": "Technical Data" },
+        "title": {"en": "Technical Data", "de": "Technische Daten", "es": "Datos técnicos", "fr": "Données techniques", "ja": "技術データ", "nl": "Technische gegevens", "zh-Hans": "技术数据"},
         "entry": "ui/index.html",
         "semanticIds": ["0173-1#01-AHX837#002", "https://admin-shell.io/idta/TechnicalData/Submodel/2/0", "https://admin-shell.io/ZVEI/TechnicalData/Submodel/1/2", "https://admin-shell.io/ZVEI/TechnicalData/Submodel/1/1"],
-        "columns": { "md": 12, "lg": 6, "xxl": 4 }
+        "columns": {"md": 12, "xl": 8}
       }
     ]
   }

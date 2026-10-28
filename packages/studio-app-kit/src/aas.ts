@@ -190,3 +190,61 @@ export function textFieldOf (node: Node | undefined): TextField | undefined {
 export function fieldText (field: TextField | undefined, locale: string): string {
   return field ? langText(field.values, locale) : ''
 }
+
+/** A Range's bounds as text, with what changing them needs (app kit `./editing`). */
+export interface RangeField {
+  /** The idShortPath, for `aas.getElement` and `aas.putElement`. */
+  path: string
+  modelType: 'Range'
+  /** The lower bound; empty when open. */
+  min: string
+  /** The upper bound; empty when open. */
+  max: string
+  /** E.g. `xs:double`. */
+  valueType: string
+}
+
+/** What can be changed in place: a Property's or MultiLanguageProperty's value, or a Range's bounds. */
+export type EditableField = TextField | RangeField
+
+function boundText (value: unknown): string {
+  return typeof value === 'string' || typeof value === 'number' ? String(value).trim() : ''
+}
+
+/** A Range as a `RangeField`; `undefined` for other elements. */
+export function rangeFieldOf (node: Node | undefined): RangeField | undefined {
+  const element = node?.element
+  if (!node || element?.modelType !== 'Range') {
+    return undefined
+  }
+  return { path: node.path, modelType: 'Range', min: boundText(element.min), max: boundText(element.max), valueType: String(element.valueType ?? '') }
+}
+
+/** A File element: its idShortPath (for `ui.readFile` and `ui.previewFile`), media type and value. */
+export interface FileRef {
+  path: string
+  contentType: string
+  value: string
+  /** The file name, from the value's last segment. */
+  name: string
+  /** The value is an http(s) address at another host. */
+  external: boolean
+}
+
+/** A File element with a value as a `FileRef`; `null` for other elements and empty Files. */
+export function fileRef (node: Node | undefined): FileRef | null {
+  const value = node?.element.value
+  const text = typeof value === 'string' ? value.trim() : ''
+  if (!node || node.element.modelType !== 'File' || text === '') {
+    return null
+  }
+  const external = /^https?:\/\//i.test(text)
+  const segment = (external ? URL.parse(text)?.pathname ?? text : text).split('/').pop() ?? ''
+  let name = segment
+  try {
+    name = decodeURIComponent(segment)
+  } catch {
+    // Not percent-encoded: as it is.
+  }
+  return { path: node.path, contentType: String(node.element.contentType ?? '').trim(), value: text, name, external }
+}

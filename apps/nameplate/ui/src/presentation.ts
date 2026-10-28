@@ -1,5 +1,5 @@
-import type { FileRef, Marking, Nameplate, NameplateFieldKey, PropertyNode } from './nameplate'
-import type { TextField } from '@basyx/studio-app-kit/aas'
+import type { Marking, Nameplate, NameplateFieldKey, PropertyNode } from './nameplate'
+import type { FileRef, TextField } from '@basyx/studio-app-kit/aas'
 import type { Translate } from '@basyx/studio-app-kit/i18n'
 import { fieldText, humanize, langText } from '@basyx/studio-app-kit/aas'
 import { contactRows, countryName, linkUrl } from '@basyx/studio-app-kit/contacts'

@@ -45,6 +45,7 @@ runs the app, whatever the package version.
 | 0.1.11 | 0.1.12: `ui.previewFile`, `context.fills`; `previewedFiles` in `testing`; in the file viewer, every kind of file (`./vue`, `./viewer`) and the 3D view in parts (`./model`) | next release |
 | 0.1.12 | 0.1.13: `ui.setViewState`, which Studio's full-screen button on the Overview opens the view with, and `context.fullscreenControl`, where Studio shows that button; `viewState` in `testing` | next release |
 | 0.1.13 | 0.1.14: `ui.saveFile` and permission `studio.ui.saveFiles`; `mailto:` and `tel:` in `ui.openExternal`; `savedFiles` in `testing`; in the app kit, `./contacts` for IDTA 02002 contact information (names, addresses, channels, vCard) | next release |
+| 0.1.14 | 0.1.15: `aas.describeConcepts` (units, names and definitions from the target's concept descriptions); `conceptDescriptions` in `memoryAas`; in the app kit, `./editing` for changing values in place (`useFieldEditor`, also Ranges, and the row actions) | next release |
 
 A new app API minor version (new methods) is a new minor version of the
 packages; fixes are patch versions. While the app API is `0.x`, additions
@@ -105,7 +106,7 @@ reaches it as `context.subPath` with `onContext`, as with every change.
 
 | Permission | Allows |
 | --- | --- |
-| `studio.aas.read` | `aas.listShells`, `getShell`, `listSubmodels`, `getSubmodel`, `getSubmodelSnapshot`, `getElement` on the active target; `ui.openFile` and `ui.readFile` for its File elements |
+| `studio.aas.read` | `aas.listShells`, `getShell`, `listSubmodels`, `getSubmodel`, `getSubmodelSnapshot`, `getElement` on the active target; `aas.describeConcepts`: the unit, preferred name, short name, definition and data type of its concept descriptions for up to 500 semantic IDs (Studio app API 0.1.15); `ui.openFile` and `ui.readFile` for its File elements |
 | `studio.aas.write` | `aas.setElementValue` (Property and MultiLanguageProperty values, with the revision read before); in edit mode, structural writes and attachments (Studio app API 0.1.5, see [Changing structure and files](#changing-structure-and-files)) |
 | `studio.ui.notifications` | `ui.notify` |
 | `studio.ui.navigation` | `ui.navigate`: change the module's own sub-path (nested routes); `ui.openTarget`, `ui.openExternal` and `ui.openShell`: open a target, a URL in the system browser (or an email address or phone number in the mail or phone app, Studio app API 0.1.14), or Studio's page of a shell; `ui.openView` and `ui.embedView`: show a submodel in another app's view, in Studio's dialog or in the app's page (Studio app API 0.1.10, 0.1.11) |
@@ -639,10 +640,10 @@ studio.calls // every call the app made
 - Without `manifest`, `testContext()` has no settings and no connections; pass them, or other values, as
   `context: { settings: { assetTypes: ['urn:example:type:pump'] }, connections: { forecast: { bound: false } } }`.
 
-`memoryAas({ shells, submodels })` keeps AAS content in memory and provides
-handlers for the reads, `setElementValue`, the structural writes,
-`putAttachment` and `ui.readFile`, with revisions and the conflicts Studio
-reports. It does not verify content with AAS Core or keep registries.
+`memoryAas({ shells, submodels, conceptDescriptions })` keeps AAS content in
+memory and provides handlers for the reads, `describeConcepts`,
+`setElementValue`, the structural writes, `putAttachment` and `ui.readFile`,
+with revisions and the conflicts Studio reports. It does not verify content with AAS Core or keep registries.
 
 ```ts
 const aas = memoryAas({ submodels: [fileSystem] })

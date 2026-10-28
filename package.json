@@ -23,7 +23,7 @@
     "testenv:up": "docker compose -f test-setup/docker-compose.yaml up -d --wait --wait-timeout 300",
     "testenv:down": "docker compose -f test-setup/docker-compose.yaml --profile large --profile demo down -v",
     "testenv:smoke": "node test-setup/smoke-test.mjs",
-    "testenv:fixtures": "node test-setup/fixtures/generate-fixtures.mjs && node test-setup/fixtures/generate-models3d.mjs && node test-setup/fixtures/generate-file-previews.mjs && node test-setup/fixtures/generate-nameplate.mjs",
+    "testenv:fixtures": "node test-setup/fixtures/generate-fixtures.mjs && node test-setup/fixtures/generate-models3d.mjs && node test-setup/fixtures/generate-file-previews.mjs && node test-setup/fixtures/generate-nameplate.mjs && node test-setup/fixtures/generate-technical-data.mjs",
     "testenv:large": "node test-setup/fixtures/generate-fixtures.mjs --large && docker compose -f test-setup/docker-compose.yaml --profile large up -d --wait --wait-timeout 600 basyx-large",
     "testenv:demo": "node examples/apps/fleet-atlas/demo/generate-fleet.mjs && docker compose -f test-setup/docker-compose.yaml --profile demo up -d --wait --wait-timeout 600 basyx-demo",
     "testenv:demo:live": "node examples/apps/fleet-atlas/demo/simulate.mjs",

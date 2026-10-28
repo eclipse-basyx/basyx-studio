@@ -33,6 +33,12 @@ export class StudioClient {
     listSubmodels: (shellId: string) => this.call('studio.aas.listSubmodels', { shellId }),
     getSubmodel: (submodelId: string) => this.call('studio.aas.getSubmodel', { submodelId }),
     getElement: (submodelId: string, idShortPath: string) => this.call('studio.aas.getElement', { submodelId, idShortPath }),
+    /**
+     * The concept descriptions for semantic IDs, e.g. for units and readable
+     * names: up to `describeConceptsMaxIds` (500) IDs, answered in their
+     * order, `null` where the target has none (Studio ≥ 0.1.15).
+     */
+    describeConcepts: (ids: string[]) => this.call('studio.aas.describeConcepts', { ids }),
     setElementValue: (params: Methods['studio.aas.setElementValue']['params']) => this.call('studio.aas.setElementValue', params),
     // Structural writes and attachments (needs studio.aas.write and Studio's
     // edit mode; Studio ≥ 0.1.5).

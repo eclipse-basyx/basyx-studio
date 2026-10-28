@@ -104,7 +104,7 @@
 
 <script lang="ts" setup>
   import type { ContactRow } from '@basyx/studio-app-kit/contacts'
-  import { useRowActions } from './actions'
+  import { useRowActions } from '@basyx/studio-app-kit/editing'
   import { useI18n } from './i18n'
 
   // A contact's label and value rows, as the Documents app's definition

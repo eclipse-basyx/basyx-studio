@@ -40,7 +40,7 @@
           data-test="marking-dialog-image"
           :disabled="!marking.file"
           height="200"
-          @click="marking.file && preview(marking.file)"
+          @click="marking.file && preview?.(marking.file)"
         >
           <PreviewImage
             :alt="name"
@@ -70,8 +70,8 @@
 <script lang="ts" setup>
   import type { Marking } from './nameplate'
   import type { StudioClient } from '@basyx/studio-sdk'
+  import { useRowActions } from '@basyx/studio-app-kit/editing'
   import { computed, ref } from 'vue'
-  import { useRowActions } from './actions'
   import DetailList from './DetailList.vue'
   import { useI18n } from './i18n'
   import { markingExpired, markingName, markingRows } from './presentation'

@@ -1,0 +1,88 @@
+{
+  "technicalData": {
+    "untitled": "Product",
+    "logo": "Logo of {name}",
+    "fullscreen": "Full screen",
+    "empty": "This submodel has no technical data."
+  },
+  "sections": {
+    "general": "General information",
+    "classifications": "Product classifications",
+    "properties": "Technical properties",
+    "specificDescriptions": "Specific descriptions",
+    "further": "Further information"
+  },
+  "general": {
+    "manufacturerName": "Manufacturer",
+    "productDesignation": "Product designation",
+    "articleNumber": "Article number",
+    "orderCode": "Order code",
+    "articleShort": "Art. no. {value}",
+    "orderShort": "Order code {value}"
+  },
+  "classification": {
+    "version": "Version {version}",
+    "showArea": "Show the properties of {name}",
+    "fields": {
+      "system": "Classification system",
+      "version": "System version",
+      "url": "System address",
+      "classId": "Class ID",
+      "codedName": "Coded class name",
+      "className": "Class name"
+    }
+  },
+  "sheet": {
+    "property": "Property",
+    "value": "Value",
+    "unit": "Unit",
+    "entry": "Entry {number}",
+    "area": "Area {number}",
+    "description": "Description",
+    "search": "Search properties",
+    "matches": "{count} of {total} properties",
+    "noMatches": "No property matches “{query}”.",
+    "definition": "Definition",
+    "collapse": "Collapse {label}",
+    "expand": "Expand {label}",
+    "empty": "No technical properties.",
+    "onlyDescriptions": "No technical property matches “{query}”; the specific descriptions below do."
+  },
+  "csv": {
+    "button": "CSV",
+    "download": "Download as CSV",
+    "fileName": "{name} technical data.csv",
+    "area": "Area",
+    "section": "Section",
+    "min": "Minimum",
+    "max": "Maximum",
+    "semanticId": "Semantic ID"
+  },
+  "further": {
+    "validDate": "Valid from",
+    "statement": "Statement",
+    "validFrom": "Valid from {date}"
+  },
+  "image": {
+    "open": "Show {name}"
+  },
+  "value": {
+    "yes": "Yes",
+    "no": "No"
+  },
+  "copy": {
+    "copy": "Copy {label}",
+    "copied": "Copied to the clipboard."
+  },
+  "edit": {
+    "edit": "Edit {label}",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saved": "{label} saved.",
+    "conflict": "Someone else changed this value in the meantime. Cancel and try again.",
+    "forbidden": "You are not permitted to change this value.",
+    "language": "Language: {language}",
+    "min": "Minimum",
+    "max": "Maximum"
+  }
+}

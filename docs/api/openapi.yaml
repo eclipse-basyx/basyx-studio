@@ -6071,6 +6071,7 @@ components:
             - studio.aas.listSubmodels
             - studio.aas.getSubmodel
             - studio.aas.getElement
+            - studio.aas.describeConcepts
             - studio.aas.setElementValue
             - studio.aas.getSubmodelSnapshot
             - studio.aas.createShell

@@ -1,0 +1,88 @@
+{
+  "technicalData": {
+    "untitled": "Produit",
+    "logo": "Logo de {name}",
+    "fullscreen": "Plein écran",
+    "empty": "Ce sous-modèle ne contient aucune donnée technique."
+  },
+  "sections": {
+    "general": "Informations générales",
+    "classifications": "Classifications du produit",
+    "properties": "Propriétés techniques",
+    "specificDescriptions": "Descriptions spécifiques",
+    "further": "Informations complémentaires"
+  },
+  "general": {
+    "manufacturerName": "Fabricant",
+    "productDesignation": "Désignation du produit",
+    "articleNumber": "Numéro d'article",
+    "orderCode": "Référence de commande",
+    "articleShort": "Réf. {value}",
+    "orderShort": "Réf. de commande {value}"
+  },
+  "classification": {
+    "version": "Version {version}",
+    "showArea": "Afficher les propriétés de {name}",
+    "fields": {
+      "system": "Système de classification",
+      "version": "Version du système",
+      "url": "Adresse du système",
+      "classId": "ID de classe",
+      "codedName": "Nom codé de la classe",
+      "className": "Nom de la classe"
+    }
+  },
+  "sheet": {
+    "property": "Propriété",
+    "value": "Valeur",
+    "unit": "Unité",
+    "entry": "Entrée {number}",
+    "area": "Zone {number}",
+    "description": "Description",
+    "search": "Rechercher des propriétés",
+    "matches": "{count} propriétés sur {total}",
+    "noMatches": "Aucune propriété ne correspond à « {query} ».",
+    "definition": "Définition",
+    "collapse": "Réduire {label}",
+    "expand": "Développer {label}",
+    "empty": "Aucune propriété technique.",
+    "onlyDescriptions": "Aucune propriété technique ne correspond à « {query} » ; les descriptions spécifiques ci-dessous, si."
+  },
+  "csv": {
+    "button": "CSV",
+    "download": "Télécharger en CSV",
+    "fileName": "{name} données techniques.csv",
+    "area": "Zone",
+    "section": "Section",
+    "min": "Minimum",
+    "max": "Maximum",
+    "semanticId": "ID sémantique"
+  },
+  "further": {
+    "validDate": "Valable à partir du",
+    "statement": "Mention",
+    "validFrom": "Valable à partir du {date}"
+  },
+  "image": {
+    "open": "Afficher {name}"
+  },
+  "value": {
+    "yes": "Oui",
+    "no": "Non"
+  },
+  "copy": {
+    "copy": "Copier {label}",
+    "copied": "Copié dans le presse-papiers."
+  },
+  "edit": {
+    "edit": "Modifier {label}",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "saved": "{label} enregistré.",
+    "conflict": "Quelqu'un d'autre a modifié cette valeur entre-temps. Annulez et réessayez.",
+    "forbidden": "Vous n'êtes pas autorisé à modifier cette valeur.",
+    "language": "Langue : {language}",
+    "min": "Minimum",
+    "max": "Maximum"
+  }
+}

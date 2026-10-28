@@ -1,0 +1,2470 @@
+{
+  "assetAdministrationShells": [
+    {
+      "idShort": "TechnicalDataDemo",
+      "displayName": [
+        {
+          "language": "en",
+          "text": "Technical data demo"
+        }
+      ],
+      "description": [
+        {
+          "language": "en",
+          "text": "A servo drive with IDTA 02003 Technical Data 2.0, for the Technical Data app."
+        }
+      ],
+      "id": "urn:studio:test:aas:technical-data",
+      "assetInformation": {
+        "assetKind": "Instance",
+        "globalAssetId": "urn:studio:test:asset:technical-data:sd-200-000314",
+        "defaultThumbnail": {
+          "path": "/thumbnail.png",
+          "contentType": "image/png"
+        }
+      },
+      "submodels": [
+        {
+          "type": "ModelReference",
+          "keys": [
+            {
+              "type": "Submodel",
+              "value": "urn:studio:test:sm:technical-data:2-0"
+            }
+          ]
+        }
+      ],
+      "modelType": "AssetAdministrationShell"
+    },
+    {
+      "idShort": "TechnicalDataDemo12",
+      "displayName": [
+        {
+          "language": "en",
+          "text": "Technical data demo 1.2"
+        }
+      ],
+      "description": [
+        {
+          "language": "en",
+          "text": "An older servo drive with ZVEI Technical Data 1.2."
+        }
+      ],
+      "id": "urn:studio:test:aas:technical-data-1-2",
+      "assetInformation": {
+        "assetKind": "Instance",
+        "globalAssetId": "urn:studio:test:asset:technical-data:sd-200-000102",
+        "defaultThumbnail": {
+          "path": "/thumbnail.png",
+          "contentType": "image/png"
+        }
+      },
+      "submodels": [
+        {
+          "type": "ModelReference",
+          "keys": [
+            {
+              "type": "Submodel",
+              "value": "urn:studio:test:sm:technical-data:1-2"
+            }
+          ]
+        }
+      ],
+      "modelType": "AssetAdministrationShell"
+    }
+  ],
+  "submodels": [
+    {
+      "idShort": "TechnicalData",
+      "administration": {
+        "version": "2",
+        "revision": "0"
+      },
+      "id": "urn:studio:test:sm:technical-data:2-0",
+      "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+          {
+            "type": "GlobalReference",
+            "value": "0173-1#01-AHX837#002"
+          }
+        ]
+      },
+      "submodelElements": [
+        {
+          "idShort": "GeneralInformation",
+          "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "0173-1#02-ABK161#002/0173-1#01-AHX838#002"
+              }
+            ]
+          },
+          "value": [
+            {
+              "idShort": "ManufacturerName",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-AAO677#004"
+                  }
+                ]
+              },
+              "valueType": "xs:string",
+              "value": "Example Drives GmbH",
+              "modelType": "Property"
+            },
+            {
+              "idShort": "CompanyLogo",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-ABI776#002"
+                  }
+                ]
+              },
+              "value": "/aasx/files/technical-data/example-drives-logo.svg",
+              "contentType": "image/svg+xml",
+              "modelType": "File"
+            },
+            {
+              "idShort": "ManufacturerProductDesignation",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-AAW338#003"
+                  }
+                ]
+              },
+              "value": [
+                {
+                  "language": "en",
+                  "text": "Servo drive SD-200"
+                },
+                {
+                  "language": "de",
+                  "text": "Servoantrieb SD-200"
+                }
+              ],
+              "modelType": "MultiLanguageProperty"
+            },
+            {
+              "idShort": "ManufacturerArticleNumber",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-AAO676#005"
+                  }
+                ]
+              },
+              "valueType": "xs:string",
+              "value": "SD-200-400-3",
+              "modelType": "Property"
+            },
+            {
+              "idShort": "ManufacturerOrderCode",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-AAO227#004"
+                  }
+                ]
+              },
+              "valueType": "xs:string",
+              "value": "SD200-4-3-B",
+              "modelType": "Property"
+            },
+            {
+              "idShort": "ProductImages",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-ABM220#001"
+                  }
+                ]
+              },
+              "orderRelevant": true,
+              "semanticIdListElement": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-ABM220#001/0173-1#01-AHY911#001"
+                  }
+                ]
+              },
+              "typeValueListElement": "SubmodelElementCollection",
+              "value": [
+                {
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "0173-1#02-ABM220#001/0173-1#01-AHY911#001"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "idShort": "ImageFile",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "0173-1#02-ABK291#002"
+                          }
+                        ]
+                      },
+                      "value": "/aasx/files/technical-data/sd-200-front.png",
+                      "contentType": "image/png",
+                      "modelType": "File"
+                    },
+                    {
+                      "idShort": "ImageNote",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "0173-1#02-ABL423#001"
+                          }
+                        ]
+                      },
+                      "value": [
+                        {
+                          "language": "en",
+                          "text": "Front view"
+                        },
+                        {
+                          "language": "de",
+                          "text": "Vorderansicht"
+                        }
+                      ],
+                      "modelType": "MultiLanguageProperty"
+                    }
+                  ],
+                  "modelType": "SubmodelElementCollection"
+                },
+                {
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "0173-1#02-ABM220#001/0173-1#01-AHY911#001"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "idShort": "ImageFile",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "0173-1#02-ABK291#002"
+                          }
+                        ]
+                      },
+                      "value": "/aasx/files/technical-data/sd-200-side.png",
+                      "contentType": "image/png",
+                      "modelType": "File"
+                    },
+                    {
+                      "idShort": "ImageNote",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "0173-1#02-ABL423#001"
+                          }
+                        ]
+                      },
+                      "value": [
+                        {
+                          "language": "en",
+                          "text": "Connectors at the bottom"
+                        },
+                        {
+                          "language": "de",
+                          "text": "Anschlüsse unten"
+                        }
+                      ],
+                      "modelType": "MultiLanguageProperty"
+                    }
+                  ],
+                  "modelType": "SubmodelElementCollection"
+                },
+                {
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "0173-1#02-ABM220#001/0173-1#01-AHY911#001"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "idShort": "ImageFile",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "0173-1#02-ABK291#002"
+                          }
+                        ]
+                      },
+                      "value": "/aasx/files/technical-data/sd-200-mounting.png",
+                      "contentType": "image/png",
+                      "modelType": "File"
+                    }
+                  ],
+                  "modelType": "SubmodelElementCollection"
+                }
+              ],
+              "modelType": "SubmodelElementList"
+            }
+          ],
+          "modelType": "SubmodelElementCollection"
+        },
+        {
+          "idShort": "ProductClassifications",
+          "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "0173-1#02-ABK162#002"
+              }
+            ]
+          },
+          "orderRelevant": true,
+          "semanticIdListElement": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "0173-1#02-ABK162#002/0173-1#01-AHX839#002"
+              }
+            ]
+          },
+          "typeValueListElement": "SubmodelElementCollection",
+          "value": [
+            {
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-ABK162#002/0173-1#01-AHX839#002"
+                  }
+                ]
+              },
+              "value": [
+                {
+                  "idShort": "ClassificationSystem",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "0173-1#02-ABL424#001"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:string",
+                  "value": "ECLASS",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "ClassificationSystemVersion",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "0173-1#02-AAR710#003"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:string",
+                  "value": "14.0",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "ClassificationSystemUrl",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/IDTA/TechnicalData/ProductClassifications/ProduktClassification/ClassificationSystemUrl/2/0"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:string",
+                  "value": "https://eclass.eu",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "ProductClassId",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "0173-1#02-ABG776#003"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:string",
+                  "value": "27-02-31-90",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "ProductClassCodedName",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "0173-1#02-ABK128#002"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:string",
+                  "value": "27023190",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "ProductClassName",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "0173-1#02-ABK273#002"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "language": "en",
+                      "text": "Servo drive (demo class)"
+                    },
+                    {
+                      "language": "de",
+                      "text": "Servoantrieb (Demo-Klasse)"
+                    }
+                  ],
+                  "modelType": "MultiLanguageProperty"
+                },
+                {
+                  "idShort": "ReferenceToTechnicalPropertyArea",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "0173-1#02-ABL358#002"
+                      }
+                    ]
+                  },
+                  "value": {
+                    "type": "ModelReference",
+                    "keys": [
+                      {
+                        "type": "Submodel",
+                        "value": "urn:studio:test:sm:technical-data:2-0"
+                      },
+                      {
+                        "type": "SubmodelElementList",
+                        "value": "TechnicalPropertyAreas"
+                      },
+                      {
+                        "type": "SubmodelElementCollection",
+                        "value": "0"
+                      }
+                    ]
+                  },
+                  "modelType": "ReferenceElement"
+                }
+              ],
+              "modelType": "SubmodelElementCollection"
+            },
+            {
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-ABK162#002/0173-1#01-AHX839#002"
+                  }
+                ]
+              },
+              "value": [
+                {
+                  "idShort": "ClassificationSystem",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "0173-1#02-ABL424#001"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:string",
+                  "value": "IEC CDD",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "ClassificationSystemVersion",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "0173-1#02-AAR710#003"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:string",
+                  "value": "2.0",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "ProductClassId",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "0173-1#02-ABG776#003"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:string",
+                  "value": "ZZB001",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "ProductClassCodedName",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "0173-1#02-ABK128#002"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:string",
+                  "value": "Servo drive",
+                  "modelType": "Property"
+                }
+              ],
+              "modelType": "SubmodelElementCollection"
+            }
+          ],
+          "modelType": "SubmodelElementList"
+        },
+        {
+          "idShort": "TechnicalPropertyAreas",
+          "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "0173-1#02-ABK163#002"
+              }
+            ]
+          },
+          "orderRelevant": true,
+          "semanticIdListElement": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "0173-1#02-ABL358#002/0173-1#01-AHX773#002"
+              }
+            ]
+          },
+          "typeValueListElement": "SubmodelElementCollection",
+          "value": [
+            {
+              "displayName": [
+                {
+                  "language": "en",
+                  "text": "Electrical"
+                },
+                {
+                  "language": "de",
+                  "text": "Elektrisch"
+                }
+              ],
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-ABL358#002/0173-1#01-AHX773#002"
+                  }
+                ]
+              },
+              "value": [
+                {
+                  "idShort": "RatedPower",
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "At 400 V and 8 kHz switching frequency."
+                    },
+                    {
+                      "language": "de",
+                      "text": "Bei 400 V und 8 kHz Schaltfrequenz."
+                    }
+                  ],
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://example.com/ids/cd/technical-data/RatedPower"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:double",
+                  "value": "3.0",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "RatedVoltage",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://example.com/ids/cd/technical-data/RatedVoltage"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:integer",
+                  "value": "400",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "RatedCurrent",
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "Peak current for 3 s: 14.5 A."
+                    },
+                    {
+                      "language": "de",
+                      "text": "Spitzenstrom für 3 s: 14,5 A."
+                    }
+                  ],
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "0173-1#02-ZZA001#001"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:double",
+                  "value": "7.25",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "Supply",
+                  "displayName": [
+                    {
+                      "language": "en",
+                      "text": "Power supply"
+                    },
+                    {
+                      "language": "de",
+                      "text": "Stromversorgung"
+                    }
+                  ],
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/SMT/General/Arbitrary"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "idShort": "SupplyFrequency",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://example.com/ids/cd/technical-data/SupplyFrequency"
+                          }
+                        ]
+                      },
+                      "valueType": "xs:double",
+                      "min": "50",
+                      "max": "60",
+                      "modelType": "Range"
+                    },
+                    {
+                      "idShort": "NumberOfPhases",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://example.com/ids/cd/technical-data/NumberOfPhases"
+                          }
+                        ]
+                      },
+                      "valueType": "xs:integer",
+                      "value": "3",
+                      "modelType": "Property"
+                    },
+                    {
+                      "idShort": "Protection",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://admin-shell.io/SMT/General/Arbitrary"
+                          }
+                        ]
+                      },
+                      "value": [
+                        {
+                          "idShort": "OvervoltageProtection",
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://example.com/ids/cd/technical-data/OvervoltageProtection"
+                              }
+                            ]
+                          },
+                          "valueType": "xs:boolean",
+                          "value": "true",
+                          "modelType": "Property"
+                        },
+                        {
+                          "idShort": "ShortCircuitCurrentRating",
+                          "semanticId": {
+                            "type": "ExternalReference",
+                            "keys": [
+                              {
+                                "type": "GlobalReference",
+                                "value": "https://example.com/ids/cd/technical-data/ShortCircuitCurrentRating"
+                              }
+                            ]
+                          },
+                          "valueType": "xs:double",
+                          "value": "65",
+                          "modelType": "Property"
+                        }
+                      ],
+                      "modelType": "SubmodelElementCollection"
+                    }
+                  ],
+                  "modelType": "SubmodelElementCollection"
+                },
+                {
+                  "idShort": "AmbientTemperature",
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "Above 40 °C with 2.5 % less power per kelvin, up to 55 °C."
+                    },
+                    {
+                      "language": "de",
+                      "text": "Über 40 °C mit 2,5 % weniger Leistung je Kelvin, bis 55 °C."
+                    }
+                  ],
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://example.com/ids/cd/technical-data/AmbientTemperature"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:double",
+                  "min": "-20",
+                  "max": "40",
+                  "modelType": "Range"
+                },
+                {
+                  "idShort": "InstallationAltitude",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://example.com/ids/cd/technical-data/InstallationAltitude"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:double",
+                  "max": "1000",
+                  "modelType": "Range"
+                },
+                {
+                  "idShort": "IntegratedBrakeChopper",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://example.com/ids/cd/technical-data/IntegratedBrakeChopper"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:boolean",
+                  "value": "false",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "FirmwareReleaseDate",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://example.com/ids/cd/technical-data/FirmwareReleaseDate"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:date",
+                  "value": "2026-03-01",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "DimensionDrawing",
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "Front and side view, in millimetres."
+                    },
+                    {
+                      "language": "de",
+                      "text": "Vorder- und Seitenansicht, in Millimetern."
+                    }
+                  ],
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/SMT/General/Arbitrary"
+                      }
+                    ]
+                  },
+                  "value": "/aasx/files/technical-data/sd-200-dimensions.svg",
+                  "contentType": "image/svg+xml",
+                  "modelType": "File"
+                },
+                {
+                  "idShort": "ApplicationNote",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/SMT/General/Arbitrary"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "language": "en",
+                      "text": "For synchronous servo motors up to 3 kW."
+                    },
+                    {
+                      "language": "de",
+                      "text": "Für Synchron-Servomotoren bis 3 kW."
+                    }
+                  ],
+                  "modelType": "MultiLanguageProperty"
+                }
+              ],
+              "modelType": "SubmodelElementCollection"
+            },
+            {
+              "displayName": [
+                {
+                  "language": "en",
+                  "text": "Mechanical"
+                },
+                {
+                  "language": "de",
+                  "text": "Mechanisch"
+                }
+              ],
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-ABL358#002/0173-1#01-AHX773#002"
+                  }
+                ]
+              },
+              "value": [
+                {
+                  "idShort": "Weight",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "0173-1#02-ZZA002#001"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:double",
+                  "value": "4.85",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "DegreeOfProtection",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://example.com/ids/cd/technical-data/DegreeOfProtection"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:string",
+                  "value": "IP65",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "Dimensions",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/SMT/General/Arbitrary"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "idShort": "Width",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://example.com/ids/cd/technical-data/Width"
+                          }
+                        ]
+                      },
+                      "valueType": "xs:integer",
+                      "value": "120",
+                      "modelType": "Property"
+                    },
+                    {
+                      "idShort": "Height",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://example.com/ids/cd/technical-data/Height"
+                          }
+                        ]
+                      },
+                      "valueType": "xs:integer",
+                      "value": "280",
+                      "modelType": "Property"
+                    },
+                    {
+                      "idShort": "Depth",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://example.com/ids/cd/technical-data/Depth"
+                          }
+                        ]
+                      },
+                      "valueType": "xs:integer",
+                      "value": "210",
+                      "modelType": "Property"
+                    }
+                  ],
+                  "modelType": "SubmodelElementCollection"
+                },
+                {
+                  "idShort": "MountingPosition",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://example.com/ids/cd/technical-data/MountingPosition"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:string",
+                  "value": "Vertical",
+                  "modelType": "Property"
+                }
+              ],
+              "modelType": "SubmodelElementCollection"
+            }
+          ],
+          "modelType": "SubmodelElementList"
+        },
+        {
+          "idShort": "FurtherInformation",
+          "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "0173-1#02-ABK164#002"
+              }
+            ]
+          },
+          "value": [
+            {
+              "idShort": "TextStatement01",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-ABK134#002"
+                  }
+                ]
+              },
+              "value": [
+                {
+                  "language": "en",
+                  "text": "Values at 40 °C ambient temperature and 8 kHz switching frequency."
+                },
+                {
+                  "language": "de",
+                  "text": "Werte bei 40 °C Umgebungstemperatur und 8 kHz Schaltfrequenz."
+                }
+              ],
+              "modelType": "MultiLanguageProperty"
+            },
+            {
+              "idShort": "TextStatement02",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-ABK134#002"
+                  }
+                ]
+              },
+              "value": [
+                {
+                  "language": "en",
+                  "text": "Subject to technical changes."
+                },
+                {
+                  "language": "de",
+                  "text": "Technische Änderungen vorbehalten."
+                }
+              ],
+              "modelType": "MultiLanguageProperty"
+            },
+            {
+              "idShort": "ValidDate",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-ABL775#001"
+                  }
+                ]
+              },
+              "valueType": "xs:date",
+              "value": "2026-01-15",
+              "modelType": "Property"
+            }
+          ],
+          "modelType": "SubmodelElementCollection"
+        },
+        {
+          "idShort": "SpecificDescriptions",
+          "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "0173-1#02-ABM221#001"
+              }
+            ]
+          },
+          "orderRelevant": true,
+          "semanticIdListElement": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "0173-1#02-ABM221#001/0173-1#01-AHY912#001"
+              }
+            ]
+          },
+          "typeValueListElement": "SubmodelElementCollection",
+          "value": [
+            {
+              "displayName": [
+                {
+                  "language": "en",
+                  "text": "Functional safety"
+                },
+                {
+                  "language": "de",
+                  "text": "Funktionale Sicherheit"
+                }
+              ],
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-ABM221#001/0173-1#01-AHY912#001"
+                  }
+                ]
+              },
+              "value": [
+                {
+                  "idShort": "SafetyFunction",
+                  "description": [
+                    {
+                      "language": "en",
+                      "text": "To IEC 61800-5-2."
+                    },
+                    {
+                      "language": "de",
+                      "text": "Nach IEC 61800-5-2."
+                    }
+                  ],
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/SMT/General/Arbitrary"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:string",
+                  "value": "STO (Safe torque off)",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "SafetyIntegrityLevel",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/SMT/General/Arbitrary"
+                      }
+                    ]
+                  },
+                  "supplementalSemanticIds": [
+                    {
+                      "type": "ExternalReference",
+                      "keys": [
+                        {
+                          "type": "GlobalReference",
+                          "value": "https://example.com/ids/cd/technical-data/SafetyIntegrityLevel"
+                        }
+                      ]
+                    }
+                  ],
+                  "valueType": "xs:string",
+                  "value": "SIL 3",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "PerformanceLevel",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/SMT/General/Arbitrary"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:string",
+                  "value": "PL e",
+                  "modelType": "Property"
+                }
+              ],
+              "modelType": "SubmodelElementCollection"
+            }
+          ],
+          "modelType": "SubmodelElementList"
+        }
+      ],
+      "modelType": "Submodel"
+    },
+    {
+      "idShort": "TechnicalData",
+      "administration": {
+        "version": "1",
+        "revision": "2"
+      },
+      "id": "urn:studio:test:sm:technical-data:1-2",
+      "semanticId": {
+        "type": "ExternalReference",
+        "keys": [
+          {
+            "type": "GlobalReference",
+            "value": "https://admin-shell.io/ZVEI/TechnicalData/Submodel/1/2"
+          }
+        ]
+      },
+      "submodelElements": [
+        {
+          "idShort": "GeneralInformation",
+          "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/ZVEI/TechnicalData/GeneralInformation/1/1"
+              }
+            ]
+          },
+          "value": [
+            {
+              "idShort": "ManufacturerName",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-AAO677#002"
+                  }
+                ]
+              },
+              "valueType": "xs:string",
+              "value": "Example Drives GmbH",
+              "modelType": "Property"
+            },
+            {
+              "idShort": "ManufacturerLogo",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/ZVEI/TechnicalData/ManufacturerLogo/1/1"
+                  }
+                ]
+              },
+              "value": "/aasx/files/technical-data/example-drives-logo.svg",
+              "contentType": "image/svg+xml",
+              "modelType": "File"
+            },
+            {
+              "idShort": "ManufacturerProductDesignation",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-AAW338#001"
+                  }
+                ]
+              },
+              "value": [
+                {
+                  "language": "en",
+                  "text": "Servo drive SD-200"
+                },
+                {
+                  "language": "de",
+                  "text": "Servoantrieb SD-200"
+                }
+              ],
+              "modelType": "MultiLanguageProperty"
+            },
+            {
+              "idShort": "ManufacturerArticleNumber",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-AAO676#003"
+                  }
+                ]
+              },
+              "valueType": "xs:string",
+              "value": "SD-200-400-3",
+              "modelType": "Property"
+            },
+            {
+              "idShort": "ManufacturerOrderCode",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "0173-1#02-AAO227#002"
+                  }
+                ]
+              },
+              "valueType": "xs:string",
+              "value": "SD200-4-3-A",
+              "modelType": "Property"
+            },
+            {
+              "idShort": "ProductImage01",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/ZVEI/TechnicalData/ProductImage/1/1"
+                  }
+                ]
+              },
+              "value": "/aasx/files/technical-data/sd-200-front.png",
+              "contentType": "image/png",
+              "modelType": "File"
+            },
+            {
+              "idShort": "ProductImage02",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/ZVEI/TechnicalData/ProductImage/1/1"
+                  }
+                ]
+              },
+              "value": "/aasx/files/technical-data/sd-200-side.png",
+              "contentType": "image/png",
+              "modelType": "File"
+            }
+          ],
+          "modelType": "SubmodelElementCollection"
+        },
+        {
+          "idShort": "ProductClassifications",
+          "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/ZVEI/TechnicalData/ProductClassifications/1/1"
+              }
+            ]
+          },
+          "value": [
+            {
+              "idShort": "ProductClassificationItem01",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/ZVEI/TechnicalData/ProductClassificationItem/1/1"
+                  }
+                ]
+              },
+              "value": [
+                {
+                  "idShort": "ProductClassificationSystem",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/ZVEI/TechnicalData/ProductClassificationSystem/1/1"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:string",
+                  "value": "ECLASS",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "ClassificationSystemVersion",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/ZVEI/TechnicalData/ClassificationSystemVersion/1/1"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:string",
+                  "value": "11.1",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "ProductClassId",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/ZVEI/TechnicalData/ProductClassId/1/1"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:string",
+                  "value": "27-02-31-90",
+                  "modelType": "Property"
+                }
+              ],
+              "modelType": "SubmodelElementCollection"
+            }
+          ],
+          "modelType": "SubmodelElementCollection"
+        },
+        {
+          "idShort": "TechnicalProperties",
+          "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/ZVEI/TechnicalData/TechnicalProperties/1/1"
+              }
+            ]
+          },
+          "value": [
+            {
+              "idShort": "Electrical",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/ZVEI/TechnicalData/MainSection/1/1"
+                  }
+                ]
+              },
+              "value": [
+                {
+                  "idShort": "RatedPower",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://example.com/ids/cd/technical-data/RatedPower"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:double",
+                  "value": "3.0",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "RatedVoltage",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://example.com/ids/cd/technical-data/RatedVoltage"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:integer",
+                  "value": "400",
+                  "modelType": "Property"
+                },
+                {
+                  "idShort": "Supply",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "https://admin-shell.io/ZVEI/TechnicalData/SubSection/1/1"
+                      }
+                    ]
+                  },
+                  "value": [
+                    {
+                      "idShort": "SupplyFrequency",
+                      "semanticId": {
+                        "type": "ExternalReference",
+                        "keys": [
+                          {
+                            "type": "GlobalReference",
+                            "value": "https://example.com/ids/cd/technical-data/SupplyFrequency"
+                          }
+                        ]
+                      },
+                      "valueType": "xs:double",
+                      "min": "50",
+                      "max": "60",
+                      "modelType": "Range"
+                    }
+                  ],
+                  "modelType": "SubmodelElementCollection"
+                }
+              ],
+              "modelType": "SubmodelElementCollection"
+            },
+            {
+              "idShort": "Mechanical",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/ZVEI/TechnicalData/MainSection/1/1"
+                  }
+                ]
+              },
+              "value": [
+                {
+                  "idShort": "Weight",
+                  "semanticId": {
+                    "type": "ExternalReference",
+                    "keys": [
+                      {
+                        "type": "GlobalReference",
+                        "value": "0173-1#02-ZZA002#001"
+                      }
+                    ]
+                  },
+                  "valueType": "xs:double",
+                  "value": "4.9",
+                  "modelType": "Property"
+                }
+              ],
+              "modelType": "SubmodelElementCollection"
+            },
+            {
+              "idShort": "ColourOfHousing",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/SemanticIdNotAvailable/1/1"
+                  }
+                ]
+              },
+              "valueType": "xs:string",
+              "value": "Anthracite",
+              "modelType": "Property"
+            }
+          ],
+          "modelType": "SubmodelElementCollection"
+        },
+        {
+          "idShort": "FurtherInformation",
+          "semanticId": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/ZVEI/TechnicalData/FurtherInformation/1/1"
+              }
+            ]
+          },
+          "value": [
+            {
+              "idShort": "TextStatement01",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/ZVEI/TechnicalData/TextStatement/1/1"
+                  }
+                ]
+              },
+              "value": [
+                {
+                  "language": "en",
+                  "text": "Subject to technical changes."
+                },
+                {
+                  "language": "de",
+                  "text": "Technische Änderungen vorbehalten."
+                }
+              ],
+              "modelType": "MultiLanguageProperty"
+            },
+            {
+              "idShort": "ValidDate",
+              "semanticId": {
+                "type": "ExternalReference",
+                "keys": [
+                  {
+                    "type": "GlobalReference",
+                    "value": "https://admin-shell.io/ZVEI/TechnicalData/ManufacturerOrderCode/1/1"
+                  }
+                ]
+              },
+              "valueType": "xs:date",
+              "value": "2023-06-01",
+              "modelType": "Property"
+            }
+          ],
+          "modelType": "SubmodelElementCollection"
+        }
+      ],
+      "modelType": "Submodel"
+    }
+  ],
+  "conceptDescriptions": [
+    {
+      "idShort": "RatedPower",
+      "id": "https://example.com/ids/cd/technical-data/RatedPower",
+      "embeddedDataSpecifications": [
+        {
+          "dataSpecification": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/DataSpecificationTemplates/DataSpecificationIec61360/3/0"
+              }
+            ]
+          },
+          "dataSpecificationContent": {
+            "preferredName": [
+              {
+                "language": "en",
+                "text": "Rated power"
+              },
+              {
+                "language": "de",
+                "text": "Bemessungsleistung"
+              }
+            ],
+            "shortName": [
+              {
+                "language": "en",
+                "text": "P"
+              }
+            ],
+            "unit": "kW",
+            "dataType": "REAL_MEASURE",
+            "definition": [
+              {
+                "language": "en",
+                "text": "Mechanical power at the shaft in continuous operation at rated values."
+              },
+              {
+                "language": "de",
+                "text": "Mechanische Leistung an der Welle im Dauerbetrieb bei Bemessungswerten."
+              }
+            ],
+            "modelType": "DataSpecificationIec61360"
+          }
+        }
+      ],
+      "modelType": "ConceptDescription"
+    },
+    {
+      "idShort": "RatedVoltage",
+      "id": "https://example.com/ids/cd/technical-data/RatedVoltage",
+      "embeddedDataSpecifications": [
+        {
+          "dataSpecification": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/DataSpecificationTemplates/DataSpecificationIec61360/3/0"
+              }
+            ]
+          },
+          "dataSpecificationContent": {
+            "preferredName": [
+              {
+                "language": "en",
+                "text": "Rated voltage"
+              },
+              {
+                "language": "de",
+                "text": "Bemessungsspannung"
+              }
+            ],
+            "shortName": [
+              {
+                "language": "en",
+                "text": "U"
+              }
+            ],
+            "unit": "V",
+            "dataType": "INTEGER_MEASURE",
+            "definition": [
+              {
+                "language": "en",
+                "text": "Supply voltage between phases the drive is designed for."
+              },
+              {
+                "language": "de",
+                "text": "Versorgungsspannung zwischen den Phasen, für die der Antrieb ausgelegt ist."
+              }
+            ],
+            "modelType": "DataSpecificationIec61360"
+          }
+        }
+      ],
+      "modelType": "ConceptDescription"
+    },
+    {
+      "idShort": "RatedCurrent",
+      "id": "https://api.eclass-cdp.com/0173-1-02-ZZA001-001",
+      "embeddedDataSpecifications": [
+        {
+          "dataSpecification": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/DataSpecificationTemplates/DataSpecificationIec61360/3/0"
+              }
+            ]
+          },
+          "dataSpecificationContent": {
+            "preferredName": [
+              {
+                "language": "en",
+                "text": "Rated current"
+              },
+              {
+                "language": "de",
+                "text": "Bemessungsstrom"
+              }
+            ],
+            "shortName": [
+              {
+                "language": "en",
+                "text": "I"
+              }
+            ],
+            "unit": "A",
+            "dataType": "REAL_MEASURE",
+            "definition": [
+              {
+                "language": "en",
+                "text": "Output current in continuous operation at rated values."
+              },
+              {
+                "language": "de",
+                "text": "Ausgangsstrom im Dauerbetrieb bei Bemessungswerten."
+              }
+            ],
+            "modelType": "DataSpecificationIec61360"
+          }
+        }
+      ],
+      "modelType": "ConceptDescription"
+    },
+    {
+      "idShort": "SupplyFrequency",
+      "id": "https://example.com/ids/cd/technical-data/SupplyFrequency",
+      "embeddedDataSpecifications": [
+        {
+          "dataSpecification": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/DataSpecificationTemplates/DataSpecificationIec61360/3/0"
+              }
+            ]
+          },
+          "dataSpecificationContent": {
+            "preferredName": [
+              {
+                "language": "en",
+                "text": "Supply frequency"
+              },
+              {
+                "language": "de",
+                "text": "Netzfrequenz"
+              }
+            ],
+            "unit": "Hz",
+            "dataType": "REAL_MEASURE",
+            "definition": [
+              {
+                "language": "en",
+                "text": "Frequencies of the supply the drive runs on."
+              },
+              {
+                "language": "de",
+                "text": "Frequenzen der Versorgung, an der der Antrieb betrieben werden kann."
+              }
+            ],
+            "modelType": "DataSpecificationIec61360"
+          }
+        }
+      ],
+      "modelType": "ConceptDescription"
+    },
+    {
+      "idShort": "NumberOfPhases",
+      "id": "https://example.com/ids/cd/technical-data/NumberOfPhases",
+      "embeddedDataSpecifications": [
+        {
+          "dataSpecification": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/DataSpecificationTemplates/DataSpecificationIec61360/3/0"
+              }
+            ]
+          },
+          "dataSpecificationContent": {
+            "preferredName": [
+              {
+                "language": "en",
+                "text": "Number of phases"
+              },
+              {
+                "language": "de",
+                "text": "Anzahl der Phasen"
+              }
+            ],
+            "dataType": "INTEGER_COUNT",
+            "definition": [
+              {
+                "language": "en",
+                "text": "Phases of the supply."
+              },
+              {
+                "language": "de",
+                "text": "Phasen der Versorgung."
+              }
+            ],
+            "modelType": "DataSpecificationIec61360"
+          }
+        }
+      ],
+      "modelType": "ConceptDescription"
+    },
+    {
+      "idShort": "OvervoltageProtection",
+      "id": "https://example.com/ids/cd/technical-data/OvervoltageProtection",
+      "embeddedDataSpecifications": [
+        {
+          "dataSpecification": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/DataSpecificationTemplates/DataSpecificationIec61360/3/0"
+              }
+            ]
+          },
+          "dataSpecificationContent": {
+            "preferredName": [
+              {
+                "language": "en",
+                "text": "Overvoltage protection"
+              },
+              {
+                "language": "de",
+                "text": "Überspannungsschutz"
+              }
+            ],
+            "dataType": "BOOLEAN",
+            "definition": [
+              {
+                "language": "en",
+                "text": "Whether the drive protects itself against overvoltage in the supply."
+              },
+              {
+                "language": "de",
+                "text": "Ob sich der Antrieb gegen Überspannung in der Versorgung schützt."
+              }
+            ],
+            "modelType": "DataSpecificationIec61360"
+          }
+        }
+      ],
+      "modelType": "ConceptDescription"
+    },
+    {
+      "idShort": "ShortCircuitCurrentRating",
+      "id": "https://example.com/ids/cd/technical-data/ShortCircuitCurrentRating",
+      "embeddedDataSpecifications": [
+        {
+          "dataSpecification": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/DataSpecificationTemplates/DataSpecificationIec61360/3/0"
+              }
+            ]
+          },
+          "dataSpecificationContent": {
+            "preferredName": [
+              {
+                "language": "en",
+                "text": "Short-circuit current rating"
+              },
+              {
+                "language": "de",
+                "text": "Bemessungskurzschlussstrom"
+              }
+            ],
+            "shortName": [
+              {
+                "language": "en",
+                "text": "SCCR"
+              }
+            ],
+            "unit": "kA",
+            "dataType": "REAL_MEASURE",
+            "definition": [
+              {
+                "language": "en",
+                "text": "Prospective short-circuit current the drive withstands at its supply."
+              },
+              {
+                "language": "de",
+                "text": "Unbeeinflusster Kurzschlussstrom, dem der Antrieb an seiner Versorgung standhält."
+              }
+            ],
+            "modelType": "DataSpecificationIec61360"
+          }
+        }
+      ],
+      "modelType": "ConceptDescription"
+    },
+    {
+      "idShort": "AmbientTemperature",
+      "id": "https://example.com/ids/cd/technical-data/AmbientTemperature",
+      "embeddedDataSpecifications": [
+        {
+          "dataSpecification": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/DataSpecificationTemplates/DataSpecificationIec61360/3/0"
+              }
+            ]
+          },
+          "dataSpecificationContent": {
+            "preferredName": [
+              {
+                "language": "en",
+                "text": "Ambient temperature in operation"
+              },
+              {
+                "language": "de",
+                "text": "Umgebungstemperatur im Betrieb"
+              }
+            ],
+            "unit": "°C",
+            "dataType": "REAL_MEASURE",
+            "definition": [
+              {
+                "language": "en",
+                "text": "Temperatures of the air around the drive it runs in."
+              },
+              {
+                "language": "de",
+                "text": "Temperaturen der Luft um den Antrieb, bei denen er betrieben werden kann."
+              }
+            ],
+            "modelType": "DataSpecificationIec61360"
+          }
+        }
+      ],
+      "modelType": "ConceptDescription"
+    },
+    {
+      "idShort": "InstallationAltitude",
+      "id": "https://example.com/ids/cd/technical-data/InstallationAltitude",
+      "embeddedDataSpecifications": [
+        {
+          "dataSpecification": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/DataSpecificationTemplates/DataSpecificationIec61360/3/0"
+              }
+            ]
+          },
+          "dataSpecificationContent": {
+            "preferredName": [
+              {
+                "language": "en",
+                "text": "Installation altitude"
+              },
+              {
+                "language": "de",
+                "text": "Aufstellungshöhe"
+              }
+            ],
+            "unit": "m",
+            "dataType": "REAL_MEASURE",
+            "definition": [
+              {
+                "language": "en",
+                "text": "Highest altitude above sea level without derating."
+              },
+              {
+                "language": "de",
+                "text": "Größte Höhe über dem Meeresspiegel ohne Leistungsminderung."
+              }
+            ],
+            "modelType": "DataSpecificationIec61360"
+          }
+        }
+      ],
+      "modelType": "ConceptDescription"
+    },
+    {
+      "idShort": "IntegratedBrakeChopper",
+      "id": "https://example.com/ids/cd/technical-data/IntegratedBrakeChopper",
+      "embeddedDataSpecifications": [
+        {
+          "dataSpecification": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/DataSpecificationTemplates/DataSpecificationIec61360/3/0"
+              }
+            ]
+          },
+          "dataSpecificationContent": {
+            "preferredName": [
+              {
+                "language": "en",
+                "text": "Integrated brake chopper"
+              },
+              {
+                "language": "de",
+                "text": "Integrierter Bremschopper"
+              }
+            ],
+            "dataType": "BOOLEAN",
+            "definition": [
+              {
+                "language": "en",
+                "text": "Whether the drive has a brake chopper of its own."
+              },
+              {
+                "language": "de",
+                "text": "Ob der Antrieb einen eigenen Bremschopper hat."
+              }
+            ],
+            "modelType": "DataSpecificationIec61360"
+          }
+        }
+      ],
+      "modelType": "ConceptDescription"
+    },
+    {
+      "idShort": "FirmwareReleaseDate",
+      "id": "https://example.com/ids/cd/technical-data/FirmwareReleaseDate",
+      "embeddedDataSpecifications": [
+        {
+          "dataSpecification": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/DataSpecificationTemplates/DataSpecificationIec61360/3/0"
+              }
+            ]
+          },
+          "dataSpecificationContent": {
+            "preferredName": [
+              {
+                "language": "en",
+                "text": "Firmware release date"
+              },
+              {
+                "language": "de",
+                "text": "Freigabedatum der Firmware"
+              }
+            ],
+            "dataType": "DATE",
+            "definition": [
+              {
+                "language": "en",
+                "text": "Date the installed firmware was released."
+              },
+              {
+                "language": "de",
+                "text": "Datum, an dem die installierte Firmware freigegeben wurde."
+              }
+            ],
+            "modelType": "DataSpecificationIec61360"
+          }
+        }
+      ],
+      "modelType": "ConceptDescription"
+    },
+    {
+      "idShort": "Weight",
+      "id": "https://api.eclass-cdp.com/0173-1-02-ZZA002-001",
+      "embeddedDataSpecifications": [
+        {
+          "dataSpecification": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/DataSpecificationTemplates/DataSpecificationIec61360/3/0"
+              }
+            ]
+          },
+          "dataSpecificationContent": {
+            "preferredName": [
+              {
+                "language": "en",
+                "text": "Weight"
+              },
+              {
+                "language": "de",
+                "text": "Gewicht"
+              }
+            ],
+            "shortName": [
+              {
+                "language": "en",
+                "text": "m"
+              }
+            ],
+            "unit": "kg",
+            "dataType": "REAL_MEASURE",
+            "definition": [
+              {
+                "language": "en",
+                "text": "Mass of the drive without packaging."
+              },
+              {
+                "language": "de",
+                "text": "Masse des Antriebs ohne Verpackung."
+              }
+            ],
+            "modelType": "DataSpecificationIec61360"
+          }
+        }
+      ],
+      "modelType": "ConceptDescription"
+    },
+    {
+      "idShort": "DegreeOfProtection",
+      "id": "https://example.com/ids/cd/technical-data/DegreeOfProtection",
+      "embeddedDataSpecifications": [
+        {
+          "dataSpecification": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/DataSpecificationTemplates/DataSpecificationIec61360/3/0"
+              }
+            ]
+          },
+          "dataSpecificationContent": {
+            "preferredName": [
+              {
+                "language": "en",
+                "text": "Degree of protection (IP code)"
+              },
+              {
+                "language": "de",
+                "text": "Schutzart (IP-Code)"
+              }
+            ],
+            "dataType": "STRING",
+            "definition": [
+              {
+                "language": "en",
+                "text": "Protection of the housing against solids and water, as IP code."
+              },
+              {
+                "language": "de",
+                "text": "Schutz des Gehäuses gegen Fremdkörper und Wasser als IP-Code."
+              }
+            ],
+            "modelType": "DataSpecificationIec61360"
+          }
+        }
+      ],
+      "modelType": "ConceptDescription"
+    },
+    {
+      "idShort": "Width",
+      "id": "https://example.com/ids/cd/technical-data/Width",
+      "embeddedDataSpecifications": [
+        {
+          "dataSpecification": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/DataSpecificationTemplates/DataSpecificationIec61360/3/0"
+              }
+            ]
+          },
+          "dataSpecificationContent": {
+            "preferredName": [
+              {
+                "language": "en",
+                "text": "Width"
+              },
+              {
+                "language": "de",
+                "text": "Breite"
+              }
+            ],
+            "unit": "mm",
+            "dataType": "REAL_MEASURE",
+            "definition": [
+              {
+                "language": "en",
+                "text": "Width of the housing."
+              },
+              {
+                "language": "de",
+                "text": "Breite des Gehäuses."
+              }
+            ],
+            "modelType": "DataSpecificationIec61360"
+          }
+        }
+      ],
+      "modelType": "ConceptDescription"
+    },
+    {
+      "idShort": "Height",
+      "id": "https://example.com/ids/cd/technical-data/Height",
+      "embeddedDataSpecifications": [
+        {
+          "dataSpecification": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/DataSpecificationTemplates/DataSpecificationIec61360/3/0"
+              }
+            ]
+          },
+          "dataSpecificationContent": {
+            "preferredName": [
+              {
+                "language": "en",
+                "text": "Height"
+              },
+              {
+                "language": "de",
+                "text": "Höhe"
+              }
+            ],
+            "unit": "mm",
+            "dataType": "REAL_MEASURE",
+            "definition": [
+              {
+                "language": "en",
+                "text": "Height of the housing."
+              },
+              {
+                "language": "de",
+                "text": "Höhe des Gehäuses."
+              }
+            ],
+            "modelType": "DataSpecificationIec61360"
+          }
+        }
+      ],
+      "modelType": "ConceptDescription"
+    },
+    {
+      "idShort": "Depth",
+      "id": "https://example.com/ids/cd/technical-data/Depth",
+      "embeddedDataSpecifications": [
+        {
+          "dataSpecification": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/DataSpecificationTemplates/DataSpecificationIec61360/3/0"
+              }
+            ]
+          },
+          "dataSpecificationContent": {
+            "preferredName": [
+              {
+                "language": "en",
+                "text": "Depth"
+              },
+              {
+                "language": "de",
+                "text": "Tiefe"
+              }
+            ],
+            "unit": "mm",
+            "dataType": "REAL_MEASURE",
+            "definition": [
+              {
+                "language": "en",
+                "text": "Depth of the housing."
+              },
+              {
+                "language": "de",
+                "text": "Tiefe des Gehäuses."
+              }
+            ],
+            "modelType": "DataSpecificationIec61360"
+          }
+        }
+      ],
+      "modelType": "ConceptDescription"
+    },
+    {
+      "idShort": "MountingPosition",
+      "id": "https://example.com/ids/cd/technical-data/MountingPosition",
+      "embeddedDataSpecifications": [
+        {
+          "dataSpecification": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/DataSpecificationTemplates/DataSpecificationIec61360/3/0"
+              }
+            ]
+          },
+          "dataSpecificationContent": {
+            "preferredName": [
+              {
+                "language": "en",
+                "text": "Mounting position"
+              },
+              {
+                "language": "de",
+                "text": "Einbaulage"
+              }
+            ],
+            "dataType": "STRING",
+            "definition": [
+              {
+                "language": "en",
+                "text": "Position the drive is mounted in."
+              },
+              {
+                "language": "de",
+                "text": "Lage, in der der Antrieb eingebaut wird."
+              }
+            ],
+            "modelType": "DataSpecificationIec61360"
+          }
+        }
+      ],
+      "modelType": "ConceptDescription"
+    },
+    {
+      "idShort": "SafetyIntegrityLevel",
+      "id": "https://example.com/ids/cd/technical-data/SafetyIntegrityLevel",
+      "embeddedDataSpecifications": [
+        {
+          "dataSpecification": {
+            "type": "ExternalReference",
+            "keys": [
+              {
+                "type": "GlobalReference",
+                "value": "https://admin-shell.io/DataSpecificationTemplates/DataSpecificationIec61360/3/0"
+              }
+            ]
+          },
+          "dataSpecificationContent": {
+            "preferredName": [
+              {
+                "language": "en",
+                "text": "Safety integrity level"
+              },
+              {
+                "language": "de",
+                "text": "Sicherheitsintegritätslevel"
+              }
+            ],
+            "shortName": [
+              {
+                "language": "en",
+                "text": "SIL"
+              }
+            ],
+            "dataType": "STRING",
+            "definition": [
+              {
+                "language": "en",
+                "text": "Safety integrity level of the safety functions to IEC 61508."
+              },
+              {
+                "language": "de",
+                "text": "Sicherheitsintegritätslevel der Sicherheitsfunktionen nach IEC 61508."
+              }
+            ],
+            "modelType": "DataSpecificationIec61360"
+          }
+        }
+      ],
+      "modelType": "ConceptDescription"
+    }
+  ]
+}

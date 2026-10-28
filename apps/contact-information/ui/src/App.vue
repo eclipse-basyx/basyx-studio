@@ -120,12 +120,11 @@
   import type { AppContext, StudioClient } from '@basyx/studio-sdk'
   import { loadSubmodel } from '@basyx/studio-app-kit'
   import { contactMatches, contactVCard, parseContactInformations, vCardFileName } from '@basyx/studio-app-kit/contacts'
+  import { provideRowActions, useFieldEditor } from '@basyx/studio-app-kit/editing'
   import { StudioError } from '@basyx/studio-sdk'
   import { computed, onMounted, ref, shallowRef, watch } from 'vue'
-  import { provideRowActions } from './actions'
   import ContactCard from './ContactCard.vue'
   import ContactDialog from './ContactDialog.vue'
-  import { useFieldEditor } from './fieldEditor'
   import { provideI18n } from './i18n'
 
   // The contacts of an asset (IDTA 02002 Contact Information 1.0). In

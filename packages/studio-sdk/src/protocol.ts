@@ -6,7 +6,7 @@
 export const protocolVersion = 'studio-sdk/0'
 
 /** Version of the Studio app API that manifests name in `studioApi`. */
-export const studioAppApiVersion = '0.1.14'
+export const studioAppApiVersion = '0.1.15'
 
 /** The largest file `studio.ui.readFile` hands to an app (200 MiB). */
 export const readFileMaxBytes = 200 * 1024 * 1024
@@ -354,6 +354,25 @@ export interface Page<T> {
   page: { nextCursor: string | null, hasMore: boolean }
 }
 
+/**
+ * What a concept description says of a semantic ID, from its IEC 61360 data
+ * specification (`studio.aas.describeConcepts`, Studio app API 0.1.15).
+ */
+export interface ConceptInfo {
+  /** The concept description's ID, as asked for. */
+  id: string
+  preferredName: { language: string, text: string }[]
+  shortName: { language: string, text: string }[]
+  definition: { language: string, text: string }[]
+  /** E.g. `kW`; `null` without one. */
+  unit: string | null
+  /** E.g. `REAL_MEASURE`; `null` without one. */
+  dataType: string | null
+}
+
+/** The most semantic IDs `studio.aas.describeConcepts` takes in one call. */
+export const describeConceptsMaxIds = 500
+
 /** Value of a Property (string or `null`) or of a MultiLanguageProperty. */
 export type ElementValue = string | null | { language: string, text: string }[]
 
@@ -661,6 +680,13 @@ export interface Methods {
   'studio.aas.listSubmodels': { params: { shellId: string }, result: { items: SubmodelSummary[] } }
   'studio.aas.getSubmodel': { params: { submodelId: string }, result: JsonObject }
   'studio.aas.getElement': { params: { submodelId: string, idShortPath: string }, result: ElementSnapshot }
+  /**
+   * The concept descriptions of the active target for semantic IDs, e.g. for
+   * units and readable names: up to 500 IDs, answered in their order; `null`
+   * where the target has none for an ID, or no concept descriptions at all
+   * (Studio app API 0.1.15).
+   */
+  'studio.aas.describeConcepts': { params: { ids: string[] }, result: { concepts: Array<ConceptInfo | null> } }
   'studio.aas.setElementValue': {
     params: { submodelId: string, idShortPath: string, value: ElementValue, revision: string }
     result: ElementSnapshot
@@ -817,6 +843,7 @@ export const methodPermissions: Record<MethodName, Permission | null> = {
   'studio.aas.listSubmodels': 'studio.aas.read',
   'studio.aas.getSubmodel': 'studio.aas.read',
   'studio.aas.getElement': 'studio.aas.read',
+  'studio.aas.describeConcepts': 'studio.aas.read',
   'studio.aas.setElementValue': 'studio.aas.write',
   'studio.aas.getSubmodelSnapshot': 'studio.aas.read',
   'studio.aas.createShell': 'studio.aas.write',

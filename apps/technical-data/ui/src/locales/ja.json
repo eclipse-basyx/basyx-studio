@@ -1,0 +1,88 @@
+{
+  "technicalData": {
+    "untitled": "製品",
+    "logo": "{name} のロゴ",
+    "fullscreen": "全画面",
+    "empty": "このサブモデルには技術データがありません。"
+  },
+  "sections": {
+    "general": "一般情報",
+    "classifications": "製品分類",
+    "properties": "技術特性",
+    "specificDescriptions": "固有の説明",
+    "further": "その他の情報"
+  },
+  "general": {
+    "manufacturerName": "製造元",
+    "productDesignation": "製品名",
+    "articleNumber": "品番",
+    "orderCode": "注文コード",
+    "articleShort": "品番 {value}",
+    "orderShort": "注文コード {value}"
+  },
+  "classification": {
+    "version": "バージョン {version}",
+    "showArea": "{name} の特性を表示",
+    "fields": {
+      "system": "分類体系",
+      "version": "体系のバージョン",
+      "url": "体系のアドレス",
+      "classId": "クラス ID",
+      "codedName": "コード化クラス名",
+      "className": "クラス名"
+    }
+  },
+  "sheet": {
+    "property": "特性",
+    "value": "値",
+    "unit": "単位",
+    "entry": "項目 {number}",
+    "area": "領域 {number}",
+    "description": "説明",
+    "search": "特性を検索",
+    "matches": "{total} 件中 {count} 件の特性",
+    "noMatches": "「{query}」に一致する特性はありません。",
+    "definition": "定義",
+    "collapse": "{label} を折りたたむ",
+    "expand": "{label} を展開",
+    "empty": "技術特性はありません。",
+    "onlyDescriptions": "「{query}」に一致する技術特性はありませんが、下の固有の説明には一致します。"
+  },
+  "csv": {
+    "button": "CSV",
+    "download": "CSV としてダウンロード",
+    "fileName": "{name} 技術データ.csv",
+    "area": "領域",
+    "section": "セクション",
+    "min": "最小",
+    "max": "最大",
+    "semanticId": "セマンティック ID"
+  },
+  "further": {
+    "validDate": "有効開始日",
+    "statement": "記述",
+    "validFrom": "{date} から有効"
+  },
+  "image": {
+    "open": "{name} を表示"
+  },
+  "value": {
+    "yes": "はい",
+    "no": "いいえ"
+  },
+  "copy": {
+    "copy": "{label} をコピー",
+    "copied": "クリップボードにコピーしました。"
+  },
+  "edit": {
+    "edit": "{label} を編集",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "saved": "{label} を保存しました。",
+    "conflict": "この値はその間に他のユーザーによって変更されました。キャンセルしてもう一度お試しください。",
+    "forbidden": "この値を変更する権限がありません。",
+    "language": "言語: {language}",
+    "min": "最小",
+    "max": "最大"
+  }
+}

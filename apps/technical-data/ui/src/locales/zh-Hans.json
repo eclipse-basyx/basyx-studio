@@ -1,0 +1,88 @@
+{
+  "technicalData": {
+    "untitled": "产品",
+    "logo": "{name} 的徽标",
+    "fullscreen": "全屏",
+    "empty": "此子模型没有技术数据。"
+  },
+  "sections": {
+    "general": "常规信息",
+    "classifications": "产品分类",
+    "properties": "技术属性",
+    "specificDescriptions": "特定描述",
+    "further": "更多信息"
+  },
+  "general": {
+    "manufacturerName": "制造商",
+    "productDesignation": "产品名称",
+    "articleNumber": "货号",
+    "orderCode": "订货号",
+    "articleShort": "货号 {value}",
+    "orderShort": "订货号 {value}"
+  },
+  "classification": {
+    "version": "版本 {version}",
+    "showArea": "显示 {name} 的属性",
+    "fields": {
+      "system": "分类体系",
+      "version": "体系版本",
+      "url": "体系地址",
+      "classId": "类别 ID",
+      "codedName": "类别编码名称",
+      "className": "类别名称"
+    }
+  },
+  "sheet": {
+    "property": "属性",
+    "value": "值",
+    "unit": "单位",
+    "entry": "条目 {number}",
+    "area": "区域 {number}",
+    "description": "描述",
+    "search": "搜索属性",
+    "matches": "{total} 个属性中的 {count} 个",
+    "noMatches": "没有与“{query}”匹配的属性。",
+    "definition": "定义",
+    "collapse": "折叠{label}",
+    "expand": "展开{label}",
+    "empty": "没有技术属性。",
+    "onlyDescriptions": "没有与“{query}”匹配的技术属性；下方的特定描述中有匹配项。"
+  },
+  "csv": {
+    "button": "CSV",
+    "download": "下载为 CSV",
+    "fileName": "{name} 技术数据.csv",
+    "area": "区域",
+    "section": "章节",
+    "min": "最小值",
+    "max": "最大值",
+    "semanticId": "语义 ID"
+  },
+  "further": {
+    "validDate": "生效日期",
+    "statement": "说明",
+    "validFrom": "自 {date} 起有效"
+  },
+  "image": {
+    "open": "显示 {name}"
+  },
+  "value": {
+    "yes": "是",
+    "no": "否"
+  },
+  "copy": {
+    "copy": "复制{label}",
+    "copied": "已复制到剪贴板。"
+  },
+  "edit": {
+    "edit": "编辑{label}",
+    "save": "保存",
+    "cancel": "取消",
+    "saved": "已保存{label}。",
+    "conflict": "其他人在此期间更改了此值。请取消后重试。",
+    "forbidden": "你无权更改此值。",
+    "language": "语言：{language}",
+    "min": "最小值",
+    "max": "最大值"
+  }
+}

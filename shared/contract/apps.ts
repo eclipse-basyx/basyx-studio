@@ -1,5 +1,5 @@
 import type { MethodName, Methods } from '@basyx/studio-sdk/protocol'
-import { editModeMethods, permissions, protocolVersion, putAttachmentMaxBytes, sandboxOriginKinds, stackFileKinds } from '@basyx/studio-sdk/protocol'
+import { describeConceptsMaxIds, editModeMethods, permissions, protocolVersion, putAttachmentMaxBytes, sandboxOriginKinds, stackFileKinds } from '@basyx/studio-sdk/protocol'
 import { z } from 'zod'
 import { displayBreakpoints } from '../overview'
 import { connectionCallParamsSchema } from './connections'
@@ -369,6 +369,7 @@ export const appMethodParamsSchemas = {
   'studio.aas.listSubmodels': z.object({ shellId: identifier }).strict(),
   'studio.aas.getSubmodel': z.object({ submodelId: identifier }).strict(),
   'studio.aas.getElement': z.object({ submodelId: identifier, idShortPath }).strict(),
+  'studio.aas.describeConcepts': z.object({ ids: z.array(identifier).max(describeConceptsMaxIds) }).strict(),
   'studio.aas.setElementValue': z.object({
     submodelId: identifier,
     idShortPath,

@@ -1,7 +1,7 @@
-import type { ElementSpec, LangString, Node, TextField } from '@basyx/studio-app-kit/aas'
+import type { ElementSpec, FileRef, LangString, Node, TextField } from '@basyx/studio-app-kit/aas'
 import type { ContactInformation } from '@basyx/studio-app-kit/contacts'
 import type { JsonObject } from '@basyx/studio-sdk'
-import { childMatching, childrenMatching, childrenOf, hasSpecName, matchesSpec, semanticIdOf, textFieldOf } from '@basyx/studio-app-kit/aas'
+import { childMatching, childrenMatching, childrenOf, fileRef, hasSpecName, matchesSpec, semanticIdOf, textFieldOf } from '@basyx/studio-app-kit/aas'
 import { parseContactInformation } from '@basyx/studio-app-kit/contacts'
 
 // Reading the Digital Nameplate of an asset: IDTA 02006 3.0 (IEC CDD semantic
@@ -63,17 +63,6 @@ const specs = {
   assetSpecificProperties: { names: ['AssetSpecificProperties'], semanticIds: ['0173-1#02-ABI218#003'] },
 } satisfies Record<string, ElementSpec>
 
-/** A File element: its idShortPath (for `readFile` and `previewFile`), media type and value. */
-export interface FileRef {
-  path: string
-  contentType: string
-  value: string
-  /** The file name, from the value's last segment. */
-  name: string
-  /** The value is an http(s) address at another host. */
-  external: boolean
-}
-
 export interface Marking {
   path: string
   /** `MarkingName`; for 1.0's `Marking_CE` collections, their suffix. */
@@ -114,22 +103,6 @@ export interface Nameplate {
 function scalar (element: JsonObject | undefined): string {
   const value = element?.value
   return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' ? String(value).trim() : ''
-}
-
-export function fileRef (node: Node | undefined): FileRef | null {
-  const value = scalar(node?.element)
-  if (!node || node.element.modelType !== 'File' || value === '') {
-    return null
-  }
-  const external = /^https?:\/\//i.test(value)
-  const segment = (external ? URL.parse(value)?.pathname ?? value : value).split('/').pop() ?? ''
-  let name = segment
-  try {
-    name = decodeURIComponent(segment)
-  } catch {
-    // Not percent-encoded: as it is.
-  }
-  return { path: node.path, contentType: String(node.element.contentType ?? '').trim(), value, name, external }
 }
 
 /** The elements of a list, or numbered collections next to each other. */

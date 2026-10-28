@@ -42,8 +42,8 @@
 <script lang="ts" setup>
   import type { ContactInformation } from '@basyx/studio-app-kit/contacts'
   import { contactRows } from '@basyx/studio-app-kit/contacts'
+  import { useRowActions } from '@basyx/studio-app-kit/editing'
   import { computed } from 'vue'
-  import { useRowActions } from './actions'
   import { useI18n } from './i18n'
   import { contactHeading } from './presentation'
 

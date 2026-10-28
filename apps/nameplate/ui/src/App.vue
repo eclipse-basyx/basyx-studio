@@ -117,17 +117,17 @@
 </template>
 
 <script lang="ts" setup>
-  import type { FileRef, Marking, Nameplate } from './nameplate'
+  import type { Marking, Nameplate } from './nameplate'
+  import type { FileRef } from '@basyx/studio-app-kit/aas'
   import type { AppContext, StudioClient } from '@basyx/studio-sdk'
   import { provideFileViewer } from '@basyx/file-viewer/vue'
   import { fieldText, loadSubmodel } from '@basyx/studio-app-kit'
   import { contactVCard, vCardFileName } from '@basyx/studio-app-kit/contacts'
+  import { provideRowActions, useFieldEditor } from '@basyx/studio-app-kit/editing'
   import { StudioError } from '@basyx/studio-sdk'
   import { computed, onMounted, ref, shallowRef, watch } from 'vue'
-  import { provideRowActions } from './actions'
   import AssetProperties from './AssetProperties.vue'
   import DetailList from './DetailList.vue'
-  import { useFieldEditor } from './fieldEditor'
   import { provideI18n } from './i18n'
   import MarkingDialog from './MarkingDialog.vue'
   import MarkingList from './MarkingList.vue'

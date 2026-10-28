@@ -53,7 +53,7 @@
                   append-icon="mdi-eye-outline"
                   data-test="detail-file"
                   :text="row.value"
-                  @click="preview(row.file)"
+                  @click="preview?.(row.file)"
                 />
 
                 <template v-else-if="row.chips">
@@ -122,7 +122,7 @@
 
 <script lang="ts" setup>
   import type { DetailRow } from './presentation'
-  import { useRowActions } from './actions'
+  import { useRowActions } from '@basyx/studio-app-kit/editing'
   import { useI18n } from './i18n'
 
   // Label and value rows, as the Documents app's definition list: links open

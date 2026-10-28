@@ -95,6 +95,7 @@ const embeddedAllowed = new Set<AppMethodName>([
   'studio.aas.getSubmodel',
   'studio.aas.getSubmodelSnapshot',
   'studio.aas.getElement',
+  'studio.aas.describeConcepts',
   'studio.timeseries.read',
   'studio.ui.readFile',
   'studio.ui.readExternalFile',

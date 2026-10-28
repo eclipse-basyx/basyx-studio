@@ -1,0 +1,88 @@
+{
+  "technicalData": {
+    "untitled": "Produkt",
+    "logo": "Logo von {name}",
+    "fullscreen": "Vollbild",
+    "empty": "Dieses Teilmodell enthält keine technischen Daten."
+  },
+  "sections": {
+    "general": "Allgemeine Informationen",
+    "classifications": "Produktklassifikationen",
+    "properties": "Technische Eigenschaften",
+    "specificDescriptions": "Spezifische Beschreibungen",
+    "further": "Weitere Informationen"
+  },
+  "general": {
+    "manufacturerName": "Hersteller",
+    "productDesignation": "Produktbezeichnung",
+    "articleNumber": "Artikelnummer",
+    "orderCode": "Bestellnummer",
+    "articleShort": "Art.-Nr. {value}",
+    "orderShort": "Best.-Nr. {value}"
+  },
+  "classification": {
+    "version": "Version {version}",
+    "showArea": "Eigenschaften von {name} anzeigen",
+    "fields": {
+      "system": "Klassifikationssystem",
+      "version": "Systemversion",
+      "url": "Adresse des Systems",
+      "classId": "Klassen-ID",
+      "codedName": "Codierter Klassenname",
+      "className": "Klassenname"
+    }
+  },
+  "sheet": {
+    "property": "Eigenschaft",
+    "value": "Wert",
+    "unit": "Einheit",
+    "entry": "Eintrag {number}",
+    "area": "Bereich {number}",
+    "description": "Beschreibung",
+    "search": "Eigenschaften durchsuchen",
+    "matches": "{count} von {total} Eigenschaften",
+    "noMatches": "Keine Eigenschaft passt zu „{query}“.",
+    "definition": "Definition",
+    "collapse": "{label} einklappen",
+    "expand": "{label} ausklappen",
+    "empty": "Keine technischen Eigenschaften.",
+    "onlyDescriptions": "Keine technische Eigenschaft passt zu „{query}“; die spezifischen Beschreibungen unten schon."
+  },
+  "csv": {
+    "button": "CSV",
+    "download": "Als CSV herunterladen",
+    "fileName": "{name} technische Daten.csv",
+    "area": "Bereich",
+    "section": "Abschnitt",
+    "min": "Minimum",
+    "max": "Maximum",
+    "semanticId": "Semantische ID"
+  },
+  "further": {
+    "validDate": "Gültig ab",
+    "statement": "Hinweis",
+    "validFrom": "Gültig ab {date}"
+  },
+  "image": {
+    "open": "{name} anzeigen"
+  },
+  "value": {
+    "yes": "Ja",
+    "no": "Nein"
+  },
+  "copy": {
+    "copy": "{label} kopieren",
+    "copied": "In die Zwischenablage kopiert."
+  },
+  "edit": {
+    "edit": "{label} bearbeiten",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "saved": "{label} gespeichert.",
+    "conflict": "Jemand anderes hat diesen Wert inzwischen geändert. Brechen Sie ab und versuchen Sie es erneut.",
+    "forbidden": "Sie dürfen diesen Wert nicht ändern.",
+    "language": "Sprache: {language}",
+    "min": "Minimum",
+    "max": "Maximum"
+  }
+}
