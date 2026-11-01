@@ -1,6 +1,6 @@
 {
   "name": "@basyx/file-viewer",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "File viewer of BaSyx Studio and its apps: text in Monaco, Markdown, CSV, images, PDF, 3D models (STL, OBJ, glTF, IFC, STEP), audio and video",
   "license": "MIT",
   "repository": {
