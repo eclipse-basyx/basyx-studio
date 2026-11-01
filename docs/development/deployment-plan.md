@@ -299,7 +299,7 @@ existing ones here.
      `verify-attestation`. Syft writes SPDX and CycloneDX artifacts, kept for
      14 days.
 2. **`.github/workflows/docker-release.yml`**:
-   - Triggers on `release: published`.
+   - Runs on a release tag, started by `release.yml` (ADR 0053).
    - Tags `<version>` (from the tag, without `v`) and `latest`.
    - The version must be the one in `package.json`, which Studio and its
      packages share (ADR 0053); `release.yml` checks it the same way.

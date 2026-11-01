@@ -1,6 +1,6 @@
 # 0043: Published SDK and app kit
 
-- Status: Proposed, amended by [ADR 0053](0053-one-version-for-studio-and-its-packages.md): Studio and the packages share one version, released by `release.yml` on a published GitHub release
+- Status: Proposed, amended by [ADR 0053](0053-one-version-for-studio-and-its-packages.md): Studio and the packages share one version, released by `release.yml`, run with the version
 - Date: 2026-10-20
 - Deciders: BaSyx Studio maintainers
 - Requirements: APP-001, APP-015, APP-020, APP-023

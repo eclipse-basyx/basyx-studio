@@ -1,26 +1,126 @@
 name: Release
 
-# A published GitHub release v<version> releases Studio and its packages at
-# that version (ADR 0053): it publishes @basyx/studio-sdk,
-# @basyx/studio-app-kit and @basyx/file-viewer to npm and attaches the
-# desktop binaries to the release. docker-release.yml builds the image of
-# the same release. Publishing uses npm trusted publishing: each package's
-# trusted publisher on npmjs.com names this repository and this workflow
-# file, so no token is stored. Every version carries a provenance statement.
+# Run from the Actions tab on main with a version, e.g. 0.2.1 or 0.2.1-rc.1
+# for a prerelease (ADR 0053). It commits the version of Studio and its
+# packages to main, tags it v<version>, and makes a draft release whose
+# notes start with .github/release-notes.md. Once the tagged commit passes
+# the checks, it attaches the desktop binaries, has docker-release.yml build
+# the image on the tag, publishes @basyx/studio-sdk, @basyx/studio-app-kit
+# and @basyx/file-viewer to npm, and publishes the release. Until then the
+# release stays a draft; a re-run continues where the last run stopped.
+#
+# Publishing uses npm trusted publishing: each package's trusted publisher on
+# npmjs.com names this repository and this workflow file, so no token is
+# stored. Every version carries a provenance statement.
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version of Studio and its packages, without v: X.Y.Z, or X.Y.Z-suffix for a prerelease"
+        required: true
+        type: string
 
 concurrency:
-  group: release-${{ github.event.release.tag_name }}
+  group: release
   cancel-in-progress: false
 
 permissions: {}
 
 jobs:
+  prepare:
+    name: Prepare the release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      prerelease: ${{ steps.release.outputs.prerelease }}
+
+    steps:
+      - name: Check out main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      # A new release commits the version to main and tags it; a re-run finds
+      # the tag and continues with it.
+      - name: Commit and tag the version
+        id: release
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF}" != "refs/heads/${DEFAULT_BRANCH}" ]]; then
+            echo "::error::Run the release from ${DEFAULT_BRANCH}."
+            exit 1
+          fi
+          tag="v${VERSION}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git rev-parse --quiet --verify "refs/tags/${tag}" > /dev/null; then
+            echo "Continuing the release ${tag}."
+          else
+            base="$(git rev-parse HEAD)"
+            node scripts/release-version.mjs "${VERSION}"
+            git add package.json packages/*/package.json packages/studio-sdk/README.md examples/apps/starter/package.json
+            if ! git diff --cached --quiet; then
+              git commit --message "Release ${VERSION}"
+            fi
+            git fetch --quiet origin "${DEFAULT_BRANCH}"
+            if [[ "$(git rev-parse "origin/${DEFAULT_BRANCH}")" != "${base}" ]]; then
+              echo "::error::${DEFAULT_BRANCH} moved on during the release; run it again."
+              exit 1
+            fi
+            git push origin "HEAD:refs/heads/${DEFAULT_BRANCH}"
+            git tag --annotate --message "Release ${VERSION}" "${tag}"
+            git push origin "refs/tags/${tag}"
+          fi
+          prerelease=false
+          if [[ "${VERSION}" == *-* ]]; then
+            prerelease=true
+          fi
+          {
+            echo "tag=${tag}"
+            echo "prerelease=${prerelease}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Make the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+          PRERELEASE: ${{ steps.release.outputs.prerelease }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if draft="$(gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" --json isDraft --jq .isDraft 2>/dev/null)"; then
+            if [[ "${draft}" != "true" ]]; then
+              echo "::error::${TAG} is released already."
+              exit 1
+            fi
+            exit 0
+          fi
+          # .github/release-notes.md comes first, then GitHub's list of
+          # changes since the last release.
+          app_api="$(git show "${TAG}:packages/studio-sdk/src/protocol.ts" | sed -n "s/.*studioAppApiVersion = '\([^']*\)'.*/\1/p")"
+          notes="$(git show "${TAG}:.github/release-notes.md" | sed -e "s/{{version}}/${VERSION}/g" -e "s/{{appApi}}/${app_api}/g")"
+          arguments=("${TAG}" --repo "${GITHUB_REPOSITORY}" --verify-tag --draft --title "${TAG}" --notes "${notes}" --generate-notes)
+          if [[ "${PRERELEASE}" == "true" ]]; then
+            arguments+=(--prerelease)
+          fi
+          gh release create "${arguments[@]}"
+
   check:
     name: Check the release
+    needs: prepare
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -30,6 +130,7 @@ jobs:
       - name: Check out release
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ needs.prepare.outputs.tag }}
           persist-credentials: false
 
       - name: Set up Node.js
@@ -47,8 +148,8 @@ jobs:
       # README says which app API it provides.
       - name: Versions match the tag
         env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: node scripts/release-version.mjs --check "${RELEASE_TAG#v}"
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: node scripts/release-version.mjs --check "${TAG#v}"
 
       - name: Lint
         run: pnpm lint
@@ -68,56 +169,9 @@ jobs:
       - name: Build an app from the packed packages
         run: node scripts/check-app-tarballs.mjs
 
-  npm:
-    name: Publish to npm
-    needs: check
-    if: ${{ github.repository == 'eclipse-basyx/basyx-studio' && !github.event.repository.fork }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      # npm trusted publishing and the provenance statement.
-      id-token: write
-
-    steps:
-      - name: Check out release
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Set up Node.js
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: "24"
-
-      - name: Enable and verify pnpm
-        run: bash .github/scripts/setup-pnpm.sh
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build the packages
-        run: pnpm --filter "./packages/*" run build
-
-      # Recursive publishing goes in dependency order and skips versions that
-      # are on npm already, so a re-run after a partial failure completes the
-      # release. The release checkout is a detached HEAD, hence no git
-      # checks. A prerelease goes to the dist-tag next, so latest stays on
-      # the last release.
-      - name: Publish
-        env:
-          PRERELEASE: ${{ github.event.release.prerelease }}
-        run: |
-          set -euo pipefail
-          tag=latest
-          if [[ "${PRERELEASE}" == "true" ]]; then
-            tag=next
-          fi
-          pnpm publish --recursive --filter "./packages/*" --access public --provenance --no-git-checks --tag "${tag}"
-
   binaries:
     name: Build ${{ matrix.platform }} binaries
-    needs: check
+    needs: [prepare, check]
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     permissions:
@@ -129,24 +183,21 @@ jobs:
           - platform: Linux
             runner: ubuntu-latest
             build_script: build:electron:linux
-            release_files: |
-              dist/*.AppImage
+            release_files: dist/*.AppImage
           - platform: macOS
             runner: macos-latest
             build_script: build:electron:mac
-            release_files: |
-              dist/*.dmg
-              dist/*.zip
+            release_files: dist/*.dmg dist/*.zip
           - platform: Windows
             runner: windows-latest
             build_script: build:electron:win
-            release_files: |
-              dist/*.exe
+            release_files: dist/*.exe
 
     steps:
       - name: Check out release
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ needs.prepare.outputs.tag }}
           persist-credentials: false
 
       - name: Set up Node.js
@@ -185,8 +236,130 @@ jobs:
       - name: Build ${{ matrix.platform }} binaries
         run: pnpm ${{ matrix.build_script }}
 
-      - name: Attach binaries to release
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+      # gh finds draft releases by their tag, and replaces the files of an
+      # earlier attempt.
+      - name: Attach binaries to the draft release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+          FILES: ${{ matrix.release_files }}
+        run: |
+          set -euo pipefail
+          # shellcheck disable=SC2086 # FILES holds globs.
+          gh release upload "${TAG}" ${FILES} --repo "${GITHUB_REPOSITORY}" --clobber
+
+  # docker-release.yml runs on the tag, so the image's cosign identity is
+  # docker-release.yml@refs/tags/v<version>, as docs/deployment says. A
+  # workflow_dispatch is the one event that a workflow's token can start
+  # another workflow with.
+  image:
+    name: Build the release image
+    needs: [prepare, check]
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      actions: write
+
+    steps:
+      - name: Run docker-release.yml on the tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          set -euo pipefail
+          runs() {
+            gh run list --repo "${GITHUB_REPOSITORY}" --workflow docker-release.yml --event workflow_dispatch --branch "${TAG}" \
+              --json databaseId,conclusion,createdAt --jq "$1"
+          }
+          if [[ -n "$(runs '[.[] | select(.conclusion == "success")][0].databaseId // empty')" ]]; then
+            echo "The image of ${TAG} is built already."
+            exit 0
+          fi
+          since="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          gh workflow run docker-release.yml --repo "${GITHUB_REPOSITORY}" --ref "${TAG}"
+          run=""
+          for _ in $(seq 1 30); do
+            run="$(runs "[.[] | select(.createdAt >= \"${since}\")][0].databaseId // empty")"
+            [[ -n "${run}" ]] && break
+            sleep 10
+          done
+          if [[ -z "${run}" ]]; then
+            echo "::error::docker-release.yml did not start."
+            exit 1
+          fi
+          echo "Waiting for ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${run}"
+          gh run watch "${run}" --repo "${GITHUB_REPOSITORY}" --exit-status --interval 60 > /dev/null
+
+  npm:
+    name: Publish to npm
+    needs: [prepare, binaries, image]
+    if: ${{ github.repository == 'eclipse-basyx/basyx-studio' && !github.event.repository.fork }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      # npm trusted publishing and the provenance statement.
+      id-token: write
+
+    steps:
+      - name: Check out release
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          files: ${{ matrix.release_files }}
-          fail_on_unmatched_files: true
+          ref: ${{ needs.prepare.outputs.tag }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Enable and verify pnpm
+        run: bash .github/scripts/setup-pnpm.sh
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the packages
+        run: pnpm --filter "./packages/*" run build
+
+      # Recursive publishing goes in dependency order and skips versions that
+      # are on npm already, so a re-run after a partial failure completes the
+      # release. The tag checkout is a detached HEAD, hence no git checks. A
+      # prerelease goes to the dist-tag next, so latest stays on the last
+      # release.
+      - name: Publish
+        env:
+          PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+          tag=latest
+          if [[ "${PRERELEASE}" == "true" ]]; then
+            tag=next
+          fi
+          pnpm publish --recursive --filter "./packages/*" --access public --provenance --no-git-checks --tag "${tag}"
+
+  publish:
+    name: Publish the release
+    needs: [prepare, binaries, image, npm]
+    # npm is skipped outside eclipse-basyx/basyx-studio.
+    if: ${{ !cancelled() && needs.binaries.result == 'success' && needs.image.result == 'success' && contains(fromJSON('["success", "skipped"]'), needs.npm.result) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+
+    steps:
+      - name: Publish the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+          PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+          latest=true
+          if [[ "${PRERELEASE}" == "true" ]]; then
+            latest=false
+          fi
+          gh release edit "${TAG}" --repo "${GITHUB_REPOSITORY}" --draft=false --latest="${latest}"
+          echo "Released ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${TAG}" >> "${GITHUB_STEP_SUMMARY}"

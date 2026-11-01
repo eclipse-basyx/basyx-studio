@@ -29,7 +29,6 @@
     "testenv:demo:live": "node examples/apps/fleet-atlas/demo/simulate.mjs",
     "apps:build": "node scripts/build-example-apps.mjs",
     "apps:bundle": "node scripts/build-example-apps.mjs apps server/bundled-apps",
-    "release:version": "node scripts/release-version.mjs",
     "typecheck": "nuxt typecheck && pnpm --filter \"./apps/*\" --filter \"./packages/*\" --filter \"./examples/apps/*\" --if-present run typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
