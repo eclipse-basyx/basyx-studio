@@ -1,7 +1,7 @@
 name: Release
 
-# Run from the Actions tab on main with a version, e.g. 0.2.1 or 0.2.1-rc.1
-# for a prerelease (ADR 0053). It commits the version of Studio and its
+# Run from the Actions tab on main with the release tag, e.g. v0.2.1, or
+# v0.2.1-rc.1 for a prerelease (ADR 0053). It commits the version of Studio and its
 # packages to main, tags it v<version>, and makes a draft release whose
 # notes start with .github/release-notes.md. Once the tagged commit passes
 # the checks, it attaches the desktop binaries, has docker-release.yml build
@@ -17,7 +17,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version of Studio and its packages, without v: X.Y.Z, or X.Y.Z-suffix for a prerelease"
+        description: "Release tag: vX.Y.Z, or vX.Y.Z-suffix for a prerelease (e.g. v0.2.1)"
         required: true
         type: string
 
@@ -56,13 +56,16 @@ jobs:
         id: release
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          VERSION: ${{ inputs.version }}
+          INPUT: ${{ inputs.version }}
         run: |
           set -euo pipefail
           if [[ "${GITHUB_REF}" != "refs/heads/${DEFAULT_BRANCH}" ]]; then
             echo "::error::Run the release from ${DEFAULT_BRANCH}."
             exit 1
           fi
+          # The tag as in the other BaSyx repositories; the version without
+          # its v is what package.json carries. A version without v works too.
+          VERSION="${INPUT#v}"
           tag="v${VERSION}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -90,6 +93,7 @@ jobs:
           fi
           {
             echo "tag=${tag}"
+            echo "version=${VERSION}"
             echo "prerelease=${prerelease}"
           } >> "${GITHUB_OUTPUT}"
 
@@ -98,7 +102,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.release.outputs.tag }}
           PRERELEASE: ${{ steps.release.outputs.prerelease }}
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ steps.release.outputs.version }}
         run: |
           set -euo pipefail
           if draft="$(gh release view "${TAG}" --repo "${GITHUB_REPOSITORY}" --json isDraft --jq .isDraft 2>/dev/null)"; then
