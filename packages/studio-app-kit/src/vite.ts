@@ -122,7 +122,10 @@ export function vuetifySettings (): Plugin {
       // the stylesheet uses it. Then the order of Vuetify's cascade layers:
       // apps load component styles before vuetify/styles, which would put the
       // reset layer above the components (buttons lose their weight and size).
-      return `@use '${settings}'\n@use '${layers}'\n@use '${file}'\n`
+      // Forward slashes, as Sass reads a backslash in a string as an escape
+      // (Windows paths).
+      const uses = [settings, layers, file].map(path => `@use '${path.replaceAll('\\', '/')}'\n`)
+      return uses.join('')
     },
   }
 }
