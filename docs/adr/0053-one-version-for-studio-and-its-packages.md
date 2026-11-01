@@ -40,31 +40,42 @@ fixed once the Eclipse Foundation sets it up.
   while it is `0.x`). An app's `studioApi` range, not the package version,
   says which Studio runs it; an app built with the 0.2 packages runs on any
   later Studio whose app API its range matches.
-- **V3, one release workflow.** Publishing a GitHub release `v<version>`
-  runs `.github/workflows/release.yml`:
-  - `check`: the version check of V4, lint, typecheck, unit tests and the
-    tarball check of ADR 0043 (P6).
-  - `npm`: publishes the packages with `pnpm publish` through npm trusted
-    publishing with provenance, from `eclipse-basyx/basyx-studio` only. A
-    prerelease is published with the dist-tag `next`, so `latest` stays on
-    the last release.
+- **V3, one release workflow, run with a version.** A maintainer runs
+  `.github/workflows/release.yml` from the Actions tab on `main` with a
+  version, e.g. `0.2.1`, or `0.2.1-rc.1` for a prerelease. Its jobs:
+  - `prepare`: sets the version as V4 does, commits "Release <version>" to
+    `main` as `github-actions[bot]`, tags it `v<version>` and creates a
+    draft release with generated notes. It refuses a version that is not
+    newer than every release tag, and stops when `main` moved on meanwhile.
+  - `check`, on the tag: the version check of V4, lint, typecheck, unit
+    tests and the tarball check of ADR 0043 (P6).
   - `binaries`: builds the desktop binaries for Linux, macOS and Windows and
-    attaches them to the release.
+    attaches them to the draft.
+  - `image`: runs `docker-release.yml` (ADR 0035) on the tag and waits for
+    it. Run on the tag, the image's cosign identity stays
+    `docker-release.yml@refs/tags/v<version>`; a `workflow_dispatch` is the
+    one event a workflow's token can start another workflow with.
+  - `npm`, once the binaries and the image are done: publishes the packages
+    with `pnpm publish` through npm trusted publishing with provenance, from
+    `eclipse-basyx/basyx-studio` only. A prerelease is published with the
+    dist-tag `next`, so `latest` stays on the last release.
+  - `publish`: publishes the draft release, as latest unless it is a
+    prerelease.
 
-  `npm` and `binaries` start once `check` passes. `sdk-release.yml` and
-  `release-binaries.yml` are removed; `docker-release.yml` (ADR 0035) stays
-  a workflow of its own and runs the same version check before it builds.
-  npm's trusted publisher for the three packages names `release.yml`.
-- **V4, setting and checking the version.**
-  `pnpm release:version <version>` (`scripts/release-version.mjs`) sets the
-  version in the four `package.json` files and the starter example's ranges
-  on the packages. With `--check` it fails unless all of them match, and
-  the SDK's README maps the version to the current `studioAppApiVersion`;
-  the release workflows run it on the release's tag without the `v`. A
-  prerelease such as 0.2.0-rc.1 needs the row of 0.2.0.
-- **V5, the README.** The SDK's version table has a row per release with
+  Until `publish`, the release is a draft, and npm is the last step that
+  cannot be undone. A re-run finds the tag, the draft and a built image, and
+  continues. `sdk-release.yml` and `release-binaries.yml` are removed, and
+  `docker-release.yml` no longer runs on published releases. npm's trusted
+  publisher for the three packages names `release.yml`.
+- **V4, setting and checking the version.** `scripts/release-version.mjs
+  <version>` sets the version in the four `package.json` files, the starter
+  example's ranges on the packages, and the row of the SDK README's release
+  table with the current `studioAppApiVersion`. With `--check` it fails
+  unless all of them match; the release jobs run it on the tag without the
+  `v`. A prerelease such as 0.2.1-rc.1 has the row of 0.2.1.
+- **V5, the README.** The SDK's release table has a row per release with
   its app API version. What each app API version added is listed by app
-  API version, as manifests declare it.
+  API version, as manifests declare it, and is written with the change.
 - **V6, the first publish.** Each package is published once by a
   maintainer, by hand and without provenance, at 0.1.10, so that its
   trusted publisher can be set up. 0.2.0 is then the first release from
@@ -73,16 +84,17 @@ fixed once the Eclipse Foundation sets it up.
 ## Consequences
 
 - One number says which Studio, which packages and which binaries belong
-  together; a release is one step, and the binaries carry the version that
-  `package.json` already has instead of setting it from the tag.
+  together. A release is one run with one input, and the binaries carry the
+  version that `package.json` has instead of setting it from the tag.
 - A release with Studio changes only publishes packages that equal the ones
   before. A new minor version of Studio is a new minor version of the
   packages, which a `^0.2.0` range does not match: app authors update their
   range when they want the newer packages, not to keep their app running.
 - A fix in a package needs a Studio release, and is one.
-- The release check fails when a version or the README row is missing, so
-  `pnpm release:version` and the README row belong in the pull request that
-  prepares a release.
+- `main` carries the version of the last release, committed by the
+  release workflow; pull requests do not change it. The workflow pushes to
+  `main` with its own token, which needs `main` to accept that push (it has
+  no branch protection, as in BaSyx Go's repositories).
 - Renaming `release.yml` later needs the trusted publishers changed on
   npm by the Eclipse Foundation.
 
@@ -99,6 +111,13 @@ fixed once the Eclipse Foundation sets it up.
   `release-binaries.yml` did: the tag is not in the repository, so the
   sources of a release would not say which version they are, and the
   packages could not be checked before they are published.
-- **Separate workflows on the same release:** a failing check would not stop
-  the others, and a release made by a workflow with `GITHUB_TOKEN` does not
-  start further workflows, so they could not be chained.
+- **Separate workflows on a published release:** a failing check would not
+  stop the others, and the release would be public before its binaries,
+  image and packages exist.
+- **The version set in a pull request** (`pnpm release:version`, then a
+  release published by hand): the first version of this ADR. Every release
+  took a pull request, a README row and the release form, in that order.
+- **`docker-release.yml` as a reusable workflow,** as BaSyx Go calls its
+  image build: the image's cosign identity would become the caller's ref on
+  `main`, which `docs/deployment` and existing verifications do not
+  expect.

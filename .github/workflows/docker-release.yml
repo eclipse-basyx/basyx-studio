@@ -1,13 +1,14 @@
 name: Docker Release Image
 
-# Every published GitHub release publishes eclipsebasyx/basyx-studio:<version>
-# (the tag without a leading "v") and, unless it is a prerelease, :latest;
+# Publishes eclipsebasyx/basyx-studio:<version> (the tag without a leading
+# "v") and, unless it is a prerelease (a version with a suffix), :latest;
 # signed with cosign, with provenance and SBOM attached to the release
-# (ADR 0035).
+# (ADR 0035). release.yml runs it on the release's tag v<version> while the
+# release is a draft (ADR 0053), so the cosign identity is
+# docker-release.yml@refs/tags/v<version>.
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
 
 concurrency:
   group: docker-release-${{ github.ref }}
@@ -26,6 +27,10 @@ jobs:
         env:
           IS_FORK: ${{ github.event.repository.fork }}
         run: |
+          if [[ "${GITHUB_REF}" != refs/tags/v* ]]; then
+            echo "Run it on a release tag v<version>, not ${GITHUB_REF}." >&2
+            exit 1
+          fi
           if [[ "${GITHUB_REPOSITORY}" == "eclipse-basyx/basyx-studio" && "${IS_FORK}" != "true" ]]; then
             echo "should-run=true" >> "$GITHUB_OUTPUT"
           else
@@ -55,9 +60,7 @@ jobs:
       # Studio and its packages have the tag's version (ADR 0053), as
       # release.yml checks for the packages and binaries of this release.
       - name: Versions match the tag
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: node scripts/release-version.mjs --check "${RELEASE_TAG#v}"
+        run: node scripts/release-version.mjs --check "${GITHUB_REF_NAME#v}"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
@@ -98,16 +101,15 @@ jobs:
           sudo install -m 0755 syft /usr/local/bin/syft
           syft version
 
+      # The image's creation date is the release commit's.
       - name: Generate version metadata
         id: meta
-        env:
-          PRERELEASE: ${{ github.event.release.prerelease }}
-          PUBLISHED_AT: ${{ github.event.release.published_at }}
         run: |
           set -euo pipefail
           VERSION="${GITHUB_REF_NAME#v}"
+          PUBLISHED_AT="$(git log -1 --format=%cI)"
           TAGS="${IMAGE_NAME}:${VERSION}"
-          if [[ "${PRERELEASE}" != "true" ]]; then
+          if [[ "${VERSION}" != *-* ]]; then
             TAGS="${TAGS},${IMAGE_NAME}:latest"
           fi
           {
@@ -299,11 +301,15 @@ jobs:
             '{ release: $release, generatedAt: $generatedAt, images: . }' \
             release-assets/release-image-metadata.json > release-assets/release-supply-chain-manifest.json
 
+      # gh finds the draft release by its tag, and replaces the files of an
+      # earlier attempt.
       - name: Attach assets to the GitHub release
-        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
-        with:
-          files: |
-            release-assets/*.spdx.json
-            release-assets/*.cdx.json
-            release-assets/release-image-metadata.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release upload "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --clobber \
+            release-assets/*.spdx.json \
+            release-assets/*.cdx.json \
+            release-assets/release-image-metadata.json \
             release-assets/release-supply-chain-manifest.json

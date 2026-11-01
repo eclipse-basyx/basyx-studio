@@ -61,7 +61,7 @@ changes one, add a new ADR with `Supersedes` and mark the old record
 | [0051](0051-views-of-other-apps.md) | Proposed | Other apps' submodel views in Studio's dialog (`studio.ui.openView`) and, with an origin per installation, read-only inline (`studio.ui.embedView`); no chart component in the app kit |
 | [0052](0052-one-file-viewer-for-studio-and-apps.md) | Proposed | One file viewer (`@basyx/file-viewer`) for Studio and apps: text in Monaco, Markdown, CSV, PDF.js, images, 3D, media; Studio's one full-screen dialog (`studio.ui.previewFile`) |
 | [0052](0052-outbound-http-proxy.md) | Proposed | Outbound requests through the `HTTP_PROXY`/`HTTPS_PROXY` proxy, except loopback and `NO_PROXY` (hosts, suffixes, ports, CIDR ranges); the guards apply to the target, not the proxy |
-| [0053](0053-one-version-for-studio-and-its-packages.md) | Proposed | One version for Studio, `@basyx/studio-sdk`, `@basyx/studio-app-kit` and `@basyx/file-viewer`; one release workflow publishes the packages and the desktop binaries |
+| [0053](0053-one-version-for-studio-and-its-packages.md) | Proposed | One version for Studio, `@basyx/studio-sdk`, `@basyx/studio-app-kit` and `@basyx/file-viewer`; a release workflow, run with the version, commits and tags it and releases the packages, binaries and image |
 
 ## Template
 

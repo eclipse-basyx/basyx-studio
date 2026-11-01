@@ -64,10 +64,9 @@ newer field declares the version that brought it, e.g. `^0.1.3`;
 declares its version too, e.g. `^0.1.5` for structural writes: an older
 Studio refuses the call as an unknown method.
 
-A release is prepared in a pull request: `pnpm release:version <version>`
-sets the version of Studio and the packages, and this table gets its row.
-Publishing the GitHub release `v<version>` then checks and publishes the
-packages and attaches Studio's desktop binaries.
+A release is one run of the *Release* workflow with its version: it adds the
+row to this table, commits and tags the version, and releases the packages,
+Studio's image and its desktop binaries.
 
 ## Manifest
 
