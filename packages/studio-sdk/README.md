@@ -23,39 +23,51 @@ is an app in its own repository that uses both
 
 ## Versions
 
-The SDK, `@basyx/studio-app-kit` and `@basyx/file-viewer` are released
-together, independently of Studio, and stay `0.x` until the app API is
-stable. A package version provides one app API version
-(`studioAppApiVersion`); a manifest's `studioApi` range says which Studio
-runs the app, whatever the package version.
+The SDK, `@basyx/studio-app-kit` and `@basyx/file-viewer` have the version
+of Studio and are released with it, `0.x` until the app API is stable
+([ADR 0053](../../docs/adr/0053-one-version-for-studio-and-its-packages.md)).
+Each release provides one app API version (`studioAppApiVersion`); a
+manifest's `studioApi` range says which Studio runs the app, whatever the
+package version.
 
-| Packages | App API (`studioAppApiVersion`) | First Studio release |
-| --- | --- | --- |
-| 0.1.0 | 0.1.2 | 0.1.0 |
-| 0.1.1 | 0.1.3: `sandbox.frameOrigins`, `connectOrigins`, `imageOrigins`, `mediaOrigins`; module `layout` | next release |
-| 0.1.2 | 0.1.4: `ui.openShell`; `timeseries.read` with `anchor: 'latest'` for LinkedSegments | next release |
-| 0.1.3 | 0.1.5: structural writes (`aas.createShell`, `createSubmodel`, `putSubmodel`, `addElement`, `putElement`, `deleteElement`, `deleteSubmodel`, `deleteShell`), `aas.putAttachment`, `aas.getSubmodelSnapshot`, `structureRevision` on element snapshots; `memoryAas` in `testing` | next release |
-| 0.1.4 | 0.1.6: `connections`, `studio.connections.call`, permission `studio.connections` | next release |
-| 0.1.5 | 0.1.7: `ui.openFullscreen(state, { header: false })`, `ui.closeFullscreen` and `context.fullscreenOpen`; `<v-btn-toggle-icon>` in the app kit | next release |
-| 0.1.6 | 0.1.8: `assetType` and `specificAssetIds` in `aas.listShells`; `ui.navigate(subPath, { history: 'push' })`; `navigations`, `back` and `forward` in `testing` | next release |
-| 0.1.7 | 0.1.8 (unchanged): `createTestStudio({ manifest })` in `testing`; in the app kit, `provideI18n` with `baseLocale`, `formatLocale` and nested keys, `createStudioHistory` (`./router`), the layout defaults and `mountApp`'s `setup`; per-format parsers of the file viewer's 3D viewer (`./model/viewer/core`, `./model/vue/core`, `./model/ifc`, `./model/step`) | next release |
-| 0.1.8 | 0.1.9: `settings` in the manifest, `context.settings` and `context.connections`, `settings` and `connections` in a backend's context; `checkSettingValue` and `checkSettingValues` in the app kit | next release |
-| 0.1.9 | 0.1.10: `ui.openView`; `openedViews` in `testing` | next release |
-| 0.1.10 | 0.1.11: `ui.embedView`, `context.embedded`; `connect()` of views embedded in other apps' pages; `embeddedViews` in `testing` | next release |
-| 0.1.11 | 0.1.12: `ui.previewFile`, `context.fills`; `previewedFiles` in `testing`; in the file viewer, every kind of file (`./vue`, `./viewer`) and the 3D view in parts (`./model`) | next release |
-| 0.1.12 | 0.1.13: `ui.setViewState`, which Studio's full-screen button on the Overview opens the view with, and `context.fullscreenControl`, where Studio shows that button; `viewState` in `testing` | next release |
-| 0.1.13 | 0.1.14: `ui.saveFile` and permission `studio.ui.saveFiles`; `mailto:` and `tel:` in `ui.openExternal`; `savedFiles` in `testing`; in the app kit, `./contacts` for IDTA 02002 contact information (names, addresses, channels, vCard) | next release |
-| 0.1.14 | 0.1.15: `aas.describeConcepts` (units, names and definitions from the target's concept descriptions); `conceptDescriptions` in `memoryAas`; in the app kit, `./editing` for changing values in place (`useFieldEditor`, also Ranges, and the row actions) | next release |
+| Studio and packages | App API (`studioAppApiVersion`) |
+| --- | --- |
+| 0.2.0 | 0.1.15 |
 
-A new app API minor version (new methods) is a new minor version of the
-packages; fixes are patch versions. While the app API is `0.x`, additions
-that existing apps do not need (new optional methods or manifest fields) are
-app API patch versions, so that a manifest's `^0.1.0` still matches a newer
-Studio, and patch versions of the packages. A manifest that uses a newer
-field declares the version that brought it, e.g. `^0.1.3`; `studio-app pack`
-reports it otherwise. An app that calls a newer method declares its version
-too, e.g. `^0.1.5` for structural writes: an older Studio refuses the call as
-an unknown method.
+New features of Studio or the packages are a new minor version, fixes a
+patch version. An app keeps running on a newer Studio with the packages it
+was built with, as long as its `studioApi` range matches; it updates its
+ranges on the packages to use what they added.
+
+| App API | Added |
+| --- | --- |
+| 0.1.2 | The first app API |
+| 0.1.3 | `sandbox.frameOrigins`, `connectOrigins`, `imageOrigins`, `mediaOrigins`; module `layout` |
+| 0.1.4 | `ui.openShell`; `timeseries.read` with `anchor: 'latest'` for LinkedSegments |
+| 0.1.5 | Structural writes (`aas.createShell`, `createSubmodel`, `putSubmodel`, `addElement`, `putElement`, `deleteElement`, `deleteSubmodel`, `deleteShell`), `aas.putAttachment`, `aas.getSubmodelSnapshot`, `structureRevision` on element snapshots; `memoryAas` in `testing` |
+| 0.1.6 | `connections`, `studio.connections.call`, permission `studio.connections` |
+| 0.1.7 | `ui.openFullscreen(state, { header: false })`, `ui.closeFullscreen` and `context.fullscreenOpen`; `<v-btn-toggle-icon>` in the app kit |
+| 0.1.8 | `assetType` and `specificAssetIds` in `aas.listShells`; `ui.navigate(subPath, { history: 'push' })`; `navigations`, `back` and `forward` in `testing`. In the packages only: `createTestStudio({ manifest })` in `testing`; in the app kit, `provideI18n` with `baseLocale`, `formatLocale` and nested keys, `createStudioHistory` (`./router`), the layout defaults and `mountApp`'s `setup`; per-format parsers of the file viewer's 3D viewer (`./model/viewer/core`, `./model/vue/core`, `./model/ifc`, `./model/step`) |
+| 0.1.9 | `settings` in the manifest, `context.settings` and `context.connections`, `settings` and `connections` in a backend's context; `checkSettingValue` and `checkSettingValues` in the app kit |
+| 0.1.10 | `ui.openView`; `openedViews` in `testing` |
+| 0.1.11 | `ui.embedView`, `context.embedded`; `connect()` of views embedded in other apps' pages; `embeddedViews` in `testing` |
+| 0.1.12 | `ui.previewFile`, `context.fills`; `previewedFiles` in `testing`; in the file viewer, every kind of file (`./vue`, `./viewer`) and the 3D view in parts (`./model`) |
+| 0.1.13 | `ui.setViewState`, which Studio's full-screen button on the Overview opens the view with, and `context.fullscreenControl`, where Studio shows that button; `viewState` in `testing` |
+| 0.1.14 | `ui.saveFile` and permission `studio.ui.saveFiles`; `mailto:` and `tel:` in `ui.openExternal`; `savedFiles` in `testing`; in the app kit, `./contacts` for IDTA 02002 contact information (names, addresses, channels, vCard) |
+| 0.1.15 | `aas.describeConcepts` (units, names and definitions from the target's concept descriptions); `conceptDescriptions` in `memoryAas`; in the app kit, `./editing` for changing values in place (`useFieldEditor`, also Ranges, and the row actions) |
+
+While the app API is `0.x`, additions that existing apps do not need (new
+optional methods or manifest fields) are app API patch versions, so that a
+manifest's `^0.1.0` still matches a newer Studio. A manifest that uses a
+newer field declares the version that brought it, e.g. `^0.1.3`;
+`studio-app pack` reports it otherwise. An app that calls a newer method
+declares its version too, e.g. `^0.1.5` for structural writes: an older
+Studio refuses the call as an unknown method.
+
+A release is prepared in a pull request: `pnpm release:version <version>`
+sets the version of Studio and the packages, and this table gets its row.
+Publishing the GitHub release `v<version>` then checks and publishes the
+packages and attaches Studio's desktop binaries.
 
 ## Manifest
 

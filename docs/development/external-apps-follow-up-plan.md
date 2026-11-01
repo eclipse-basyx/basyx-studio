@@ -60,7 +60,7 @@ Verified on `main` (d8a77e0) for each gap the pilot reported:
 | 11 | Other apps' submodel views in an app's pages | Not possible; `studio.ui.openShell` leaves the app for Studio's shell page (external apps plan X2) | E1, E2 |
 | 12 | Charts of time series in an app | The app brings its own chart code; the Time Series app's chart is not reusable (ADR 0041 keeps ApexCharts in that app) | E3 |
 | 13 | Embeds that need the third party's sign-in | Documented as unsupported in ADR 0045 and the SDK README (*Third-party origins*); nothing else changed | E4 |
-| 14 | Packages on npm and a released image | The `@basyx` scope on npm is requested, so `sdk-release.yml` cannot publish yet; no Studio release exists, only snapshot images from `main` | O1, O2 |
+| 14 | Packages on npm and a released image | The `@basyx` scope exists on npm, but the packages are not published yet, so trusted publishing for `release.yml` cannot be set up; no Studio release exists, only snapshot images from `main` | O1, O2 |
 
 No gap is solved on `main` already. Gap 13 needs no work beyond the
 decision E4, because the limit is documented.
@@ -132,8 +132,8 @@ Not new features: they close phases B and D of the external apps plan.
 
 | # | Topic | Proposal |
 | --- | --- | --- |
-| O1 | Packages on npm | `@basyx/studio-sdk`, `@basyx/studio-app-kit` and `@basyx/file-viewer` are published by `sdk-release.yml` with provenance once the `@basyx` scope and trusted publishing are granted. Until then, apps build against the packed tarballs. |
-| O2 | Studio release | A released Studio image with app API 0.1.6 or later, so deployments need neither snapshots nor own builds for HTTP connections, structural writes and full-page modules. The README's version table gets its first release column entries. |
+| O1 | Packages on npm | `@basyx/studio-sdk`, `@basyx/studio-app-kit` and `@basyx/file-viewer` are published by `release.yml` with provenance, with Studio's version ([ADR 0053](../adr/0053-one-version-for-studio-and-its-packages.md)). npm sets up trusted publishing only for existing packages, so each is first published by hand at 0.1.10. Until 0.2.0 is released, apps build against the packed tarballs. |
+| O2 | Studio release | A released Studio image with app API 0.1.6 or later, so deployments need neither snapshots nor own builds for HTTP connections, structural writes and full-page modules. Studio 0.2.0 is that release, with the packages of O1 and app API 0.1.15. |
 
 ## Requirement changes
 

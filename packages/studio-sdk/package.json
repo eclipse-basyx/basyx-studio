@@ -1,6 +1,6 @@
 {
   "name": "@basyx/studio-sdk",
-  "version": "0.1.10",
+  "version": "0.2.0",
   "description": "Client SDK for BaSyx Studio apps: capability calls, context and theme over the studio-sdk/0 bridge, and an in-memory Studio for tests",
   "license": "MIT",
   "repository": {
