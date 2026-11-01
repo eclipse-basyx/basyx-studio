@@ -170,6 +170,16 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # The pnpm devDependency only tracks the version for Dependabot, and its
+      # install script is denied (pnpm-workspace.yaml), so its bins stay sh
+      # launchers that Windows cannot run. Scripts put node_modules/.bin first
+      # on the PATH, so the build's nested pnpm calls would reach them instead
+      # of Corepack's pnpm, which is the same version.
+      - name: Use Corepack's pnpm in scripts
+        if: runner.os == 'Windows'
+        shell: bash
+        run: rm -f node_modules/.bin/{pnpm,pn,pnpx,pnx}{,.cmd,.ps1}
+
       # The version comes from package.json, which the check job compared
       # with the tag.
       - name: Build ${{ matrix.platform }} binaries
