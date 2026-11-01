@@ -2,12 +2,12 @@ name: Release
 
 # Run from the Actions tab on main with a version, e.g. 0.2.1 or 0.2.1-rc.1
 # for a prerelease (ADR 0053). It commits the version of Studio and its
-# packages to main, tags it v<version>, and makes a draft release. Once the
-# tagged commit passes the checks, it attaches the desktop binaries, has
-# docker-release.yml build the image on the tag, publishes
-# @basyx/studio-sdk, @basyx/studio-app-kit and @basyx/file-viewer to npm,
-# and publishes the release. Until then the release stays a draft; a re-run
-# continues where the last run stopped.
+# packages to main, tags it v<version>, and makes a draft release whose
+# notes start with .github/release-notes.md. Once the tagged commit passes
+# the checks, it attaches the desktop binaries, has docker-release.yml build
+# the image on the tag, publishes @basyx/studio-sdk, @basyx/studio-app-kit
+# and @basyx/file-viewer to npm, and publishes the release. Until then the
+# release stays a draft; a re-run continues where the last run stopped.
 #
 # Publishing uses npm trusted publishing: each package's trusted publisher on
 # npmjs.com names this repository and this workflow file, so no token is
@@ -108,8 +108,10 @@ jobs:
             fi
             exit 0
           fi
+          # .github/release-notes.md comes first, then GitHub's list of
+          # changes since the last release.
           app_api="$(git show "${TAG}:packages/studio-sdk/src/protocol.ts" | sed -n "s/.*studioAppApiVersion = '\([^']*\)'.*/\1/p")"
-          notes="Studio ${VERSION}: desktop binaries below, the image \`eclipsebasyx/basyx-studio:${VERSION}\`, and \`@basyx/studio-sdk\`, \`@basyx/studio-app-kit\` and \`@basyx/file-viewer\` ${VERSION} on npm, with app API ${app_api}."
+          notes="$(git show "${TAG}:.github/release-notes.md" | sed -e "s/{{version}}/${VERSION}/g" -e "s/{{appApi}}/${app_api}/g")"
           arguments=("${TAG}" --repo "${GITHUB_REPOSITORY}" --verify-tag --draft --title "${TAG}" --notes "${notes}" --generate-notes)
           if [[ "${PRERELEASE}" == "true" ]]; then
             arguments+=(--prerelease)

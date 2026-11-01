@@ -45,7 +45,8 @@ fixed once the Eclipse Foundation sets it up.
   version, e.g. `0.2.1`, or `0.2.1-rc.1` for a prerelease. Its jobs:
   - `prepare`: sets the version as V4 does, commits "Release <version>" to
     `main` as `github-actions[bot]`, tags it `v<version>` and creates a
-    draft release with generated notes. It refuses a version that is not
+    draft release: `.github/release-notes.md` with the version and app API,
+    then GitHub's generated list of changes. It refuses a version that is not
     newer than every release tag, and stops when `main` moved on meanwhile.
   - `check`, on the tag: the version check of V4, lint, typecheck, unit
     tests and the tarball check of ADR 0043 (P6).

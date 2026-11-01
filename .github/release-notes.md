@@ -1,0 +1,3 @@
+This is a very early release of the new BaSyx Studio. It is not intended for production use.
+
+The release includes the Docker image `eclipsebasyx/basyx-studio:{{version}}`, the npm packages [@basyx/studio-sdk](https://www.npmjs.com/package/@basyx/studio-sdk/v/{{version}}), [@basyx/studio-app-kit](https://www.npmjs.com/package/@basyx/studio-app-kit/v/{{version}}) and [@basyx/file-viewer](https://www.npmjs.com/package/@basyx/file-viewer/v/{{version}}) {{version}} with app API {{appApi}}, and the binaries of BaSyx Studio for Windows, macOS and Linux (currently unsigned). Use at your own discretion.
