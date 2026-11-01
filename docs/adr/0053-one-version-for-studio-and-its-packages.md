@@ -41,8 +41,9 @@ fixed once the Eclipse Foundation sets it up.
   says which Studio runs it; an app built with the 0.2 packages runs on any
   later Studio whose app API its range matches.
 - **V3, one release workflow, run with a version.** A maintainer runs
-  `.github/workflows/release.yml` from the Actions tab on `main` with a
-  version, e.g. `0.2.1`, or `0.2.1-rc.1` for a prerelease. Its jobs:
+  `.github/workflows/release.yml` from the Actions tab on `main` with the
+  release tag, e.g. `v0.2.1`, or `v0.2.1-rc.1` for a prerelease, as in the
+  other BaSyx repositories (a version without `v` is accepted too). Its jobs:
   - `prepare`: sets the version as V4 does, commits "Release <version>" to
     `main` as `github-actions[bot]`, tags it `v<version>` and creates a
     draft release: `.github/release-notes.md` with the version and app API,
