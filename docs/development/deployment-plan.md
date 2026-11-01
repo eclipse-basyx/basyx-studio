@@ -301,8 +301,8 @@ existing ones here.
 2. **`.github/workflows/docker-release.yml`**:
    - Triggers on `release: published`.
    - Tags `<version>` (from the tag, without `v`) and `latest`.
-   - The version also goes into `package.json`, as `release-binaries.yml`
-     does.
+   - The version must be the one in `package.json`, which Studio and its
+     packages share (ADR 0053); `release.yml` checks it the same way.
    - A second job attaches the SBOMs and the supply-chain manifest to the
      release.
 3. **`ci.yml`** gets an `image` job on PRs:

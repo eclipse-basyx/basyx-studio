@@ -1,0 +1,182 @@
+name: Release
+
+# A published GitHub release v<version> releases Studio and its packages at
+# that version (ADR 0053): it publishes @basyx/studio-sdk,
+# @basyx/studio-app-kit and @basyx/file-viewer to npm and attaches the
+# desktop binaries to the release. docker-release.yml builds the image of
+# the same release. Publishing uses npm trusted publishing: each package's
+# trusted publisher on npmjs.com names this repository and this workflow
+# file, so no token is stored. Every version carries a provenance statement.
+
+on:
+  release:
+    types: [published]
+
+concurrency:
+  group: release-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  check:
+    name: Check the release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out release
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Enable and verify pnpm
+        run: bash .github/scripts/setup-pnpm.sh
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The tag names the version of Studio and its packages, and the SDK's
+      # README says which app API it provides.
+      - name: Versions match the tag
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: node scripts/release-version.mjs --check "${RELEASE_TAG#v}"
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      # The starter example, installed from the packed packages outside the
+      # checkout: builds, packs, signs, verifies and runs on the test
+      # transport.
+      - name: Build an app from the packed packages
+        run: node scripts/check-app-tarballs.mjs
+
+  npm:
+    name: Publish to npm
+    needs: check
+    if: ${{ github.repository == 'eclipse-basyx/basyx-studio' && !github.event.repository.fork }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      # npm trusted publishing and the provenance statement.
+      id-token: write
+
+    steps:
+      - name: Check out release
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Enable and verify pnpm
+        run: bash .github/scripts/setup-pnpm.sh
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the packages
+        run: pnpm --filter "./packages/*" run build
+
+      # Recursive publishing goes in dependency order and skips versions that
+      # are on npm already, so a re-run after a partial failure completes the
+      # release. The release checkout is a detached HEAD, hence no git
+      # checks. A prerelease goes to the dist-tag next, so latest stays on
+      # the last release.
+      - name: Publish
+        env:
+          PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          set -euo pipefail
+          tag=latest
+          if [[ "${PRERELEASE}" == "true" ]]; then
+            tag=next
+          fi
+          pnpm publish --recursive --filter "./packages/*" --access public --provenance --no-git-checks --tag "${tag}"
+
+  binaries:
+    name: Build ${{ matrix.platform }} binaries
+    needs: check
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: Linux
+            runner: ubuntu-latest
+            build_script: build:electron:linux
+            release_files: |
+              dist/*.AppImage
+          - platform: macOS
+            runner: macos-latest
+            build_script: build:electron:mac
+            release_files: |
+              dist/*.dmg
+              dist/*.zip
+          - platform: Windows
+            runner: windows-latest
+            build_script: build:electron:win
+            release_files: |
+              dist/*.exe
+
+    steps:
+      - name: Check out release
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+
+      - name: Enable and verify pnpm
+        id: pnpm
+        shell: bash
+        run: bash .github/scripts/setup-pnpm.sh
+
+      - name: Restore pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm.outputs.store-path }}
+          key: ${{ runner.os }}-${{ runner.arch }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The version comes from package.json, which the check job compared
+      # with the tag.
+      - name: Build ${{ matrix.platform }} binaries
+        run: pnpm ${{ matrix.build_script }}
+
+      - name: Attach binaries to release
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          files: ${{ matrix.release_files }}
+          fail_on_unmatched_files: true

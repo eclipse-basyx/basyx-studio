@@ -52,6 +52,13 @@ jobs:
         with:
           persist-credentials: false
 
+      # Studio and its packages have the tag's version (ADR 0053), as
+      # release.yml checks for the packages and binaries of this release.
+      - name: Versions match the tag
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: node scripts/release-version.mjs --check "${RELEASE_TAG#v}"
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
         with:

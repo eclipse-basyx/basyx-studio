@@ -51,7 +51,7 @@ changes one, add a new ADR with `Supersedes` and mark the old record
 | [0040](0040-connections-on-infrastructures.md) | Proposed | Connections to third-party services on infrastructures, used only by Studio-side adapters; `studio.timeseries.read` |
 | [0041](0041-apexcharts-for-time-series.md) | Proposed | ApexCharts in the bundled Time Series Data app, not in Studio |
 | [0042](0042-external-files-through-studio.md) | Proposed | Files that AAS content names at other hosts, fetched by Studio's server for origins the deployment lists |
-| [0043](0043-published-sdk-and-app-kit.md) | Proposed | `@basyx/studio-sdk`, `@basyx/studio-app-kit` and `@basyx/file-viewer` on npm with provenance; a test transport; the `studio-app` command |
+| [0043](0043-published-sdk-and-app-kit.md) | Proposed, amended by 0053 | `@basyx/studio-sdk`, `@basyx/studio-app-kit` and `@basyx/file-viewer` on npm with provenance; a test transport; the `studio-app` command |
 | [0044](0044-app-package-signatures-trust-store-and-updates.md) | Proposed | cosign-compatible package signatures, a trust store of publisher keys per app ID, in-place updates with consent, managed packages |
 | [0045](0045-app-origins-embeds-and-full-page-modules.md) | Proposed, amended by 0051 | One origin per app installation; declared frame, connect, image and media origins; full-page modules |
 | [0047](0047-http-connections-for-apps.md) | Proposed | `http` connections bound to app connections; declared OpenAPI operations; `studio.connections.call`; token exchange for the signed-in user |
@@ -61,6 +61,7 @@ changes one, add a new ADR with `Supersedes` and mark the old record
 | [0051](0051-views-of-other-apps.md) | Proposed | Other apps' submodel views in Studio's dialog (`studio.ui.openView`) and, with an origin per installation, read-only inline (`studio.ui.embedView`); no chart component in the app kit |
 | [0052](0052-one-file-viewer-for-studio-and-apps.md) | Proposed | One file viewer (`@basyx/file-viewer`) for Studio and apps: text in Monaco, Markdown, CSV, PDF.js, images, 3D, media; Studio's one full-screen dialog (`studio.ui.previewFile`) |
 | [0052](0052-outbound-http-proxy.md) | Proposed | Outbound requests through the `HTTP_PROXY`/`HTTPS_PROXY` proxy, except loopback and `NO_PROXY` (hosts, suffixes, ports, CIDR ranges); the guards apply to the target, not the proxy |
+| [0053](0053-one-version-for-studio-and-its-packages.md) | Proposed | One version for Studio, `@basyx/studio-sdk`, `@basyx/studio-app-kit` and `@basyx/file-viewer`; one release workflow publishes the packages and the desktop binaries |
 
 ## Template
 
