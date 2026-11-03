@@ -16,7 +16,7 @@ minimumReleaseAgeStrict: true
 # installed before the 24-hour delay ends, by exact version only (ADR 0012,
 # ADR 0031). Entries may be removed once the version is older than 24 hours.
 minimumReleaseAgeExclude:
-  - basyx-typescript-sdk@2.4.1
+  - basyx-typescript-sdk@2.4.2
   - aas-package3-typescript@1.1.0
 strictDepBuilds: true
 blockExoticSubdeps: true
