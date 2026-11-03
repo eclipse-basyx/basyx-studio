@@ -200,8 +200,8 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1(ajv@8.20.0)
       basyx-typescript-sdk:
-        specifier: ^2.4.1
-        version: 2.4.1(@aas-core-works/aas-core3.1-typescript@1.0.1)
+        specifier: ^2.4.2
+        version: 2.4.2(@aas-core-works/aas-core3.1-typescript@1.0.1)
       drizzle-orm:
         specifier: ^0.45.4
         version: 0.45.4(@electric-sql/pglite@0.5.14)(@types/pg@8.23.1)(pg@8.23.1)
@@ -3963,8 +3963,8 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
-  basyx-typescript-sdk@2.4.1:
-    resolution: {integrity: sha512-4sRx6g0pDwRkhHLFdjUUH6lk44hBWskJakYSrmPUdjzH85XMxJd2JjSW5bQAiDCkv3hRW49ywjwkfT3SaO+FDw==}
+  basyx-typescript-sdk@2.4.2:
+    resolution: {integrity: sha512-qw5flgbgo4/JFXQwZKpfdi4civGLbRFbuOKcibnNzGgVqqitbyn9LSeE7BR5lKU/vZ9dufOZaKI/ZTlHaZEi9w==}
     peerDependencies:
       '@aas-core-works/aas-core3.1-typescript': ^1.0.0
 
@@ -11311,7 +11311,7 @@ snapshots:
 
   baseline-browser-mapping@2.11.27: {}
 
-  basyx-typescript-sdk@2.4.1(@aas-core-works/aas-core3.1-typescript@1.0.1):
+  basyx-typescript-sdk@2.4.2(@aas-core-works/aas-core3.1-typescript@1.0.1):
     dependencies:
       '@aas-core-works/aas-core3.1-typescript': 1.0.1
       xmlsax-typescript: 1.0.0
