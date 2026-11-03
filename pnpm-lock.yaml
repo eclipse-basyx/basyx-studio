@@ -599,8 +599,8 @@ importers:
         specifier: 7.4.47
         version: 7.4.47
       apexcharts:
-        specifier: 8.5.0
-        version: 8.5.0
+        specifier: 8.7.0
+        version: 8.7.0
       vue:
         specifier: ^3.5.44
         version: 3.5.44(typescript@6.0.3)
@@ -3820,8 +3820,8 @@ packages:
   apex-commons@0.8.3:
     resolution: {integrity: sha512-WdU5lblyL1ByI/nkFOJkSgJYenCsHmay0P3UIcnSeUiCyF1b30SvPSZLbyxOCUOry8IlL7M0/3GvsGbZTMm8FA==}
 
-  apexcharts@8.5.0:
-    resolution: {integrity: sha512-mH9QiOwIeRGg635OzAc2mznuwrK9XHr9S1RcC26GNNOU6fUPe64cMc7hXGcM9bXz92nO4Ax7P6uxSYaTA7gBDw==}
+  apexcharts@8.7.0:
+    resolution: {integrity: sha512-HHpMlM4QvLXFLL6hyn1iivF+3IyoCrBEXYcV9elJuT+Dc4At9P5+RAaSYA1onOrcXg59+VTAsnyUDdm4GRhUfA==}
     engines: {node: ^20.19.0 || ^22.12.0 || >=24.0.0}
 
   app-builder-lib@26.18.0:
@@ -11136,7 +11136,7 @@ snapshots:
 
   apex-commons@0.8.3: {}
 
-  apexcharts@8.5.0:
+  apexcharts@8.7.0:
     dependencies:
       apex-commons: 0.8.3
 
