@@ -42,7 +42,7 @@
     "dompurify": "^3.4.17",
     "markdown-it": "^15.0.3",
     "occt-import-js": "^0.0.23",
-    "pdfjs-dist": "6.4.299",
+    "pdfjs-dist": "6.5.438",
     "three": "^0.187.0",
     "web-ifc": "^0.0.78"
   },
