@@ -1,6 +1,6 @@
 {
   "name": "@basyx/studio-app-kit",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Build BaSyx Studio apps: Studio's look for Vue and Vuetify, a Vite preset, and the studio-app command to pack, sign and verify app packages",
   "license": "MIT",
   "repository": {

@@ -11,9 +11,9 @@
     "package": "studio-app pack"
   },
   "dependencies": {
-    "@basyx/file-viewer": "^0.2.1",
-    "@basyx/studio-app-kit": "^0.2.1",
-    "@basyx/studio-sdk": "^0.2.1",
+    "@basyx/file-viewer": "^0.2.2",
+    "@basyx/studio-app-kit": "^0.2.2",
+    "@basyx/studio-sdk": "^0.2.2",
     "vue": "^3.5.44",
     "vuetify": "^4.2.6"
   },

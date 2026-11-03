@@ -34,6 +34,7 @@ package version.
 | --- | --- |
 | 0.2.0 | 0.1.15 |
 | 0.2.1 | 0.1.15 |
+| 0.2.2 | 0.1.15 |
 
 New features of Studio or the packages are a new minor version, fixes a
 patch version. An app keeps running on a newer Studio with the packages it
