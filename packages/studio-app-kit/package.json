@@ -42,7 +42,7 @@
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "fflate": "^0.8.3",
-    "semver": "^7.8.5"
+    "semver": "^7.8.6"
   },
   "peerDependencies": {
     "@basyx/studio-sdk": "workspace:^",
