@@ -58,7 +58,7 @@
     "monaco-editor": "^0.57.0",
     "node-forge": "^1.4.2",
     "nuxt": "^4.6.4",
-    "openid-client": "^6.8.8",
+    "openid-client": "^6.8.9",
     "pg": "^8.23.1",
     "pinia": "^4.1.0",
     "semver": "^7.8.6",
