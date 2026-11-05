@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@aas-core-works/aas-core3.1-typescript": "^1.0.1",
-    "@electric-sql/pglite": "^0.5.14",
+    "@electric-sql/pglite": "^0.5.15",
     "@mdi/font": "7.4.47",
     "@nuxtjs/i18n": "^10.6.0",
     "@pinia/colada": "1.4.9",
@@ -74,7 +74,7 @@
     "@basyx/file-viewer": "workspace:*",
     "@basyx/studio-app-kit": "workspace:*",
     "@basyx/studio-sdk": "workspace:*",
-    "@electric-sql/pglite-tools": "^0.4.14",
+    "@electric-sql/pglite-tools": "^0.4.15",
     "@intlify/message-compiler": "^11.4.18",
     "@nuxt/eslint": "^1.17.0",
     "@nuxt/fonts": "^1.2.0",
