@@ -33,7 +33,7 @@ import { CredentialBroker } from '../lib/targets/credentials'
 import { studioPath } from '../lib/urls'
 import { WorkspaceWorkerClient } from '../lib/workspaces/client'
 import { WorkspaceManager } from '../lib/workspaces/manager'
-import { loadAppTemplate } from '../nitro/app-template'
+import { loadAppTemplate, loadBundledAppSources } from '../nitro/app-template'
 import { loadBundledApps } from '../nitro/bundled-apps'
 import { loadMigrationsFromAssets } from '../nitro/migration-assets'
 import { previewInstaller, releaseInstaller } from './app-builder'
@@ -204,6 +204,8 @@ async function initialize (): Promise<StudioRuntime> {
           projectsDir: config.appBuilder.projectsDir ?? defaultProjectsDir(),
           store: new DatabaseProjectStore(deps.db),
           template: loadAppTemplate,
+          bundledSources: loadBundledAppSources,
+          takeFolder: handle => fileGrants.take(handle, 'app-project'),
           studioVersion: String(runtimeConfig.version ?? '0.0.0'),
           previews: previewInstaller({ ...deps, backends }, 'app-builder'),
           releases: releaseInstaller({ ...deps, backends, fileGrants }),

@@ -211,6 +211,16 @@
               </template>
 
               <template #actions>
+                <!-- A copy of a bundled app to change, in the desktop app's App Builder (ADR 0054, plan P4). -->
+                <v-btn
+                  v-if="item.bundled && session.isDesktop"
+                  v-tooltip="t('apps.copyAndChange')"
+                  :aria-label="t('apps.copyAndChange')"
+                  data-test="apps-copy-and-change"
+                  icon="mdi-content-duplicate"
+                  :to="{ path: '/app-builder', query: { copy: item.appId } }"
+                />
+
                 <v-btn
                   v-if="item.settings.length > 0"
                   v-tooltip="t('apps.settings.edit')"

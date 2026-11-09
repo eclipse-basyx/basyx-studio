@@ -92,7 +92,8 @@
     "removeTitle": "{name} aus Studio entfernen?",
     "removeText": "Ihre Chats werden gelöscht. Der Ordner mit den Quellen der App bleibt auf diesem Computer, außer du setzt das Häkchen.",
     "deleteFolder": "Auch den Ordner {folder} löschen",
-    "removeConfirm": "Entfernen"
+    "removeConfirm": "Entfernen",
+    "keepsFolder": "Der Ordner {folder} bleibt, wie er ist."
   },
   "newApp": {
     "title": "Neue App",
@@ -102,7 +103,18 @@
     "promptHint": "Zum Beispiel: eine Ansicht für das digitale Typenschild, die die Seriennummer als QR-Code zeigt.",
     "where": "Studio legt die App in einem eigenen Ordner unter Dokumente/BaSyx Studio/Apps an und committet jede Änderung des Agenten.",
     "create": "Erstellen",
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "startFrom": "Ausgehend von",
+    "empty": "Leere App",
+    "copy": "Kopie einer mitgelieferten App",
+    "folder": "Ordner auf diesem Computer",
+    "source": "Mitgelieferte App",
+    "chooseFolder": "Ordner wählen …",
+    "folderHint": "Der Ordner einer Studio-App mit ihrer studio-app.json. Er bleibt, wo er ist.",
+    "nameFromFolder": "Leer: der Titel der App",
+    "promptOptional": "Optional: die erste gewünschte Änderung. Ohne sie wartet der Chat auf dich.",
+    "add": "Hinzufügen",
+    "whereFolder": "Studio arbeitet direkt im Ordner. In einem Git-Repository darf der Ordner keine uncommitteten Änderungen haben; ohne Repository legt Studio eines an und committet, was da ist. Jede Änderung des Agenten wird ein Commit; Studio löscht diesen Ordner nie."
   },
   "checkpoint": {
     "title": "{count} geänderte Dateien committet",

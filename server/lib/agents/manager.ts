@@ -8,7 +8,7 @@ import type { RunCommand } from './environment'
 import type { OpenAgent } from './process'
 import { randomUUID } from 'node:crypto'
 import { existsSync, readdirSync } from 'node:fs'
-import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import semver from 'semver'
@@ -17,7 +17,7 @@ import { ProjectGit } from '../app-projects/git'
 import { ProjectPreviews } from '../app-projects/previews'
 import { bumpVersion, readIdentity, setVersion } from '../app-projects/release'
 import { EventWriter } from '../app-projects/store'
-import { localAppId, scaffoldFiles, slugOf } from '../app-projects/template'
+import { agentInstructions, bundledAppInfo, copyFiles, gitignore, localAppId, scaffoldFiles, slugOf } from '../app-projects/template'
 import { StudioProblem } from '../problem'
 import { Conversation } from './conversation'
 import { agentProcessEnv, findExecutable, loginShellPath, openInFileManager, runCommand, versionFromOutput } from './environment'
@@ -37,6 +37,10 @@ export interface AgentManagerOptions {
   store: ProjectStore
   /** The files of the starter app (examples/apps/starter). */
   template: () => Promise<TemplateFiles>
+  /** The sources of the bundled apps (apps/), by folder. */
+  bundledSources: () => Promise<Map<string, TemplateFiles>>
+  /** Folders the user chose in a native dialog (`app-project` grants). */
+  takeFolder: (handle: string) => string
   /** The running Studio's version, for the template's package versions. */
   studioVersion: string
   env?: NodeJS.ProcessEnv
@@ -132,30 +136,92 @@ export class AgentManager {
     }))
   }
 
-  /** Creates a project from the template, commits it, and starts a chat in it with the first prompt. */
-  async createProject (name: string, agentId: AgentId, prompt: string): Promise<AppBuilderOperationResults['createProject']> {
+  /** The bundled apps a project can start from (plan P4). */
+  async bundledApps (): Promise<AppBuilderOperationResults['listBundledApps']> {
+    return [...await this.#options.bundledSources()]
+      .flatMap(([source, files]) => bundledAppInfo(source, files) ?? [])
+      .toSorted((a, b) => a.title.localeCompare(b.title))
+  }
+
+  /**
+   * Creates a project from the template, or as a copy of a bundled app
+   * (`source`), commits it, and starts a chat in it; a prompt starts its
+   * first turn.
+   */
+  async createProject (name: string, agentId: AgentId, prompt: string | null, source: string | null = null): Promise<AppBuilderOperationResults['createProject']> {
     const discovery = await this.#ready(agentId)
     const slug = await this.#freeSlug(slugOf(name))
     const folder = join(this.#options.projectsDir, slug)
     const appId = localAppId(slug)
-    const files = scaffoldFiles(await this.#options.template(), { name, slug, appId, studioVersion: this.#options.studioVersion })
+    const template = await this.#options.template()
+    let files: TemplateFiles
+    let from: string | null = null
+    if (source) {
+      const sources = await this.#options.bundledSources()
+      const sourceFiles = sources.get(source)
+      if (!sourceFiles) {
+        throw new StudioProblem('not_found', `Studio ships no app ${source}.`)
+      }
+      from = bundledAppInfo(source, sourceFiles)?.appId ?? source
+      files = copyFiles(sourceFiles, template, { name, slug, appId, studioVersion: this.#options.studioVersion, from: bundledAppInfo(source, sourceFiles)?.title ?? source })
+    } else {
+      files = scaffoldFiles(template, { name, slug, appId, studioVersion: this.#options.studioVersion })
+    }
     await mkdir(folder, { recursive: true })
     for (const [path, content] of files) {
       await mkdir(dirname(join(folder, path)), { recursive: true })
       await writeFile(join(folder, path), content)
     }
-    await this.#git(folder, discovery).init(`Create ${name} from the BaSyx Studio template`)
-    const project: ProjectRecord = { id: randomUUID(), name, appId, folder, origin: 'new', source: null, createdAt: this.#now() }
+    await this.#git(folder, discovery).init(from ? `Copy ${from} as ${name}` : `Create ${name} from the BaSyx Studio template`)
+    const project: ProjectRecord = { id: randomUUID(), name, appId, folder, origin: source ? 'copy' : 'new', source: from, createdAt: this.#now() }
     await this.#store.insertProject(project)
-    const started = await this.startConversation(project.id, agentId)
-    await this.prompt(started.id, prompt)
-    const conversation = this.#conversations.get(started.id)!.summary()
-    return { project: { ...describeProject(project), conversations: [conversation] }, conversation }
+    return await this.#startWith(project, agentId, prompt)
+  }
+
+  /**
+   * Registers an app's folder where it is (plan P5). Without git, Studio
+   * creates a repository and commits what is there; in a repository, the
+   * folder must have no uncommitted changes, so the first turn's commit holds
+   * only what the agent did.
+   */
+  async addFolder (handle: string, agentId: AgentId, name: string | null): Promise<AppBuilderOperationResults['addFolder']> {
+    const discovery = await this.#ready(agentId)
+    const folder = await realpath(this.#options.takeFolder(handle))
+    let manifest: { id?: unknown, title?: { en?: unknown } }
+    try {
+      manifest = JSON.parse(await readFile(join(folder, 'studio-app.json'), 'utf8')) as typeof manifest
+    } catch {
+      throw new StudioProblem('invalid_request', 'The folder has no studio-app.json: choose the folder of a Studio app.')
+    }
+    if (typeof manifest.id !== 'string') {
+      throw new StudioProblem('invalid_request', 'The studio-app.json in this folder has no app ID.')
+    }
+    if ((await this.#store.listProjects()).some(project => project.folder === folder)) {
+      throw new StudioProblem('invalid_request', 'This folder is a project of the App Builder already.')
+    }
+    const title = name ?? (typeof manifest.title?.en === 'string' ? manifest.title.en : manifest.id)
+    const git = this.#git(folder, discovery)
+    if (await git.isRepository()) {
+      if (!await git.isClean()) {
+        throw new StudioProblem('invalid_request', 'The folder has changes that are not committed. Commit or stash them first, so each of the agent\'s turns is a commit of its own.')
+      }
+    } else {
+      if (!existsSync(join(folder, '.gitignore'))) {
+        await writeFile(join(folder, '.gitignore'), gitignore)
+      }
+      await git.init(`Add ${title} to the BaSyx Studio App Builder`)
+    }
+    const project: ProjectRecord = { id: randomUUID(), name: title, appId: manifest.id, folder, origin: 'folder', source: null, createdAt: this.#now() }
+    await this.#store.insertProject(project)
+    return await this.#startWith(project, agentId, null)
   }
 
   /** Removes a project from Studio, with its preview; its folder only when asked (plan P6). */
   async removeProject (projectId: string, deleteFolder: boolean): Promise<void> {
     const project = await this.#project(projectId)
+    if (deleteFolder && project.origin === 'folder') {
+      throw new StudioProblem('invalid_request', 'Studio does not delete a folder it did not create.')
+    }
     await this.#previews?.remove(project)
     for (const conversation of this.#conversations.values()) {
       if (conversation.projectId === projectId) {
@@ -184,6 +250,10 @@ export class AgentManager {
     await this.#store.insertConversation({ id, projectId, agentId, title: '', sessionId: null, model: null, createdAt })
     const conversation = this.#create(project, agentId, discovery, { id, createdAt })
     this.#conversations.set(id, conversation)
+    if (project.origin === 'folder') {
+      // A folder keeps its own files: Studio's rules come with the first prompt (plan P5).
+      conversation.noteForAgent(agentInstructions({ name: project.name, appId: project.appId }, 'You work in a folder the user chose. It has no AGENTS.md from Studio; these are Studio\'s rules for it.'))
+    }
     try {
       await conversation.start()
     } catch (error) {
@@ -370,6 +440,15 @@ export class AgentManager {
   /** Waits until every event so far is saved (tests, shutdown). */
   async flush (): Promise<void> {
     await this.#writer.flush()
+  }
+
+  async #startWith (project: ProjectRecord, agentId: AgentId, prompt: string | null): Promise<{ project: AppProject, conversation: ConversationSummary }> {
+    const started = await this.startConversation(project.id, agentId)
+    if (prompt) {
+      await this.prompt(started.id, prompt)
+    }
+    const conversation = this.#conversations.get(started.id)!.summary()
+    return { project: { ...describeProject(project), conversations: [conversation] }, conversation }
   }
 
   async #load (conversationId: string): Promise<Conversation> {

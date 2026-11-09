@@ -517,6 +517,7 @@
     "package": "App-pakket",
     "installed": "{name} {version} geïnstalleerd.",
     "uninstall": "Verwijderen",
+    "copyAndChange": "Kopiëren en wijzigen in de App Builder",
     "uninstallConfirm": "‘{name}’ verwijderen? De weergaven en modules ervan verdwijnen voor alle gebruikers. AAS-gegevens die de app heeft gewijzigd, blijven zoals ze zijn.",
     "cancel": "Annuleren",
     "noApps": "Er zijn geen apps geïnstalleerd.",

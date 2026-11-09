@@ -10,7 +10,7 @@ import { join } from 'node:path'
 
 import { app, BrowserWindow, dialog, ipcMain, protocol, safeStorage, session, shell } from 'electron'
 import packageJson from '../package.json'
-import { fileGrantExtensions, isFileGrantKind, isSaveKind } from '../shared/file-grant-kinds'
+import { fileGrantExtensions, isFileGrantKind, isFolderKind, isSaveKind } from '../shared/file-grant-kinds'
 
 const launchSecretHeader = 'X-Studio-Launch-Secret'
 const brokerSecretHeader = 'X-Studio-Broker-Secret'
@@ -403,6 +403,10 @@ async function chooseStackFiles (event: Electron.IpcMainInvokeEvent, kind: unkno
     }
     const path = result.filePath.toLowerCase().endsWith(`.${extension}`) ? result.filePath : `${result.filePath}.${extension}`
     return [await grant(path, 'save')]
+  }
+  if (isFolderKind(kind)) {
+    const result = window ? await dialog.showOpenDialog(window, { properties: ['openDirectory'] }) : await dialog.showOpenDialog({ properties: ['openDirectory'] })
+    return result.canceled || !result.filePaths[0] ? [] : [await grant(result.filePaths[0], 'open')]
   }
   const options: Electron.OpenDialogOptions = kind === 'stack-aasx'
     ? { properties: ['openFile', 'multiSelections'], filters: aasxFilters }

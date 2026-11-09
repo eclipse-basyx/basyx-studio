@@ -120,6 +120,16 @@ export type ApprovalState = z.infer<typeof approvalStateSchema>
 export const approvalDecisionSchema = z.enum(['allowOnce', 'allowInChat', 'deny'])
 export type ApprovalDecision = z.infer<typeof approvalDecisionSchema>
 
+/** A bundled app whose sources a project can start from (plan P4). */
+export interface BundledAppSource {
+  /** Its folder in Studio's apps. */
+  source: string
+  appId: string
+  title: string
+  description: string | null
+  version: string
+}
+
 /** `new`: from Studio's template; `copy`: of a bundled app; `folder`: a folder the user chose. */
 export const appProjectOrigins = ['new', 'copy', 'folder'] as const
 export const appProjectOriginSchema = z.enum(appProjectOrigins)
@@ -253,7 +263,11 @@ export const appProjectNameSchema = z.string().trim().min(1).max(80).regex(/^\P{
 export const appBuilderOperationSchemas = {
   getStatus: z.object({ refresh: z.boolean().default(false) }),
   listProjects: z.object({}),
-  createProject: z.object({ name: appProjectNameSchema, agentId: agentIdSchema, prompt }),
+  /** From the template, or as a copy of a bundled app (`source`: its folder in Studio's apps); the prompt starts the first chat. */
+  createProject: z.object({ name: appProjectNameSchema, agentId: agentIdSchema, prompt: prompt.optional(), source: z.string().regex(/^[a-z\d][a-z\d-]{0,63}$/).optional() }),
+  /** An app's folder the user chose (an `app-project` grant), registered where it is (plan P5). */
+  addFolder: z.object({ folderHandle: z.string().min(1).max(200), agentId: agentIdSchema, name: appProjectNameSchema.optional() }),
+  listBundledApps: z.object({}),
   removeProject: z.object({ projectId, deleteFolder: z.boolean().default(false) }),
   openFolder: z.object({ projectId }),
   startConversation: z.object({ projectId, agentId: agentIdSchema }),
@@ -288,6 +302,8 @@ export interface AppBuilderOperationResults {
   getStatus: AppBuilderStatus
   listProjects: AppProject[]
   createProject: { project: AppProject, conversation: ConversationSummary }
+  addFolder: { project: AppProject, conversation: ConversationSummary }
+  listBundledApps: BundledAppSource[]
   removeProject: null
   openFolder: null
   startConversation: ConversationSummary

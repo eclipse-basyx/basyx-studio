@@ -517,6 +517,7 @@
     "package": "Paquete de aplicación",
     "installed": "Se instaló {name} {version}.",
     "uninstall": "Desinstalar",
+    "copyAndChange": "Copiar y cambiar en el creador de apps",
     "uninstallConfirm": "¿Desinstalar «{name}»? Sus vistas y módulos desaparecen para todos los usuarios. Los datos AAS que la aplicación cambió se quedan como están.",
     "cancel": "Cancelar",
     "noApps": "No hay aplicaciones instaladas.",

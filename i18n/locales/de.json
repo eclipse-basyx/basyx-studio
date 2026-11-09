@@ -604,6 +604,7 @@
     "package": "App-Paket",
     "installed": "{name} {version} installiert.",
     "uninstall": "Deinstallieren",
+    "copyAndChange": "Im App Builder kopieren und ändern",
     "uninstallConfirm": "„{name}“ deinstallieren? Ihre Ansichten und Module verschwinden für alle Benutzer. AAS-Daten, die die App geändert hat, bleiben unverändert.",
     "cancel": "Abbrechen",
     "noApps": "Es sind keine Apps installiert.",

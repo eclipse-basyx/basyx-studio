@@ -9,8 +9,8 @@ import { stackFileKinds } from '@basyx/studio-sdk/protocol'
 // and the Studio Service need. It has no runtime dependencies, so Electron
 // can bundle it.
 
-/** The App Builder's kinds: a PEM private key to sign a package with, where to save a package. */
-export const appBuilderFileKinds = ['signing-key', 'app-package'] as const
+/** The App Builder's kinds: a PEM private key to sign a package with, where to save a package, an app's folder. */
+export const appBuilderFileKinds = ['signing-key', 'app-package', 'app-project'] as const
 export type AppBuilderFileKind = typeof appBuilderFileKinds[number]
 
 export type FileGrantKind = StackFileKind | AppBuilderFileKind
@@ -24,9 +24,15 @@ export const fileGrantExtensions: Record<FileGrantKind, readonly string[]> = {
   'stack-logs': ['txt'],
   'signing-key': ['pem', 'key'],
   'app-package': ['zip'],
+  'app-project': [],
 }
 
 const saveKinds: ReadonlySet<FileGrantKind> = new Set<FileGrantKind>(['stack-export', 'stack-logs', 'app-package'])
+
+/** Kinds that pick a folder, not a file. */
+export function isFolderKind (kind: FileGrantKind): boolean {
+  return kind === 'app-project'
+}
 
 /** Kinds whose dialog asks where to save; the others pick existing files. */
 export function isSaveKind (kind: FileGrantKind): boolean {

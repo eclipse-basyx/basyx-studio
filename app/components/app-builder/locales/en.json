@@ -92,7 +92,8 @@
     "removeTitle": "Remove {name} from Studio?",
     "removeText": "Its chats are deleted. The folder with the app's sources stays on this computer unless you tick the box.",
     "deleteFolder": "Also delete the folder {folder}",
-    "removeConfirm": "Remove"
+    "removeConfirm": "Remove",
+    "keepsFolder": "The folder {folder} stays as it is."
   },
   "newApp": {
     "title": "New app",
@@ -102,7 +103,18 @@
     "promptHint": "For example: a view for the Digital Nameplate that shows the serial number as a QR code.",
     "where": "Studio creates the app in a folder of its own under Documents/BaSyx Studio/Apps and commits each change the agent makes.",
     "create": "Create",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "startFrom": "Start from",
+    "empty": "Empty app",
+    "copy": "Copy of a bundled app",
+    "folder": "Folder on this computer",
+    "source": "Bundled app",
+    "chooseFolder": "Choose folder…",
+    "folderHint": "The folder of a Studio app, with its studio-app.json. It stays where it is.",
+    "nameFromFolder": "Empty: the app's title",
+    "promptOptional": "Optional: the first change you want. Without one, the chat waits for you.",
+    "add": "Add",
+    "whereFolder": "Studio works in the folder itself. In a git repository, the folder must have no uncommitted changes; without one, Studio creates a repository and commits what is there. Each change of the agent becomes a commit; Studio never deletes this folder."
   },
   "checkpoint": {
     "title": "Committed {count} changed files",

@@ -394,6 +394,24 @@ page), existing folders with the `app-project` grant.
 Done when a copy of the Digital Nameplate builds, previews and installs next
 to the bundled one.
 
+*Built on macOS, 2026-11-09; a copy built and installed by hand is open.*
+The sources of `apps/*` ship as Nitro server assets (`bundled-app-sources`).
+*New app* starts from the template, a bundled app or a folder; the Apps page
+links bundled apps to the App Builder (`/app-builder?copy=<appId>`). A copy
+gets `local.<slug>`, version 0.1.0, *This computer* as publisher, npm
+versions instead of `workspace:*`, the starter's dev dependencies, `tsconfig`
+and `pnpm-workspace.yaml` where it lacks them, scripts for `typecheck`,
+`test` (`--passWithNoTests`) and `package`, and `AGENTS.md` with a note on
+where it came from. A folder (file grant `app-project`, chosen in a folder
+dialog) is registered where it is: in a repository it must have no
+uncommitted changes; without one, Studio adds a `.gitignore` if missing and
+commits what is there. Its chats get Studio's rules with their first prompt,
+and Studio never deletes the folder. Since a folder can sit inside a larger
+repository, every git command is limited to the folder (`-- .`, `--relative`,
+and a commit with a path): `test/agents/projects.test.ts` checks that a
+change the user staged elsewhere stays staged and out of the agent's commit,
+and that undo leaves it alone.
+
 ### Phase F: finish
 
 All strings in the seven locales ([ADR 0026](../adr/0026-ui-translation.md)),

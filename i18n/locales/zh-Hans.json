@@ -517,6 +517,7 @@
     "package": "应用包",
     "installed": "已安装 {name} {version}。",
     "uninstall": "卸载",
+    "copyAndChange": "在应用构建器中复制并修改",
     "uninstallConfirm": "卸载“{name}”？其视图和模块将对所有用户消失。该应用修改过的 AAS 数据保持不变。",
     "cancel": "取消",
     "noApps": "未安装任何应用。",

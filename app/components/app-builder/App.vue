@@ -118,7 +118,14 @@
       </v-sheet>
     </div>
 
-    <NewAppDialog v-model="newApp" :agents="readyAgents" :busy="creating" @create="createApp" />
+    <NewAppDialog
+      v-model="newApp"
+      :agents="readyAgents"
+      :bundled="bundled"
+      :busy="creating"
+      :preset-app-id="presetAppId"
+      @create="createApp"
+    />
 
     <ChangesDialog :patch="patch" @close="patch = null" />
 
@@ -147,7 +154,10 @@
         <v-card-text>
           <div class="text-body-medium">{{ t('projects.removeText') }}</div>
 
+          <div v-if="removing.project.origin === 'folder'" class="text-body-medium mt-2">{{ t('projects.keepsFolder', { folder: removing.project.folder }) }}</div>
+
           <v-checkbox
+            v-else
             v-model="removing.deleteFolder"
             class="mt-2"
             data-test="app-builder-remove-folder"
@@ -166,7 +176,8 @@
 </template>
 
 <script lang="ts" setup>
-  import type { AgentId, AppBuilderStatus, AppProject, ApprovalDecision, ConversationSummary } from '#shared/contract'
+  import type { AgentId, AppBuilderStatus, AppProject, ApprovalDecision, BundledAppSource, ConversationSummary } from '#shared/contract'
+  import type { NewAppRequest } from './NewAppDialog.vue'
   import type { Transcript } from './transcript'
   import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowReactive } from 'vue'
   import { StudioApiError } from '~/composables/useStudioApi'
@@ -200,6 +211,10 @@
   const newApp = ref(false)
   const previewOpen = ref(true)
   const installing = ref<AppProject | null>(null)
+  const bundled = ref<BundledAppSource[]>([])
+  const route = useRoute()
+  /** A bundled app the Apps page sent here to copy (plan P4). */
+  const presetAppId = ref<string | null>(typeof route.query.copy === 'string' ? route.query.copy : null)
   const patch = ref<string | null>(null)
   const deleting = ref<string | null>(null)
   const undoing = ref<{ conversationId: string, commit: string } | null>(null)
@@ -300,9 +315,21 @@
     }
   }
 
-  async function createApp (values: { name: string, agentId: AgentId, prompt: string }) {
+  async function createApp (request: NewAppRequest) {
     creating.value = true
-    const created = await run(() => client.call('createProject', values))
+    const created = await run(() => {
+      switch (request.kind) {
+        case 'new': {
+          return client.call('createProject', { name: request.name, agentId: request.agentId, prompt: request.prompt })
+        }
+        case 'copy': {
+          return client.call('createProject', { name: request.name, agentId: request.agentId, source: request.source, ...(request.prompt ? { prompt: request.prompt } : {}) })
+        }
+        default: {
+          return client.call('addFolder', { folderHandle: request.folderHandle, agentId: request.agentId, ...(request.name ? { name: request.name } : {}) })
+        }
+      }
+    })
     creating.value = false
     if (created) {
       newApp.value = false
@@ -409,7 +436,12 @@
   }
 
   onMounted(async () => {
-    await Promise.all([loadStatus(), loadProjects()])
+    if (presetAppId.value) {
+      newApp.value = true
+    }
+    await Promise.all([loadStatus(), loadProjects(), (async () => {
+      bundled.value = await client.call('listBundledApps', {}).catch(() => [])
+    })()])
     const latest = projects.value[0]?.conversations[0]
     if (latest) {
       select(latest.id)

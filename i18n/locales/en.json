@@ -604,6 +604,7 @@
     "package": "App package",
     "installed": "Installed {name} {version}.",
     "uninstall": "Uninstall",
+    "copyAndChange": "Copy and change in the App Builder",
     "uninstallConfirm": "Uninstall \"{name}\"? Its views and modules disappear for all users. AAS data the app changed stays as it is.",
     "cancel": "Cancel",
     "noApps": "No apps are installed.",

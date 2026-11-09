@@ -88,7 +88,9 @@ adapters can run an installed CLI in place of the one they depend on.
   `studio-app.json` chosen through the host dialog (file grant kind
   `app-project`, [ADR 0015](0015-desktop-native-bridge-and-file-grants.md)).
   It is registered in place and never moved; without git, Studio asks before
-  running `git init`.
+  running `git init`. A folder may lie inside a larger repository, so Studio
+  limits every git command to the folder: it never stages, commits or
+  restores anything outside it.
 - **Instructions for the agent.** Every project Studio creates contains an
   `AGENTS.md` (and a `CLAUDE.md` that includes it). It holds the app rules:
   the manifest and its permissions, the SDK and app kit, Vuetify without

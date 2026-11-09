@@ -132,6 +132,8 @@ export default defineNuxtConfig({
       { baseName: 'bundled-apps', dir: './bundled-apps' },
       // The App Builder's template for new projects (ADR 0054).
       { baseName: 'app-template', dir: '../examples/apps/starter', ignore: ['node_modules/**', 'dist/**', '*.zip', '*.sig'] },
+      // The sources of the bundled apps, which the App Builder copies (ADR 0054, plan P4).
+      { baseName: 'bundled-app-sources', dir: '../apps', ignore: ['**/node_modules/**', '**/dist/**', '**/*.zip', '**/*.sig'] },
     ],
   },
 

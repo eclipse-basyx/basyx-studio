@@ -3,7 +3,10 @@ import type { RunCommand } from '../agents/environment'
 
 // The project's git repository (ADR 0054, plan A5): Studio, not the agent,
 // commits what each turn changed, shows a commit's changes, and undoes
-// turns with a new commit that restores the files of an earlier one.
+// turns with a new commit that restores the files of an earlier one. A
+// folder the user chose may lie inside a larger repository (plan P5), so
+// every command is limited to the folder (`-- .`): Studio never stages,
+// commits or restores anything outside it.
 
 /** Who commits when the user has no git identity of their own. */
 const fallbackIdentity = ['-c', 'user.name=BaSyx Studio App Builder', '-c', 'user.email=app-builder@basyx-studio.invalid']
@@ -30,6 +33,11 @@ export class ProjectGit {
     return result.code === 0 && result.stdout.trim() === 'true'
   }
 
+  /** Whether the folder has changes that are not committed. */
+  async isClean (): Promise<boolean> {
+    return (await this.#git(['status', '--porcelain', '--untracked-files=all', '--', '.'])).trim() === ''
+  }
+
   async init (message: string): Promise<string> {
     await this.#git(['init', '--quiet', '--initial-branch=main'])
     return (await this.commitAll(message))?.commit ?? await this.head() ?? ''
@@ -42,20 +50,21 @@ export class ProjectGit {
 
   /** Commits everything that changed; `null` when nothing did. */
   async commitAll (message: string): Promise<{ commit: string, files: ChangedFile[] } | null> {
-    await this.#git(['add', '--all'])
-    const staged = await this.#git(['diff', '--cached', '--name-status', '-z'])
+    await this.#git(['add', '--all', '--', '.'])
+    const staged = await this.#git(['diff', '--cached', '--name-status', '--relative', '-z', '--', '.'])
     const files = parseNameStatus(staged)
     if (files.length === 0) {
       return null
     }
-    await this.#git([...await this.#identity(), 'commit', '--quiet', '--no-verify', '--message', message])
+    // With a path, git commits only that path, not what else is staged in the repository.
+    await this.#git([...await this.#identity(), 'commit', '--quiet', '--no-verify', '--message', message, '--', '.'])
     return { commit: (await this.head())!, files }
   }
 
   /** A commit as a patch, with its changed files. */
   async show (commit: string): Promise<{ patch: string, files: ChangedFile[] }> {
-    const files = parseNameStatus(await this.#git(['show', '--format=', '--name-status', '-z', commit]))
-    const patch = await this.#git(['show', '--format=%s%n', '--patch', '--no-color', '--no-ext-diff', commit])
+    const files = parseNameStatus(await this.#git(['show', '--format=', '--name-status', '--relative', '-z', commit, '--', '.']))
+    const patch = await this.#git(['show', '--format=%s%n', '--patch', '--no-color', '--no-ext-diff', '--relative', commit, '--', '.'])
     return { patch, files }
   }
 
@@ -65,7 +74,7 @@ export class ProjectGit {
    */
   async undo (commit: string, message: string): Promise<{ commit: string, files: ChangedFile[] } | null> {
     await this.#git(['rev-parse', '--verify', '--quiet', `${commit}^{commit}`])
-    await this.#git(['restore', `--source=${commit}^`, '--staged', '--worktree', '--', ':/'])
+    await this.#git(['restore', `--source=${commit}^`, '--staged', '--worktree', '--', '.'])
     return await this.commitAll(message)
   }
 

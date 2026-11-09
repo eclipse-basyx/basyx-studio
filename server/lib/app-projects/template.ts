@@ -37,6 +37,9 @@ export function packageRange (studioVersion: string): string {
   return match ? `^${match[1]}.${match[2]}.0` : 'latest'
 }
 
+/** What a project's repository leaves out. */
+export const gitignore = 'node_modules\ndist\n*.zip\n*.zip.sig\n'
+
 /** Files of the starter that the template does not take. */
 const skipped = new Set(['README.md'])
 
@@ -70,17 +73,83 @@ export function scaffoldFiles (template: TemplateFiles, identity: ProjectIdentit
   }
   files.set('studio-app.json', `${JSON.stringify(manifest, null, 2)}\n`)
 
-  files.set('.gitignore', 'node_modules\ndist\n*.zip\n*.zip.sig\n')
+  files.set('.gitignore', gitignore)
   files.set('AGENTS.md', agentInstructions(identity))
   files.set('CLAUDE.md', 'The instructions for coding agents are in AGENTS.md.\n\n@AGENTS.md\n')
   files.set('README.md', `# ${identity.name}\n\nA BaSyx Studio app, made with Studio's App Builder.\n\n\`\`\`bash\npnpm install\npnpm dev        # the app on the test Studio of ui/src/dev.ts\npnpm test\npnpm package    # studio-app pack: the package to install in Studio\n\`\`\`\n`)
   return files
 }
 
-/** What every coding agent reads first in a project Studio created. */
-export function agentInstructions (identity: ProjectIdentity): string {
-  return `# ${identity.name}: instructions for coding agents
+/** The title and version of a bundled app, from its sources. */
+export function bundledAppInfo (source: string, files: TemplateFiles): { source: string, appId: string, title: string, description: string | null, version: string } | null {
+  try {
+    const manifest = JSON.parse(files.get('studio-app.json') ?? '') as { id: string, version: string, title?: Record<string, string>, description?: Record<string, string> }
+    return { source, appId: manifest.id, title: manifest.title?.en ?? manifest.id, description: manifest.description?.en ?? null, version: manifest.version }
+  } catch {
+    return null
+  }
+}
 
+/**
+ * A copy of a bundled app (plan P4): its sources with the project's name and
+ * app ID, the published packages instead of Studio's workspace, and what the
+ * starter has and a bundled app lacks outside Studio's repository (the
+ * TypeScript and test tools, the release-age rule), plus the instructions.
+ */
+export function copyFiles (source: TemplateFiles, starter: TemplateFiles, identity: ProjectIdentity & { from: string }): TemplateFiles {
+  const files: TemplateFiles = new Map(source)
+  const range = packageRange(identity.studioVersion)
+  const starterPkg = JSON.parse(starter.get('package.json') ?? '{}') as { scripts?: Record<string, string>, devDependencies?: Record<string, string> }
+
+  const pkg = JSON.parse(files.get('package.json') ?? '{}') as { name?: string, version?: string, private?: boolean, scripts?: Record<string, string>, dependencies?: Record<string, string>, devDependencies?: Record<string, string> }
+  pkg.name = identity.slug
+  pkg.version = '0.1.0'
+  pkg.private = true
+  for (const group of [pkg.dependencies, pkg.devDependencies]) {
+    for (const [name, version] of Object.entries(group ?? {})) {
+      if (version.startsWith('workspace:')) {
+        group![name] = name.startsWith('@basyx/') ? range : 'latest'
+      }
+    }
+  }
+  pkg.devDependencies = { ...starterPkg.devDependencies, ...pkg.devDependencies }
+  pkg.scripts = {
+    typecheck: 'vue-tsc --noEmit -p tsconfig.json',
+    test: 'vitest run --passWithNoTests',
+    package: 'studio-app pack',
+    ...pkg.scripts,
+  }
+  files.set('package.json', `${JSON.stringify(pkg, null, 2)}\n`)
+
+  const manifest = JSON.parse(files.get('studio-app.json') ?? '{}') as Record<string, unknown> & { contributes?: { modules?: Record<string, unknown>[], submodelViews?: Record<string, unknown>[] } }
+  manifest.$schema = './node_modules/@basyx/studio-sdk/app-manifest.schema.json'
+  manifest.id = identity.appId
+  manifest.version = '0.1.0'
+  manifest.publisher = { name: 'This computer' }
+  manifest.title = { en: identity.name }
+  // A single view or module carries the project's name, so it is told apart from the bundled one.
+  const parts = [...manifest.contributes?.modules ?? [], ...manifest.contributes?.submodelViews ?? []]
+  if (parts.length === 1) {
+    parts[0]!.title = { en: identity.name }
+  }
+  files.set('studio-app.json', `${JSON.stringify(manifest, null, 2)}\n`)
+
+  for (const shared of ['tsconfig.json', 'pnpm-workspace.yaml']) {
+    if (!files.has(shared) && starter.has(shared)) {
+      files.set(shared, starter.get(shared)!)
+    }
+  }
+  files.set('.gitignore', gitignore)
+  files.set('AGENTS.md', agentInstructions(identity, `This app started as a copy of Studio's bundled app ${identity.from}. Studio keeps the bundled app; this one is the user's own. It may have no \`ui/src/dev.ts\` or tests yet: add them when you change its logic.`))
+  files.set('CLAUDE.md', 'The instructions for coding agents are in AGENTS.md.\n\n@AGENTS.md\n')
+  files.set('README.md', `# ${identity.name}\n\nA BaSyx Studio app, copied from the bundled app ${identity.from} with Studio's App Builder.\n`)
+  return files
+}
+
+/** What every coding agent reads first in a project Studio created. */
+export function agentInstructions (identity: Omit<ProjectIdentity, 'studioVersion' | 'slug'>, note?: string): string {
+  return `# ${identity.name}: instructions for coding agents
+${note ? `\n${note}\n` : ''}
 This folder is a BaSyx Studio app: a web UI that Studio shows in a
 sandboxed frame. It reads and changes Asset Administration Shell (AAS) data
 only through the Studio SDK, which asks Studio to do it. BaSyx Studio's App

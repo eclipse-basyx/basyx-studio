@@ -37,7 +37,9 @@ type Handler<O extends AppBuilderOperation> = (params: Params<O>, agents: AgentM
 const handlers: { [O in AppBuilderOperation]: Handler<O> } = {
   getStatus: ({ refresh }, agents) => agents.status(refresh),
   listProjects: (_, agents) => agents.projects(),
-  createProject: ({ name, agentId, prompt }, agents) => agents.createProject(name, agentId, prompt),
+  createProject: ({ name, agentId, prompt, source }, agents) => agents.createProject(name, agentId, prompt ?? null, source ?? null),
+  addFolder: ({ folderHandle, agentId, name }, agents) => agents.addFolder(folderHandle, agentId, name ?? null),
+  listBundledApps: (_, agents) => agents.bundledApps(),
   removeProject: async ({ projectId, deleteFolder }, agents) => {
     await agents.removeProject(projectId, deleteFolder)
     return null

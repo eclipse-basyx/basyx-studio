@@ -9,11 +9,15 @@ import { agentCatalog } from '../../server/lib/agents/catalog'
 import { AgentManager } from '../../server/lib/agents/manager'
 import { parseNameStatus } from '../../server/lib/app-projects/git'
 import { MemoryProjectStore } from '../../server/lib/app-projects/store'
-import { localAppId, packageRange, scaffoldFiles, slugOf } from '../../server/lib/app-projects/template'
+import { copyFiles, localAppId, packageRange, scaffoldFiles, slugOf } from '../../server/lib/app-projects/template'
 
 const starter = join(import.meta.dirname, '..', '..', 'examples', 'apps', 'starter')
 
 function starterFiles (): Map<string, string> {
+  return filesOf(starter)
+}
+
+function filesOf (root: string): Map<string, string> {
   const files = new Map<string, string>()
   const walk = (folder: string) => {
     for (const name of readdirSync(folder)) {
@@ -24,12 +28,20 @@ function starterFiles (): Map<string, string> {
       if (statSync(path).isDirectory()) {
         walk(path)
       } else {
-        files.set(relative(starter, path).replaceAll('\\', '/'), readFileSync(path, 'utf8'))
+        files.set(relative(root, path).replaceAll('\\', '/'), readFileSync(path, 'utf8'))
       }
     }
   }
-  walk(starter)
+  walk(root)
   return files
+}
+
+const bundledRoot = join(import.meta.dirname, '..', '..', 'apps')
+
+function bundledSources (): Map<string, Map<string, string>> {
+  return new Map(readdirSync(bundledRoot)
+    .filter(name => existsSync(join(bundledRoot, name, 'studio-app.json')))
+    .map(name => [name, filesOf(join(bundledRoot, name))]))
 }
 
 describe('App Builder project template (ADR 0054, plan P2)', () => {
@@ -58,6 +70,24 @@ describe('App Builder project template (ADR 0054, plan P2)', () => {
     expect(files.get('README.md')).toContain('# Shell List')
     expect(files.has('ui/src/App.vue')).toBe(true)
     expect(files.get('pnpm-workspace.yaml')).toContain('minimumReleaseAge')
+  })
+
+  it('makes a bundled app the project\'s own, outside Studio\'s workspace', () => {
+    for (const source of ['nameplate', 'carbon-footprint']) {
+      const files = copyFiles(filesOf(join(bundledRoot, source)), starterFiles(), { name: 'My Nameplate', slug: 'my-nameplate', appId: 'local.my-nameplate', studioVersion: '0.2.0', from: 'Digital Nameplate' })
+      const pkg = JSON.parse(files.get('package.json')!) as { name: string, version: string, dependencies: Record<string, string>, devDependencies: Record<string, string>, scripts: Record<string, string> }
+      expect(pkg).toMatchObject({ name: 'my-nameplate', version: '0.1.0' })
+      expect(JSON.stringify(pkg)).not.toContain('workspace:')
+      expect(pkg.dependencies['@basyx/studio-app-kit']).toBe('^0.2.0')
+      expect(pkg.devDependencies['vue-tsc']).toBeDefined()
+      expect(Object.keys(pkg.scripts)).toEqual(expect.arrayContaining(['build', 'typecheck', 'test', 'package']))
+      const manifest = JSON.parse(files.get('studio-app.json')!) as { $schema: string, id: string, version: string, publisher: { name: string } }
+      expect(manifest).toMatchObject({ $schema: './node_modules/@basyx/studio-sdk/app-manifest.schema.json', id: 'local.my-nameplate', version: '0.1.0', publisher: { name: 'This computer' } })
+      expect(files.has('tsconfig.json')).toBe(true)
+      expect(files.get('pnpm-workspace.yaml')).toContain('minimumReleaseAge')
+      expect(files.get('AGENTS.md')).toContain('copy of Studio\'s bundled app Digital Nameplate')
+      expect(files.has('ui/src/App.vue')).toBe(true)
+    }
   })
 
   it('reads git\'s changed files, renames included', () => {
@@ -115,6 +145,9 @@ function setup () {
     nodePath: process.execPath,
     store,
     template: async () => starterFiles(),
+    bundledSources: async () => bundledSources(),
+    // Tests pass the folder itself as the grant's handle.
+    takeFolder: handle => handle,
     studioVersion: '0.2.0',
     // git on the test machine's PATH, the fake opencode first.
     path: async () => `${bin}:${process.env.PATH ?? ''}`,
@@ -201,6 +234,77 @@ describe.skipIf(process.platform === 'win32')('App Builder projects (ADR 0054, p
     const { project } = await instance.createProject('Shell List', 'opencode', 'two')
     expect(project.folder).toBe(join(root, 'Apps', 'shell-list-2'))
     expect(project.appId).toBe('local.shell-list-2')
+    await instance.dispose()
+  })
+
+  it('copies a bundled app into a project of its own', async () => {
+    const { root, manager } = setup()
+    const instance = manager()
+    const { project, conversation } = await instance.createProject('My Nameplate', 'opencode', null, 'nameplate')
+    expect(project).toMatchObject({ folder: join(root, 'Apps', 'my-nameplate'), appId: 'local.my-nameplate', origin: 'copy', source: 'org.eclipse.basyx.studio.nameplate' })
+    expect(conversation.state).toBe('idle')
+    expect(git(project.folder, 'log', '--format=%s').trim()).toBe('Copy org.eclipse.basyx.studio.nameplate as My Nameplate')
+    expect((await instance.bundledApps()).map(app => app.source)).toContain('nameplate')
+    await expect(instance.createProject('X', 'opencode', null, 'missing')).rejects.toMatchObject({ code: 'not_found' })
+    await instance.dispose()
+  })
+
+  it('adds a folder where it is, and keeps git to that folder inside a larger repository', async () => {
+    const { root, fake, manager } = setup()
+    const instance = manager()
+    // A repository with another project beside the app, and nothing uncommitted.
+    const repo = join(root, 'work')
+    const app = join(repo, 'apps', 'mine')
+    execFileSync('mkdir', ['-p', app, join(repo, 'other')])
+    writeFileSync(join(app, 'studio-app.json'), JSON.stringify({ id: 'org.example.mine', version: '1.0.0', title: { en: 'Mine' } }))
+    writeFileSync(join(repo, 'other', 'keep.txt'), 'before')
+    const commit = (...args: string[]) => execFileSync('git', ['-C', repo, '-c', 'user.name=t', '-c', 'user.email=t@example.com', ...args])
+    commit('init', '--quiet')
+    commit('add', '--all')
+    commit('commit', '--quiet', '-m', 'start')
+
+    writeFileSync(join(app, 'draft.txt'), 'uncommitted')
+    await expect(instance.addFolder(app, 'opencode', null)).rejects.toMatchObject({ code: 'invalid_request' })
+    rmSync(join(app, 'draft.txt'))
+
+    const { project, conversation } = await instance.addFolder(app, 'opencode', null)
+    expect(project).toMatchObject({ name: 'Mine', appId: 'org.example.mine', origin: 'folder' })
+    await expect(instance.addFolder(app, 'opencode', null)).rejects.toMatchObject({ code: 'invalid_request' })
+
+    // A change outside the app, staged by the user, stays out of the agent's commit.
+    writeFileSync(join(repo, 'other', 'keep.txt'), 'changed by the user')
+    commit('add', 'other/keep.txt')
+    const live = await instance.conversation(conversation.id)
+    const events: ConversationEventEnvelope[] = []
+    live.subscribe(0, envelope => events.push(envelope))
+    await instance.prompt(conversation.id, 'Add a file')
+    await until(() => live.state === 'idle' && events.some(({ event }) => event.type === 'checkpoint'))
+    expect(fake.prompts[0]).toMatch(/^\(Note from BaSyx Studio: # Mine: instructions for coding agents/)
+    expect(git(repo, 'show', '--name-only', '--format=', 'HEAD').trim()).toBe('apps/mine/turn-1.txt')
+    expect(git(repo, 'diff', '--cached', '--name-only').trim()).toBe('other/keep.txt')
+
+    const turn = (events.map(({ event }) => event).find(event => event.type === 'checkpoint') as { commit: string }).commit
+    await instance.undo(conversation.id, turn)
+    expect(existsSync(join(app, 'turn-1.txt'))).toBe(false)
+    expect(readFileSync(join(repo, 'other', 'keep.txt'), 'utf8')).toBe('changed by the user')
+
+    await expect(instance.removeProject(project.id, true)).rejects.toMatchObject({ code: 'invalid_request' })
+    await instance.removeProject(project.id, false)
+    expect(existsSync(app)).toBe(true)
+    await instance.dispose()
+  })
+
+  it('makes a repository for a folder without one', async () => {
+    const { root, manager } = setup()
+    const instance = manager()
+    const app = join(root, 'plain')
+    execFileSync('mkdir', ['-p', app])
+    writeFileSync(join(app, 'studio-app.json'), JSON.stringify({ id: 'org.example.plain', version: '1.0.0' }))
+    const { project } = await instance.addFolder(app, 'opencode', 'Plain App')
+    expect(project.name).toBe('Plain App')
+    expect(readFileSync(join(app, '.gitignore'), 'utf8')).toContain('node_modules')
+    expect(git(app, 'log', '--format=%s').trim()).toBe('Add Plain App to the BaSyx Studio App Builder')
+    await expect(instance.addFolder(root, 'opencode', null)).rejects.toMatchObject({ code: 'invalid_request' })
     await instance.dispose()
   })
 })
