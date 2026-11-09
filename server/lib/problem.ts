@@ -64,6 +64,8 @@ const definitions: Record<ProblemCode, ProblemDefinition> = {
   container_disk_full: { status: 507, title: 'The container engine has no disk space left', retryable: false },
   container_start_failed: { status: 502, title: 'A component did not start', retryable: true },
   container_operation_failed: { status: 502, title: 'The container engine refused the operation', retryable: false },
+  agent_unavailable: { status: 503, title: 'The coding agent is not available', retryable: true },
+  agent_busy: { status: 409, title: 'The conversation is busy', retryable: true },
   connection_not_configured: { status: 422, title: 'No connection is configured for this service', retryable: false },
   connection_credentials_unavailable: { status: 502, title: 'The credentials of the connection could not be resolved', retryable: false },
   connection_rejected: { status: 502, title: 'The service rejected the connection\'s credentials', retryable: false },

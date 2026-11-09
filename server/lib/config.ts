@@ -159,6 +159,8 @@ export interface StudioConfig {
   uploadMaxBytes: number
   /** Local BaSyx instances on Docker or Podman (ADR 0033); desktop only. */
   containers: { dataDir: string } | null
+  /** The App Builder's coding agents (ADR 0054); desktop only. */
+  appBuilder: { dataDir: string } | null
 }
 
 export class ConfigurationError extends Error {}
@@ -371,6 +373,7 @@ export function loadStudioConfig (env: NodeJS.ProcessEnv, deploymentMode: Deploy
     deployment: deploymentSettings(values),
     uploadMaxBytes: values.STUDIO_UPLOAD_MAX_BYTES,
     containers: deploymentMode === 'desktop' ? { dataDir: resolve(values.STUDIO_DATA_DIR, 'containers') } : null,
+    appBuilder: deploymentMode === 'desktop' ? { dataDir: resolve(values.STUDIO_DATA_DIR, 'app-builder') } : null,
   }
 }
 

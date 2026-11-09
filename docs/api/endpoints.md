@@ -309,3 +309,24 @@ restoring it.
 
 External links and clipboard writes run from an explicit action on the native
 page. Lifecycle calls are audited with their result when their job ends.
+
+## App Builder (desktop, ADR 0054)
+
+The native App Builder page runs coding agents (Claude Code, Codex, opencode)
+over the Agent Client Protocol. It uses `POST /app-builder/{operation}`, with
+the user's Studio session and CSRF token; in hosted mode every operation
+answers `unsupported_operation`.
+
+| Operation | Purpose |
+| --- | --- |
+| `getStatus` | Which agent CLIs are installed and signed in, and where node, pnpm and git are (`refresh: true` checks again) |
+| `listConversations`, `startConversation`, `closeConversation` | Chats; each starts its agent in a folder of its own |
+| `sendPrompt`, `cancelTurn` | Starts a turn, or stops it; the turn's progress arrives as events |
+| `answerApproval` | `allowOnce`, `allowInChat` or `deny` for a permission request that Studio's policy did not answer |
+| `setModel` | Switches the agent's model, where it offers a choice |
+
+`GET /app-builder/conversations/{conversationId}/events` streams a
+conversation's events as Server-Sent Events, each with its number as `id`;
+`?after=` or `Last-Event-ID` resumes after a given event. The schemas are in
+`shared/contract/app-builder.ts`. Failures use `agent_unavailable` (CLI
+missing, signed out, or the agent stopped) and `agent_busy`.

@@ -284,6 +284,60 @@ Not covered yet:
 Claude was tested after `claude auth login`. A first run before that, with
 the CLI signed out, is where the sign-in finding comes from.
 
+### Phase A: agents and chat
+
+Catalogue, environment, ACP client, policy, events, SSE; the page with agent
+status, chats on a scratch folder, transcript cards, approvals, cancel.
+Done when a prompt to each of the three agents streams into the page, an
+approval card round-trips, and *Stop* works.
+
+*Done on macOS, 2026-11-09.* The status, the chat with transcript cards
+(messages as Markdown, thoughts, tool calls with diffs and output, plans,
+approvals), cancel and the model choice work in the desktop app. Tests use an
+in-process ACP agent (`test/agents`). Conversations live in memory and end
+with the Studio Service, each in a scratch folder under
+`STUDIO_DATA_DIR/app-builder/scratch`; saved chats and projects are phase B.
+The page's texts are in English and German; the other locales fall back to
+English until phase F. Not yet checked: the adapters in a packaged build
+(`traceInclude` in `nuxt.config.ts`).
+
+### Phase B: projects
+
+Scaffold from the template, `AGENTS.md`, git commits per turn, *Show changes*
+and *Undo this turn*, project list, open folder and editor, resume.
+Done when "make an app that lists the shells" produces a project whose
+`pnpm build` and `pnpm test` pass.
+
+### Phase C: build and preview
+
+Build pipeline, build-error card, preview installation (ID and version
+rewrite, `preview` flag, filtering), preview pane with shell or submodel
+picker, consent on permission changes.
+Done when each turn's result is visible in the pane within seconds of the
+build, and preview apps appear nowhere else in Studio.
+
+### Phase D: install and signing
+
+Install dialog, version bump, unsigned and signed installs, machine key and
+trust store entry, own key, export.
+Done when an app goes from preview to installed signed with the machine key,
+an update with the same key passes, and an update with another key is refused
+as in ADR 0044.
+
+### Phase E: copies and existing folders
+
+Shipping the sources of bundled apps, *Copy and change* (also on the *Apps*
+page), existing folders with the `app-project` grant.
+Done when a copy of the Digital Nameplate builds, previews and installs next
+to the bundled one.
+
+### Phase F: finish
+
+All strings in the seven locales ([ADR 0026](../adr/0026-ui-translation.md)),
+accessibility (keyboard, announced streaming and status), docs
+(`docs/architecture/app-platform.md`, user guide), ADR 0054 to *Accepted*
+once the platforms are qualified.
+
 ## Tests
 
 - Unit (`test/`): policy decisions for paths and commands (inside, outside,

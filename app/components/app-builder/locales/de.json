@@ -1,0 +1,88 @@
+{
+  "app": {
+    "title": "App Builder",
+    "subtitle": "Beschreibe eine App, und ein Coding-Agent baut sie auf diesem Computer."
+  },
+  "chats": {
+    "heading": "Chats",
+    "new": "Neuer Chat",
+    "untitled": "Neuer Chat",
+    "empty": "Noch keine Chats.",
+    "close": "Chat schließen",
+    "closeTitle": "Diesen Chat schließen?",
+    "closeText": "Der Agent wird beendet, und der Chat verschwindet aus der Liste. Dateien, die er geschrieben hat, bleiben in seinem Ordner.",
+    "cancel": "Abbrechen"
+  },
+  "agents": {
+    "heading": "Agenten",
+    "ready": "Bereit",
+    "missing": "Nicht installiert",
+    "signedOut": "Abgemeldet",
+    "error": "Prüfung fehlgeschlagen",
+    "install": "{agent} holen",
+    "signIn": "Im Terminal anmelden: {command}",
+    "recheck": "Erneut prüfen",
+    "tools": "Werkzeuge",
+    "toolMissing": "nicht gefunden",
+    "noneReady": "Kein Coding-Agent ist bereit. Installiere Claude Code, Codex oder opencode, melde dich an und prüfe erneut."
+  },
+  "chat": {
+    "placeholder": "Beschreibe die App oder die gewünschte Änderung …",
+    "send": "Senden",
+    "stop": "Stoppen",
+    "model": "Modell",
+    "starting": "{agent} wird gestartet …",
+    "working": "{agent} arbeitet …",
+    "closed": "Dieser Chat ist beendet.",
+    "failed": "Der Agent wurde beendet. Starte einen neuen Chat, um weiterzumachen.",
+    "reconnecting": "Verbindung wird wiederhergestellt …",
+    "emptyTitle": "Was sollen wir bauen?",
+    "emptyText": "Wähle einen Agenten und beschreibe die App. Vorerst arbeitet jeder Chat in einem eigenen Arbeitsordner; Projekte, Vorschau und Installation folgen.",
+    "folder": "Ordner",
+    "copyFolder": "Ordnerpfad kopieren",
+    "copied": "Kopiert",
+    "thinking": "Denkt nach"
+  },
+  "tool": {
+    "read": "Lesen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "move": "Verschieben",
+    "search": "Suchen",
+    "execute": "Ausführen",
+    "think": "Nachdenken",
+    "fetch": "Abrufen",
+    "switch_mode": "Modus wechseln",
+    "other": "Werkzeug",
+    "pending": "Wartet",
+    "in_progress": "Läuft",
+    "completed": "Fertig",
+    "failed": "Fehlgeschlagen",
+    "output": "Ausgabe",
+    "changes": "Änderungen",
+    "newFile": "Neue Datei"
+  },
+  "plan": {
+    "title": "Plan"
+  },
+  "approval": {
+    "title": "{agent} bittet um Erlaubnis",
+    "command": "Befehl",
+    "files": "Dateien",
+    "allowOnce": "Einmal erlauben",
+    "allowInChat": "In diesem Chat erlauben",
+    "deny": "Ablehnen",
+    "allowed": "Erlaubt",
+    "denied": "Abgelehnt",
+    "autoAllowed": "Erlaubt: im Ordner der App",
+    "cancelled": "Nicht mehr nötig",
+    "denyEndsTurn": "Ablehnen beendet den Durchgang des Agenten."
+  },
+  "notice": {
+    "cancelled": "Gestoppt.",
+    "max_tokens": "Der Agent hat seine Ausgabegrenze erreicht.",
+    "max_turn_requests": "Der Agent hat seine Schrittgrenze erreicht.",
+    "refusal": "Der Agent hat abgelehnt.",
+    "error": "Der Durchgang endete mit einem Fehler."
+  }
+}

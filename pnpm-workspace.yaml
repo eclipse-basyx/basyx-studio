@@ -42,5 +42,11 @@ allowBuilds:
   # install script only switches its shim between Vue 2 and 3; the published
   # files already target Vue 3.
   vue-demi: false
+# The App Builder's ACP adapters drive the user's installed `claude` and
+# `codex` (CLAUDE_CODE_EXECUTABLE, CODEX_PATH; ADR 0054), so the agent
+# binaries they would bring (about 650 MB per platform) are not installed.
+ignoredOptionalDependencies:
+  - "@anthropic-ai/claude-agent-sdk-*"
+  - "@openai/codex-*"
 patchedDependencies:
   vuetify@4.2.6: patches/vuetify@4.2.6.patch

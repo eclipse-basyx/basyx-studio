@@ -257,7 +257,9 @@
     "app_revoked": "此部署已不再信任此应用。",
     "app_sandbox_not_granted": "该发布者不能发布运行软件包以外代码的应用。",
     "app_outdated": "应用已更新。请重新加载以使用新版本。",
-    "app_edit_mode_required": "请切换到编辑模式，以便应用更改内容。"
+    "app_edit_mode_required": "请切换到编辑模式，以便应用更改内容。",
+    "agent_unavailable": "编码代理不可用",
+    "agent_busy": "对话正忙"
   },
   "admin": {
     "title": "基础设施",
@@ -643,6 +645,9 @@
     "docker": "BaSyx Docker",
     "dockerShort": "Docker",
     "dockerDesktopOnly": "本地 BaSyx 实例仅在 BaSyx Studio 桌面应用中可用。",
+    "appBuilder": "应用构建器",
+    "appBuilderShort": "构建器",
+    "appBuilderDesktopOnly": "应用构建器会在你的计算机上运行编码代理，仅在 BaSyx Studio 桌面应用中可用。",
     "dashboard": "首页",
     "dashboardShort": "首页",
     "shells": "管理壳",

@@ -1,5 +1,6 @@
 // Versioned Studio UI <-> BFF contract (`/api/studio/v1`). These Zod schemas
 // are the authoritative source for implemented routes.
+export * from './app-builder'
 export * from './apps'
 export * from './connections'
 export * from './containers'

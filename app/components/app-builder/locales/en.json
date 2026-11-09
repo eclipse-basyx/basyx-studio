@@ -1,0 +1,88 @@
+{
+  "app": {
+    "title": "App Builder",
+    "subtitle": "Describe an app, and a coding agent builds it on this computer."
+  },
+  "chats": {
+    "heading": "Chats",
+    "new": "New chat",
+    "untitled": "New chat",
+    "empty": "No chats yet.",
+    "close": "Close chat",
+    "closeTitle": "Close this chat?",
+    "closeText": "The agent stops, and the chat is removed from the list. Files it wrote stay in its folder.",
+    "cancel": "Cancel"
+  },
+  "agents": {
+    "heading": "Agents",
+    "ready": "Ready",
+    "missing": "Not installed",
+    "signedOut": "Signed out",
+    "error": "Check failed",
+    "install": "Get {agent}",
+    "signIn": "Sign in in a terminal: {command}",
+    "recheck": "Check again",
+    "tools": "Tools",
+    "toolMissing": "not found",
+    "noneReady": "No coding agent is ready. Install Claude Code, Codex or opencode, sign in, and check again."
+  },
+  "chat": {
+    "placeholder": "Describe the app, or the change you want…",
+    "send": "Send",
+    "stop": "Stop",
+    "model": "Model",
+    "starting": "Starting {agent}…",
+    "working": "{agent} is working…",
+    "closed": "This chat has ended.",
+    "failed": "The agent stopped. Start a new chat to go on.",
+    "reconnecting": "Reconnecting…",
+    "emptyTitle": "What should we build?",
+    "emptyText": "Pick an agent and describe the app. For now, each chat works in a scratch folder of its own; projects, previews and installing follow.",
+    "folder": "Folder",
+    "copyFolder": "Copy folder path",
+    "copied": "Copied",
+    "thinking": "Thinking"
+  },
+  "tool": {
+    "read": "Read",
+    "edit": "Edit",
+    "delete": "Delete",
+    "move": "Move",
+    "search": "Search",
+    "execute": "Run",
+    "think": "Think",
+    "fetch": "Fetch",
+    "switch_mode": "Switch mode",
+    "other": "Tool",
+    "pending": "Waiting",
+    "in_progress": "Running",
+    "completed": "Done",
+    "failed": "Failed",
+    "output": "Output",
+    "changes": "Changes",
+    "newFile": "New file"
+  },
+  "plan": {
+    "title": "Plan"
+  },
+  "approval": {
+    "title": "{agent} asks for permission",
+    "command": "Command",
+    "files": "Files",
+    "allowOnce": "Allow once",
+    "allowInChat": "Allow in this chat",
+    "deny": "Deny",
+    "allowed": "Allowed",
+    "denied": "Denied",
+    "autoAllowed": "Allowed: inside the app's folder",
+    "cancelled": "No longer needed",
+    "denyEndsTurn": "Denying ends the agent's turn."
+  },
+  "notice": {
+    "cancelled": "Stopped.",
+    "max_tokens": "The agent reached its output limit.",
+    "max_turn_requests": "The agent reached its step limit.",
+    "refusal": "The agent declined.",
+    "error": "The turn ended with an error."
+  }
+}

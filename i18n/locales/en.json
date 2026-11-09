@@ -336,7 +336,9 @@
     "app_revoked": "This app is no longer trusted by this deployment.",
     "app_sandbox_not_granted": "The publisher may not publish apps that run code from outside their package.",
     "app_outdated": "The app was updated. Reload it to use the new version.",
-    "app_edit_mode_required": "Switch to edit mode to let the app change content."
+    "app_edit_mode_required": "Switch to edit mode to let the app change content.",
+    "agent_unavailable": "The coding agent is not available",
+    "agent_busy": "The conversation is busy"
   },
   "admin": {
     "title": "Infrastructures",
@@ -733,6 +735,9 @@
     "docker": "BaSyx Docker",
     "dockerShort": "Docker",
     "dockerDesktopOnly": "Local BaSyx instances are available only in the BaSyx Studio desktop app.",
+    "appBuilder": "App Builder",
+    "appBuilderShort": "Builder",
+    "appBuilderDesktopOnly": "The App Builder runs coding agents on your computer and is available only in the BaSyx Studio desktop app.",
     "dashboard": "Home",
     "dashboardShort": "Home",
     "shells": "Shells",

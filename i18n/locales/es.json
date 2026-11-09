@@ -257,7 +257,9 @@
     "app_revoked": "Esta implementación ya no confía en esta app.",
     "app_sandbox_not_granted": "El editor no puede publicar apps que ejecutan código de fuera de su paquete.",
     "app_outdated": "La app se ha actualizado. Recárguela para usar la nueva versión.",
-    "app_edit_mode_required": "Cambie al modo de edición para que la app pueda modificar contenido."
+    "app_edit_mode_required": "Cambie al modo de edición para que la app pueda modificar contenido.",
+    "agent_unavailable": "El agente de programación no está disponible",
+    "agent_busy": "La conversación está ocupada"
   },
   "admin": {
     "title": "Infraestructuras",
@@ -643,6 +645,9 @@
     "docker": "BaSyx Docker",
     "dockerShort": "Docker",
     "dockerDesktopOnly": "Las instancias locales de BaSyx solo están disponibles en la aplicación de escritorio BaSyx Studio.",
+    "appBuilder": "Creador de apps",
+    "appBuilderShort": "Creador",
+    "appBuilderDesktopOnly": "El creador de apps ejecuta agentes de programación en tu equipo y solo está disponible en la app de escritorio de BaSyx Studio.",
     "dashboard": "Inicio",
     "dashboardShort": "Inicio",
     "shells": "AAS",

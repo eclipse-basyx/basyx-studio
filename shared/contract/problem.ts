@@ -89,6 +89,11 @@ export const problemCodes = [
   'container_start_failed',
   /** The engine refused an operation. */
   'container_operation_failed',
+  // The App Builder's coding agents (ADR 0054)
+  /** The agent's CLI is missing or signed out, or the agent process stopped. */
+  'agent_unavailable',
+  /** The conversation is in a turn already, or not in one. */
+  'agent_busy',
   // Connections to third-party services (ADR 0040)
   /** No connection of the infrastructure serves this purpose for the service the content names. */
   'connection_not_configured',

@@ -257,7 +257,9 @@
     "app_revoked": "このデプロイはこのアプリをもう信頼していません。",
     "app_sandbox_not_granted": "このパブリッシャーは、パッケージ外のコードを実行するアプリを公開できません。",
     "app_outdated": "アプリが更新されました。新しいバージョンを使うには再読み込みしてください。",
-    "app_edit_mode_required": "アプリが内容を変更するには、編集モードに切り替えてください。"
+    "app_edit_mode_required": "アプリが内容を変更するには、編集モードに切り替えてください。",
+    "agent_unavailable": "コーディングエージェントを利用できません",
+    "agent_busy": "会話は処理中です"
   },
   "admin": {
     "title": "インフラストラクチャ",
@@ -643,6 +645,9 @@
     "docker": "BaSyx Docker",
     "dockerShort": "Docker",
     "dockerDesktopOnly": "ローカル BaSyx インスタンスは BaSyx Studio デスクトップアプリでのみ利用できます。",
+    "appBuilder": "アプリビルダー",
+    "appBuilderShort": "ビルダー",
+    "appBuilderDesktopOnly": "アプリビルダーはお使いのコンピューターでコーディングエージェントを実行するため、BaSyx Studio デスクトップアプリでのみ利用できます。",
     "dashboard": "ホーム",
     "dashboardShort": "ホーム",
     "shells": "管理シェル",

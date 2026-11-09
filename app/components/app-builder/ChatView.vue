@@ -1,0 +1,223 @@
+<template>
+  <div class="d-flex flex-column flex-grow-1 overflow-hidden">
+    <div class="d-flex align-center ga-2 px-4 py-2 border-b">
+      <div class="flex-grow-1 overflow-hidden">
+        <div class="text-title-medium text-truncate">{{ conversation.title || t('chats.untitled') }}</div>
+
+        <div class="text-body-small text-medium-emphasis text-truncate">
+          {{ agentName }} · {{ t('chat.folder') }}: {{ conversation.folder }}
+        </div>
+      </div>
+
+      <v-select
+        v-if="transcript.model && transcript.model.options.length > 1"
+        data-test="app-builder-model"
+        :disabled="transcript.state !== 'idle'"
+        hide-details
+        item-title="name"
+        item-value="value"
+        :items="transcript.model.options"
+        :label="t('chat.model')"
+        max-width="260"
+        :model-value="transcript.model.current"
+        @update:model-value="value => emit('set-model', value)"
+      />
+
+      <v-btn
+        v-tooltip="t('chat.copyFolder')"
+        :aria-label="t('chat.copyFolder')"
+        icon="mdi-folder-outline"
+        @click="emit('copy-folder')"
+      />
+
+      <v-btn
+        v-tooltip="t('chats.close')"
+        :aria-label="t('chats.close')"
+        data-test="app-builder-close"
+        icon="mdi-close"
+        @click="emit('close')"
+      />
+    </div>
+
+    <div ref="scroller" class="flex-grow-1 overflow-y-auto">
+      <div class="d-flex flex-column ga-3 pa-4 mx-auto" data-test="app-builder-transcript">
+        <template v-for="item in transcript.items" :key="`${item.kind}:${item.id}`">
+          <div v-if="item.kind === 'user'" class="d-flex justify-end">
+            <v-sheet class="px-4 py-2 text-body-medium text-pre-wrap text-break" color="surface-light" max-width="85%" rounded="lg">{{ item.text }}</v-sheet>
+          </div>
+
+          <MarkdownText v-else-if="item.kind === 'agent'" :text="item.text" />
+
+          <v-expansion-panels v-else-if="item.kind === 'thought'">
+            <v-expansion-panel>
+              <v-expansion-panel-title>
+                <v-icon class="me-3" color="medium-emphasis" icon="mdi-thought-bubble-outline" />
+                <span class="text-body-medium text-medium-emphasis">{{ t('chat.thinking') }}</span>
+              </v-expansion-panel-title>
+
+              <v-expansion-panel-text>
+                <div class="text-body-small text-medium-emphasis text-pre-wrap text-break">{{ item.text }}</div>
+              </v-expansion-panel-text>
+            </v-expansion-panel>
+          </v-expansion-panels>
+
+          <ToolCallItem v-else-if="item.kind === 'tool'" :folder="conversation.folder" :item="item" />
+
+          <v-card v-else-if="item.kind === 'plan'">
+            <v-card-header prepend-icon="mdi-format-list-checks" :title="t('plan.title')" />
+
+            <v-list>
+              <v-list-item
+                v-for="(entry, index) in item.entries"
+                :key="index"
+                :prepend-icon="entry.status === 'completed' ? 'mdi-checkbox-marked-outline' : entry.status === 'in_progress' ? 'mdi-progress-clock' : 'mdi-checkbox-blank-outline'"
+                :title="entry.content"
+              />
+            </v-list>
+          </v-card>
+
+          <ApprovalCard
+            v-else-if="item.kind === 'approval'"
+            :agent="agentName"
+            :busy="answering.has(item.id)"
+            :item="item"
+            @answer="decision => emit('answer', item.id, decision)"
+          />
+
+          <div v-else-if="item.kind === 'notice'" class="text-body-small text-medium-emphasis text-center">{{ t(`notice.${item.stopReason}`) }}</div>
+
+          <v-alert
+            v-else-if="item.kind === 'error'"
+            class="text-pre-wrap"
+            density="compact"
+            :text="item.message"
+            type="error"
+          />
+        </template>
+
+        <div v-if="transcript.items.length === 0 && transcript.state !== 'starting'" class="text-center text-medium-emphasis py-12">
+          <v-icon icon="mdi-creation-outline" size="40" />
+          <div class="text-title-medium mt-2">{{ t('chat.emptyTitle') }}</div>
+          <div class="text-body-medium mt-1">{{ t('chat.emptyText') }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="px-4 pb-4 pt-2">
+      <div v-if="status" class="d-flex align-center ga-2 text-body-small text-medium-emphasis mb-2">
+        <v-progress-circular v-if="transcript.state === 'working' || transcript.state === 'starting' || !connected" indeterminate size="14" width="2" />
+        <span>{{ status }}</span>
+      </div>
+
+      <v-textarea
+        v-model="draft"
+        auto-grow
+        data-test="app-builder-prompt"
+        :disabled="ended"
+        hide-details
+        max-rows="10"
+        :placeholder="t('chat.placeholder')"
+        rows="2"
+        @keydown.enter.exact.prevent="send"
+      >
+        <template #append-inner>
+          <v-btn
+            v-if="transcript.state === 'working'"
+            v-tooltip="t('chat.stop')"
+            :aria-label="t('chat.stop')"
+            data-test="app-builder-stop"
+            icon="mdi-stop"
+            @click="emit('stop')"
+          />
+
+          <v-btn
+            v-else
+            v-tooltip="t('chat.send')"
+            :aria-label="t('chat.send')"
+            data-test="app-builder-send"
+            :disabled="!canSend"
+            icon="mdi-arrow-up"
+            @click="send"
+          />
+        </template>
+      </v-textarea>
+    </div>
+  </div>
+</template>
+
+<script lang="ts" setup>
+  import type { ApprovalDecision, ConversationSummary } from '#shared/contract'
+  import type { Transcript } from './transcript'
+  import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
+  import ApprovalCard from './ApprovalCard.vue'
+  import { useI18n } from './i18n'
+  import MarkdownText from './MarkdownText.vue'
+  import ToolCallItem from './ToolCallItem.vue'
+
+  // One chat: the transcript, the agent's state, and the prompt box.
+  const props = defineProps<{
+    conversation: ConversationSummary
+    transcript: Transcript
+    agentName: string
+    connected: boolean
+    answering: Set<string>
+  }>()
+  const emit = defineEmits<{
+    'send': [text: string]
+    'stop': []
+    'answer': [approvalId: string, decision: ApprovalDecision]
+    'set-model': [value: string]
+    'copy-folder': []
+    'close': []
+  }>()
+  const { t } = useI18n()
+
+  const draft = ref('')
+  const ended = computed(() => props.transcript.state === 'closed' || props.transcript.state === 'failed')
+  const canSend = computed(() => props.transcript.state === 'idle' && draft.value.trim().length > 0)
+
+  const status = computed(() => {
+    if (!props.connected) {
+      return t('chat.reconnecting')
+    }
+    switch (props.transcript.state) {
+      case 'starting': {
+        return t('chat.starting', { agent: props.agentName })
+      }
+      case 'working': {
+        return t('chat.working', { agent: props.agentName })
+      }
+      case 'closed': {
+        return t('chat.closed')
+      }
+      case 'failed': {
+        return t('chat.failed')
+      }
+      default: {
+        return ''
+      }
+    }
+  })
+
+  function send () {
+    if (!canSend.value) {
+      return
+    }
+    emit('send', draft.value.trim())
+    draft.value = ''
+  }
+
+  // Follows new output while the user is at the bottom.
+  const scroller = useTemplateRef<HTMLElement>('scroller')
+  watch(() => [props.transcript.seq, props.conversation.id], async () => {
+    const element = scroller.value
+    if (!element) {
+      return
+    }
+    const atBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 120
+    await nextTick()
+    if (atBottom) {
+      element.scrollTop = element.scrollHeight
+    }
+  })
+</script>
