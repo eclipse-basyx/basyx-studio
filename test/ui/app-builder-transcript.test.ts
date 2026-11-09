@@ -64,4 +64,15 @@ describe('App Builder transcript (ADR 0054)', () => {
     ])
     expect(transcript.items.filter(item => item.kind === 'plan')).toHaveLength(2)
   })
+
+  it('marks an undone turn and the ones after it', () => {
+    const transcript = fold([
+      { type: 'checkpoint', commit: 'aaaaaaa', message: 'one', files: [{ path: 'a', status: 'added' }] },
+      { type: 'checkpoint', commit: 'bbbbbbb', message: 'two', files: [{ path: 'b', status: 'added' }] },
+      { type: 'checkpoint', commit: 'ccccccc', message: 'three', files: [{ path: 'c', status: 'added' }] },
+      { type: 'checkpointUndone', commit: 'bbbbbbb' },
+      { type: 'notice', text: 'Codex starts a new session.' },
+    ])
+    expect(transcript.items.map(item => item.kind === 'checkpoint' ? item.undone : item.kind)).toEqual([false, true, true, 'info'])
+  })
 })

@@ -308,6 +308,32 @@ and *Undo this turn*, project list, open folder and editor, resume.
 Done when "make an app that lists the shells" produces a project whose
 `pnpm build` and `pnpm test` pass.
 
+*Built on macOS, 2026-11-09; the end-to-end check with a real agent is
+open.* Projects (`app_projects`), chats (`app_builder_conversations`) and
+their events (`app_builder_events`, written in batches) are in the database
+(migration `0010_app_builder`). A new project is the starter app with the
+project's name, the app ID `local.<slug>` and `@basyx/*` at Studio's minor
+version, plus `AGENTS.md` and `CLAUDE.md`, committed as the first commit
+under `~/Documents/BaSyx Studio/Apps/<slug>` (`STUDIO_APP_PROJECTS_DIR`
+changes it). After each turn Studio commits what changed and shows it as a
+card with *Show changes* and *Undo from here*; undo restores the files of the
+commit before in a new commit and tells the agent with the next prompt.
+Saved chats are `inactive` until the next prompt, which starts the agent and
+loads its session; the chosen model is set again. Agents idle for 15 minutes
+are stopped. Tests: `test/agents/projects.test.ts` runs the whole flow with
+real git and an in-process agent.
+
+Learned on the way:
+
+- Claude runs read-only commands (`git ls-files`, `cat`) without a
+  permission request, and writes commands as
+  `cd "<folder>" && pnpm install 2>&1 | tail -5`. The policy reads a `cd`
+  into the project folder, `&&` between commands and a trailing
+  `2>&1 | tail/head -n` (`commandsOf`); anything else still asks.
+- A reload of the Studio Service (in `nuxt dev`, any server change) ends the
+  running agents; their chats come back `inactive` and resume with the next
+  prompt.
+
 ### Phase C: build and preview
 
 Build pipeline, build-error card, preview installation (ID and version

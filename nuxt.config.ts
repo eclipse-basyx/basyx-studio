@@ -130,6 +130,8 @@ export default defineNuxtConfig({
       { baseName: 'migrations', dir: './database/migrations' },
       // Apps shipped with Studio (ADR 0023), packaged by `pnpm apps:bundle`.
       { baseName: 'bundled-apps', dir: './bundled-apps' },
+      // The App Builder's template for new projects (ADR 0054).
+      { baseName: 'app-template', dir: '../examples/apps/starter', ignore: ['node_modules/**', 'dist/**', '*.zip', '*.sig'] },
     ],
   },
 

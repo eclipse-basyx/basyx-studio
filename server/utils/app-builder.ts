@@ -11,23 +11,37 @@ type Params<O extends AppBuilderOperation> = z.output<(typeof appBuilderOperatio
 /** One handler per App Builder operation; adding an operation without one does not compile. */
 const handlers: { [O in AppBuilderOperation]: (params: Params<O>, agents: AgentManager) => Promise<AppBuilderOperationResults[O]> | AppBuilderOperationResults[O] } = {
   getStatus: ({ refresh }, agents) => agents.status(refresh),
-  listConversations: (_, agents) => agents.conversations(),
-  startConversation: ({ agentId }, agents) => agents.start(agentId),
-  sendPrompt: ({ conversationId, text }, agents) => {
-    agents.prompt(conversationId, text)
+  listProjects: (_, agents) => agents.projects(),
+  createProject: ({ name, agentId, prompt }, agents) => agents.createProject(name, agentId, prompt),
+  removeProject: async ({ projectId, deleteFolder }, agents) => {
+    await agents.removeProject(projectId, deleteFolder)
+    return null
+  },
+  openFolder: async ({ projectId }, agents) => {
+    await agents.openFolder(projectId)
+    return null
+  },
+  startConversation: ({ projectId, agentId }, agents) => agents.startConversation(projectId, agentId),
+  deleteConversation: async ({ conversationId }, agents) => {
+    await agents.deleteConversation(conversationId)
+    return null
+  },
+  sendPrompt: async ({ conversationId, text }, agents) => {
+    await agents.prompt(conversationId, text)
     return null
   },
   cancelTurn: async ({ conversationId }, agents) => {
     await agents.cancel(conversationId)
     return null
   },
-  answerApproval: ({ conversationId, approvalId, decision }, agents) => {
-    agents.answer(conversationId, approvalId, decision)
+  answerApproval: async ({ conversationId, approvalId, decision }, agents) => {
+    await agents.answer(conversationId, approvalId, decision)
     return null
   },
   setModel: ({ conversationId, value }, agents) => agents.setModel(conversationId, value),
-  closeConversation: ({ conversationId }, agents) => {
-    agents.close(conversationId)
+  getChanges: ({ projectId, commit }, agents) => agents.changes(projectId, commit),
+  undoTurn: async ({ conversationId, commit }, agents) => {
+    await agents.undo(conversationId, commit)
     return null
   },
 }

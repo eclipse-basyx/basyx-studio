@@ -4,15 +4,13 @@
       <div class="flex-grow-1 overflow-hidden">
         <div class="text-title-medium text-truncate">{{ conversation.title || t('chats.untitled') }}</div>
 
-        <div class="text-body-small text-medium-emphasis text-truncate">
-          {{ agentName }} · {{ t('chat.folder') }}: {{ conversation.folder }}
-        </div>
+        <div class="text-body-small text-medium-emphasis text-truncate">{{ projectName }} · {{ agentName }}</div>
       </div>
 
       <v-select
         v-if="transcript.model && transcript.model.options.length > 1"
         data-test="app-builder-model"
-        :disabled="transcript.state !== 'idle'"
+        :disabled="transcript.state !== 'idle' && transcript.state !== 'inactive'"
         hide-details
         item-title="name"
         item-value="value"
@@ -24,18 +22,12 @@
       />
 
       <v-btn
-        v-tooltip="t('chat.copyFolder')"
-        :aria-label="t('chat.copyFolder')"
-        icon="mdi-folder-outline"
-        @click="emit('copy-folder')"
-      />
-
-      <v-btn
-        v-tooltip="t('chats.close')"
-        :aria-label="t('chats.close')"
-        data-test="app-builder-close"
-        icon="mdi-close"
-        @click="emit('close')"
+        v-tooltip="t('chats.delete')"
+        :aria-label="t('chats.delete')"
+        data-test="app-builder-delete-chat"
+        :disabled="busy"
+        icon="mdi-delete-outline"
+        @click="emit('delete')"
       />
     </div>
 
@@ -86,6 +78,16 @@
 
           <div v-else-if="item.kind === 'notice'" class="text-body-small text-medium-emphasis text-center">{{ t(`notice.${item.stopReason}`) }}</div>
 
+          <CheckpointItem
+            v-else-if="item.kind === 'checkpoint'"
+            :can-undo="!busy"
+            :item="item"
+            @show="emit('show-changes', item.commit)"
+            @undo="emit('undo', item.commit)"
+          />
+
+          <v-alert v-else-if="item.kind === 'info'" density="compact" :text="item.text" type="info" />
+
           <v-alert
             v-else-if="item.kind === 'error'"
             class="text-pre-wrap"
@@ -113,7 +115,7 @@
         v-model="draft"
         auto-grow
         data-test="app-builder-prompt"
-        :disabled="ended"
+        :disabled="transcript.state === 'closed'"
         hide-details
         max-rows="10"
         :placeholder="t('chat.placeholder')"
@@ -150,6 +152,7 @@
   import type { Transcript } from './transcript'
   import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
   import ApprovalCard from './ApprovalCard.vue'
+  import CheckpointItem from './CheckpointItem.vue'
   import { useI18n } from './i18n'
   import MarkdownText from './MarkdownText.vue'
   import ToolCallItem from './ToolCallItem.vue'
@@ -157,6 +160,7 @@
   // One chat: the transcript, the agent's state, and the prompt box.
   const props = defineProps<{
     conversation: ConversationSummary
+    projectName: string
     transcript: Transcript
     agentName: string
     connected: boolean
@@ -167,14 +171,16 @@
     'stop': []
     'answer': [approvalId: string, decision: ApprovalDecision]
     'set-model': [value: string]
-    'copy-folder': []
-    'close': []
+    'show-changes': [commit: string]
+    'undo': [commit: string]
+    'delete': []
   }>()
   const { t } = useI18n()
 
   const draft = ref('')
-  const ended = computed(() => props.transcript.state === 'closed' || props.transcript.state === 'failed')
-  const canSend = computed(() => props.transcript.state === 'idle' && draft.value.trim().length > 0)
+  /** While the agent starts or works, the chat's files and history change. */
+  const busy = computed(() => props.transcript.state === 'working' || props.transcript.state === 'starting')
+  const canSend = computed(() => ['idle', 'inactive', 'failed'].includes(props.transcript.state) && draft.value.trim().length > 0)
 
   const status = computed(() => {
     if (!props.connected) {
@@ -187,8 +193,8 @@
       case 'working': {
         return t('chat.working', { agent: props.agentName })
       }
-      case 'closed': {
-        return t('chat.closed')
+      case 'inactive': {
+        return t('chat.inactive')
       }
       case 'failed': {
         return t('chat.failed')

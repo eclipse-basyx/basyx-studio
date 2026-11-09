@@ -1,4 +1,4 @@
-import type { AppSettingValues, ClientCertificateSummary, Connection, EndpointInput, InfrastructureAppSettings, InfrastructureTemplate, ListSource, Preferences, SecuritySummary, ServiceProfiles, StackComponentId, StackSpec, SyncSettings } from '#shared/contract'
+import type { AgentId, AppProjectOrigin, AppSettingValues, ClientCertificateSummary, Connection, ConversationEvent, EndpointInput, InfrastructureAppSettings, InfrastructureTemplate, ListSource, Preferences, SecuritySummary, ServiceProfiles, StackComponentId, StackSpec, SyncSettings } from '#shared/contract'
 import type { AppManifest } from '@basyx/studio-sdk/protocol'
 import { boolean, customType, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 
@@ -182,3 +182,43 @@ export const containerSettings = pgTable('container_settings', {
   engineHost: text('engine_host'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
+
+/**
+ * The App Builder's projects (ADR 0054, desktop only): an app's sources in a
+ * folder on this computer, which coding agents change. The files stay in
+ * the folder; this row says where it is and what it holds.
+ */
+export const appProjects = pgTable('app_projects', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  /** The app ID in its `studio-app.json`. */
+  appId: text('app_id').notNull(),
+  folder: text('folder').notNull().unique(),
+  origin: text('origin').$type<AppProjectOrigin>().notNull(),
+  /** The bundled app a copy started from. */
+  source: text('source'),
+  ...timestamps,
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+/** A chat with one coding agent in a project's folder. */
+export const appBuilderConversations = pgTable('app_builder_conversations', {
+  id: text('id').primaryKey(),
+  projectId: text('project_id').notNull().references(() => appProjects.id, { onDelete: 'cascade' }),
+  agentId: text('agent_id').$type<AgentId>().notNull(),
+  title: text('title').notNull().default(''),
+  /** The agent's ACP session, for `session/load`. */
+  sessionId: text('session_id'),
+  /** The model the user chose, set again after a load. */
+  model: text('model'),
+  ...timestamps,
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, table => [index('app_builder_conversations_project').on(table.projectId)])
+
+/** What happened in a chat, to show it again (ADR 0054). */
+export const appBuilderEvents = pgTable('app_builder_events', {
+  conversationId: text('conversation_id').notNull().references(() => appBuilderConversations.id, { onDelete: 'cascade' }),
+  seq: integer('seq').notNull(),
+  at: timestamp('at', { withTimezone: true }).notNull(),
+  event: jsonb('event').$type<ConversationEvent>().notNull(),
+}, table => [primaryKey({ columns: [table.conversationId, table.seq] })])

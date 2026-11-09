@@ -1,4 +1,4 @@
-import { execFile } from 'node:child_process'
+import { execFile, spawn } from 'node:child_process'
 import { accessSync, constants, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { delimiter, join } from 'node:path'
@@ -137,4 +137,19 @@ export function agentProcessEnv (source: NodeJS.ProcessEnv, path: string): NodeJ
   }
   env.PATH = path
   return env
+}
+
+/** Opens a folder in the system's file manager (Finder, Explorer, the desktop's default). */
+export function openInFileManager (folder: string, platform: NodeJS.Platform = process.platform): Promise<void> {
+  const [command, args] = platform === 'darwin'
+    ? ['open', [folder]]
+    : (platform === 'win32' ? ['explorer.exe', [folder]] : ['xdg-open', [folder]])
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { detached: true, stdio: 'ignore', windowsHide: false })
+    child.once('error', reject)
+    child.once('spawn', () => {
+      child.unref()
+      resolve()
+    })
+  })
 }

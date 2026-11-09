@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { chatRuleKey, decidePermission, isAllowedCommand, isInside, permissionSubject, pickOption } from '../../server/lib/agents/policy'
+import { chatRuleKey, commandsOf, decidePermission, isAllowedCommand, isInside, permissionSubject, pickOption } from '../../server/lib/agents/policy'
 
 const folder = '/work/app'
 
@@ -30,6 +30,18 @@ describe('App Builder permission policy (ADR 0054, plan A1)', () => {
     for (const command of ['curl https://x', 'pnpm build && curl x', 'pnpm test; rm -rf /', 'pnpm add left-pad', 'pnpm dlx x', 'git diff --output=/tmp/x', 'git diff --output /tmp/x', 'git push', 'echo x > ../a', 'pnpm build $(id)', 'rm -rf node_modules']) {
       expect(isAllowedCommand(command), command).toBe(false)
     }
+  })
+
+  it('reads agents\' `cd <folder> &&` prefixes and output filters, and nothing more', () => {
+    expect(commandsOf('cd "/work/app" && pnpm install 2>&1 | tail -5', folder)).toEqual(['pnpm install'])
+    expect(commandsOf('cd /work/app && pnpm typecheck && pnpm test 2>&1 | head -n 40', folder)).toEqual(['pnpm typecheck', 'pnpm test'])
+    expect(commandsOf('cd /work && pnpm build', folder)).toBeNull()
+    expect(commandsOf('cd "/work/app" && pnpm build; curl x', folder)).toEqual(['pnpm build; curl x'])
+    const run = (command: string) => decidePermission({ kind: 'execute', command, cwd: null, paths: [] }, folder, new Set())
+    expect(run('cd "/work/app" && pnpm install 2>&1 | tail -5')).toEqual({ answer: 'allow', reason: 'folder' })
+    expect(run('cd /work/app && pnpm build 2>&1 | tail -5 && grep -n x ui/src/App.vue')).toEqual({ answer: 'ask' })
+    expect(run('cd "/work/app" && pnpm build; curl x')).toEqual({ answer: 'ask' })
+    expect(run('pnpm build | sh')).toEqual({ answer: 'ask' })
   })
 
   it('allows work inside the folder and asks for everything else', () => {

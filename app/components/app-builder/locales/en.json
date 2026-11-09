@@ -5,13 +5,11 @@
   },
   "chats": {
     "heading": "Chats",
-    "new": "New chat",
     "untitled": "New chat",
-    "empty": "No chats yet.",
-    "close": "Close chat",
-    "closeTitle": "Close this chat?",
-    "closeText": "The agent stops, and the chat is removed from the list. Files it wrote stay in its folder.",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "delete": "Delete chat",
+    "deleteTitle": "Delete this chat?",
+    "deleteText": "The chat and its history are deleted. The app's files and their git history stay."
   },
   "agents": {
     "heading": "Agents",
@@ -33,15 +31,12 @@
     "model": "Model",
     "starting": "Starting {agent}…",
     "working": "{agent} is working…",
-    "closed": "This chat has ended.",
-    "failed": "The agent stopped. Start a new chat to go on.",
+    "failed": "The agent stopped. Send a message to start it again.",
     "reconnecting": "Reconnecting…",
     "emptyTitle": "What should we build?",
-    "emptyText": "Pick an agent and describe the app. For now, each chat works in a scratch folder of its own; projects, previews and installing follow.",
-    "folder": "Folder",
-    "copyFolder": "Copy folder path",
-    "copied": "Copied",
-    "thinking": "Thinking"
+    "emptyText": "Describe what the app should do, or the change you want.",
+    "thinking": "Thinking",
+    "inactive": "The agent starts with your next message."
   },
   "tool": {
     "read": "Read",
@@ -84,5 +79,45 @@
     "max_turn_requests": "The agent reached its step limit.",
     "refusal": "The agent declined.",
     "error": "The turn ended with an error."
+  },
+  "projects": {
+    "heading": "Apps",
+    "new": "New app",
+    "empty": "No apps yet.",
+    "newChat": "New chat with {agent}",
+    "openFolder": "Open folder",
+    "copyPath": "Copy folder path",
+    "actions": "Actions for {name}",
+    "remove": "Remove app…",
+    "removeTitle": "Remove {name} from Studio?",
+    "removeText": "Its chats are deleted. The folder with the app's sources stays on this computer unless you tick the box.",
+    "deleteFolder": "Also delete the folder {folder}",
+    "removeConfirm": "Remove"
+  },
+  "newApp": {
+    "title": "New app",
+    "name": "Name",
+    "agent": "Agent",
+    "prompt": "What should the app do?",
+    "promptHint": "For example: a view for the Digital Nameplate that shows the serial number as a QR code.",
+    "where": "Studio creates the app in a folder of its own under Documents/BaSyx Studio/Apps and commits each change the agent makes.",
+    "create": "Create",
+    "cancel": "Cancel"
+  },
+  "checkpoint": {
+    "title": "Committed {count} changed files",
+    "titleOne": "Committed 1 changed file",
+    "show": "Show changes",
+    "undo": "Undo from here",
+    "undone": "Undone",
+    "undoTitle": "Undo this turn and the ones after it?",
+    "undoText": "The app's files go back to how they were before this turn, in a new commit. The agent learns of it with your next message. Nothing is lost: the undone changes stay in the git history.",
+    "undoConfirm": "Undo",
+    "changesTitle": "Changes",
+    "close": "Close",
+    "added": "added",
+    "modified": "changed",
+    "deleted": "deleted",
+    "renamed": "renamed"
   }
 }

@@ -65,6 +65,29 @@ export function isAllowedCommand (command: string): boolean {
   return !shellSyntax.test(trimmed) && allowedCommands.some(pattern => pattern.test(trimmed))
 }
 
+const cdPrefix = /^cd\s+(?:"([^"]+)"|'([^']+)'|([^\s"';&|]+))\s*&&\s*/
+const outputFilter = /(?:\s+2>&1)?(?:\s*\|\s*(?:tail|head)(?:\s+-n)?\s+-?\d+)?\s*$/
+
+/**
+ * The commands an agent runs, as Studio judges them: agents write
+ * `cd "<folder>" && pnpm build 2>&1 | tail -20`, so a leading `cd` into the
+ * folder itself and a trailing `2>&1 | tail -n` are left out, and `&&` joins
+ * commands that must each be allowed. `null` when the command does more.
+ */
+export function commandsOf (command: string, folder: string): string[] | null {
+  let rest = command.trim()
+  const cd = cdPrefix.exec(rest)
+  if (cd) {
+    const target = cd[1] ?? cd[2] ?? cd[3]!
+    if (resolve(folder, target) !== resolve(folder)) {
+      return null
+    }
+    rest = rest.slice(cd[0].length)
+  }
+  const parts = rest.split(/\s*&&\s*/).map(part => part.replace(outputFilter, '').trim())
+  return parts.every(part => part.length > 0) ? parts : null
+}
+
 /** The key under which *Allow in this chat* remembers an answer. */
 export function chatRuleKey (subject: PermissionSubject): string {
   return subject.kind === 'execute'
@@ -81,7 +104,8 @@ export function decidePermission (subject: PermissionSubject, folder: string, al
   }
   if (subject.kind === 'execute') {
     const inFolder = subject.cwd === null || isInside(folder, subject.cwd)
-    return inFolder && subject.command !== null && isAllowedCommand(subject.command) ? { answer: 'allow', reason: 'folder' } : { answer: 'ask' }
+    const commands = subject.command === null ? null : commandsOf(subject.command, folder)
+    return inFolder && commands?.every(command => isAllowedCommand(command)) ? { answer: 'allow', reason: 'folder' } : { answer: 'ask' }
   }
   const local = subject.paths.length > 0 && subject.paths.every(path => isInside(folder, path))
   if (local && ['read', 'edit', 'delete', 'move', 'search'].includes(subject.kind)) {

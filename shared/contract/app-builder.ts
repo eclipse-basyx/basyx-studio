@@ -64,15 +64,17 @@ export const agentSettingSchema = z.object({
 export type AgentSetting = z.infer<typeof agentSettingSchema>
 
 /**
+ * `inactive`: saved, without a running agent; the next prompt starts it.
  * `starting`: the agent process and session are being set up; `idle`:
- * waiting for a prompt; `working`: a turn runs; `closed`: ended by the
+ * waiting for a prompt; `working`: a turn runs; `closed`: deleted by the
  * user; `failed`: the agent stopped or could not start.
  */
-export const conversationStateSchema = z.enum(['starting', 'idle', 'working', 'closed', 'failed'])
+export const conversationStateSchema = z.enum(['inactive', 'starting', 'idle', 'working', 'closed', 'failed'])
 export type ConversationState = z.infer<typeof conversationStateSchema>
 
 export const conversationSummarySchema = z.object({
   id: z.string(),
+  projectId: z.string(),
   agentId: agentIdSchema,
   title: z.string(),
   folder: z.string(),
@@ -116,6 +118,30 @@ export type ApprovalState = z.infer<typeof approvalStateSchema>
 export const approvalDecisionSchema = z.enum(['allowOnce', 'allowInChat', 'deny'])
 export type ApprovalDecision = z.infer<typeof approvalDecisionSchema>
 
+/** `new`: from Studio's template; `copy`: of a bundled app; `folder`: a folder the user chose. */
+export const appProjectOrigins = ['new', 'copy', 'folder'] as const
+export const appProjectOriginSchema = z.enum(appProjectOrigins)
+export type AppProjectOrigin = z.infer<typeof appProjectOriginSchema>
+
+export const appProjectSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  appId: z.string(),
+  folder: z.string(),
+  origin: appProjectOriginSchema,
+  source: z.string().nullable(),
+  createdAt: z.string(),
+  /** Newest first. */
+  conversations: z.array(conversationSummarySchema),
+})
+export type AppProject = z.infer<typeof appProjectSchema>
+
+export const changedFileSchema = z.object({
+  path: z.string(),
+  status: z.enum(['added', 'modified', 'deleted', 'renamed']),
+})
+export type ChangedFile = z.infer<typeof changedFileSchema>
+
 const text = z.string()
 
 /** What happened in a conversation. `toolCall` events carry only the fields that changed. */
@@ -147,6 +173,12 @@ export const conversationEventSchema = z.discriminatedUnion('type', [
     denyEndsTurn: z.boolean(),
   }),
   z.object({ type: z.literal('turnEnded'), stopReason: z.string() }),
+  /** Studio committed what a turn changed in the project's git repository. */
+  z.object({ type: z.literal('checkpoint'), commit: z.string(), message: z.string(), files: z.array(changedFileSchema) }),
+  /** The user undid this turn and the ones after it. */
+  z.object({ type: z.literal('checkpointUndone'), commit: z.string() }),
+  /** Something Studio tells about the chat, such as a session that could not be resumed. */
+  z.object({ type: z.literal('notice'), text: z.string() }),
   z.object({ type: z.literal('state'), state: conversationStateSchema, model: agentSettingSchema.nullable() }),
   z.object({ type: z.literal('error'), message: z.string() }),
 ])
@@ -161,27 +193,45 @@ export type ConversationEventEnvelope = z.infer<typeof conversationEventEnvelope
 
 const conversationId = z.string().min(1).max(64)
 
+const projectId = z.string().min(1).max(64)
+const prompt = z.string().trim().min(1).max(100_000)
+const commit = z.string().regex(/^[\da-f]{7,64}$/, 'must be a commit hash')
+
+/** A project's name: one line, and something that gives a folder name. */
+export const appProjectNameSchema = z.string().trim().min(1).max(80).regex(/^\P{Cc}*$/u, 'must be one line without control characters').refine(name => /[\p{L}\p{N}]/u.test(name), 'must contain a letter or digit')
+
 /** Parameters of `POST /app-builder/{operation}`. */
 export const appBuilderOperationSchemas = {
   getStatus: z.object({ refresh: z.boolean().default(false) }),
-  listConversations: z.object({}),
-  startConversation: z.object({ agentId: agentIdSchema }),
-  sendPrompt: z.object({ conversationId, text: z.string().trim().min(1).max(100_000) }),
+  listProjects: z.object({}),
+  createProject: z.object({ name: appProjectNameSchema, agentId: agentIdSchema, prompt }),
+  removeProject: z.object({ projectId, deleteFolder: z.boolean().default(false) }),
+  openFolder: z.object({ projectId }),
+  startConversation: z.object({ projectId, agentId: agentIdSchema }),
+  deleteConversation: z.object({ conversationId }),
+  sendPrompt: z.object({ conversationId, text: prompt }),
   cancelTurn: z.object({ conversationId }),
   answerApproval: z.object({ conversationId, approvalId: z.string().min(1).max(64), decision: approvalDecisionSchema }),
   setModel: z.object({ conversationId, value: z.string().min(1).max(200) }),
-  closeConversation: z.object({ conversationId }),
+  getChanges: z.object({ projectId, commit }),
+  undoTurn: z.object({ conversationId, commit }),
 } as const
 export type AppBuilderOperation = keyof typeof appBuilderOperationSchemas
 export type AppBuilderOperationParams<O extends AppBuilderOperation> = z.input<(typeof appBuilderOperationSchemas)[O]>
 
 export interface AppBuilderOperationResults {
   getStatus: AppBuilderStatus
-  listConversations: ConversationSummary[]
+  listProjects: AppProject[]
+  createProject: { project: AppProject, conversation: ConversationSummary }
+  removeProject: null
+  openFolder: null
   startConversation: ConversationSummary
+  deleteConversation: null
   sendPrompt: null
   cancelTurn: null
   answerApproval: null
   setModel: ConversationSummary
-  closeConversation: null
+  /** The commit as a patch, and its files. */
+  getChanges: { patch: string, files: ChangedFile[] }
+  undoTurn: null
 }

@@ -20,7 +20,7 @@ function afterSeq (value: unknown): number {
  */
 export default defineStudioHandler(async event => {
   await requireActor(event)
-  const conversation = requireAgents(await useStudio()).get(routeParam(event, 'conversationId'))
+  const conversation = await requireAgents(await useStudio()).conversation(routeParam(event, 'conversationId'))
   const after = afterSeq(getRequestHeader(event, 'last-event-id') ?? getQuery(event).after)
   event.res.headers.set('Content-Type', 'text/event-stream; charset=utf-8')
   event.res.headers.set('X-Accel-Buffering', 'no')

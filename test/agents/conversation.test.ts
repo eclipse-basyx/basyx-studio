@@ -75,6 +75,7 @@ const claude = agentCatalog(specifier => specifier).find(entry => entry.id === '
 
 async function started (fake: Fake, definition: AgentDefinition = claude) {
   const conversation = new Conversation({
+    projectId: 'p1',
     definition,
     folder,
     open: () => ({ target: fakeAgent(fake), stop: () => {}, exited: new Promise(() => {}) }),
@@ -106,9 +107,9 @@ describe('App Builder conversation over ACP (ADR 0054)', () => {
   it('streams a turn, allows what the policy allows and asks the user for the rest', async () => {
     const fake: Fake = { modes: [], prompts: [], answers: [], cancelled: 0 }
     const { conversation, events } = await started(fake)
-    conversation.prompt('Build it')
-    expect(conversation.summary()).toMatchObject({ state: 'working', title: 'Build it' })
-    expect(() => conversation.prompt('again')).toThrow(StudioProblem)
+    await conversation.prompt('Build it')
+    expect(conversation.summary()).toMatchObject({ state: 'working', title: 'Build it', projectId: 'p1' })
+    await expect(conversation.prompt('again')).rejects.toBeInstanceOf(StudioProblem)
 
     await until(() => events.some(({ event }) => event.type === 'approval' && event.state === 'pending'))
     const pending = events.map(({ event }) => event).find(event => event.type === 'approval' && event.state === 'pending')
@@ -130,7 +131,7 @@ describe('App Builder conversation over ACP (ADR 0054)', () => {
   it('replays events after a given number to a late subscriber', async () => {
     const fake: Fake = { modes: [], prompts: [], answers: [], cancelled: 0 }
     const { conversation, events } = await started(fake)
-    conversation.prompt('Build it')
+    await conversation.prompt('Build it')
     await until(() => events.some(({ event }) => event.type === 'approval' && event.state === 'pending'))
     const late: number[] = []
     const stop = conversation.subscribe(3, envelope => late.push(envelope.seq))
@@ -142,12 +143,12 @@ describe('App Builder conversation over ACP (ADR 0054)', () => {
   it('remembers "Allow in this chat" for the same command', async () => {
     const fake: Fake = { modes: [], prompts: [], answers: [], cancelled: 0 }
     const { conversation, events } = await started(fake)
-    conversation.prompt('one')
+    await conversation.prompt('one')
     await until(() => events.some(({ event }) => event.type === 'approval' && event.state === 'pending'))
     const pending = events.map(({ event }) => event).find(event => event.type === 'approval' && event.state === 'pending') as { approvalId: string }
     conversation.answer(pending.approvalId, 'allowInChat')
     await until(() => conversation.state === 'idle')
-    conversation.prompt('two')
+    await conversation.prompt('two')
     await until(() => conversation.state === 'idle' && fake.answers.length === 4)
     expect(fake.answers).toEqual(['yes', 'yes', 'yes', 'yes'])
     expect(events.filter(({ event }) => event.type === 'approval' && event.state === 'pending')).toHaveLength(1)
@@ -156,7 +157,7 @@ describe('App Builder conversation over ACP (ADR 0054)', () => {
   it('cancels a running turn', async () => {
     const fake: Fake = { modes: [], prompts: [], answers: [], cancelled: 0 }
     const { conversation, events } = await started(fake)
-    conversation.prompt('wait')
+    await conversation.prompt('wait')
     await until(() => fake.prompts.length === 1)
     await conversation.cancel()
     await until(() => conversation.state === 'idle')
@@ -164,14 +165,23 @@ describe('App Builder conversation over ACP (ADR 0054)', () => {
     expect(events.at(-2)?.event).toEqual({ type: 'turnEnded', stopReason: 'cancelled' })
   })
 
-  it('reports an agent that stops, and refuses further prompts', async () => {
+  it('reports an agent that stops, and starts it again with the next prompt', async () => {
     let exit: (value: { code: number | null, stderr: string }) => void = () => {}
+    let opened = 0
     const conversation = new Conversation({
+      projectId: 'p1',
       definition: claude,
       folder,
-      open: () => ({ target: fakeAgent({ modes: [], prompts: [], answers: [], cancelled: 0 }), stop: () => {}, exited: new Promise(resolve => {
-        exit = resolve
-      }) }),
+      open: () => {
+        opened++
+        return {
+          target: fakeAgent({ modes: [], prompts: [], answers: [], cancelled: 0 }),
+          stop: () => {},
+          exited: new Promise(resolve => {
+            exit = resolve
+          }),
+        }
+      },
     })
     const events: ConversationEventEnvelope[] = []
     conversation.subscribe(0, envelope => events.push(envelope))
@@ -179,6 +189,8 @@ describe('App Builder conversation over ACP (ADR 0054)', () => {
     exit({ code: 1, stderr: 'boom' })
     await until(() => conversation.state === 'failed')
     expect(events.find(({ event }) => event.type === 'error')?.event).toEqual({ type: 'error', message: 'Claude Code stopped (exit code 1).\nboom' })
-    expect(() => conversation.prompt('more')).toThrow(StudioProblem)
+    await conversation.prompt('wait')
+    expect(opened).toBe(2)
+    expect(conversation.state).toBe('working')
   })
 })

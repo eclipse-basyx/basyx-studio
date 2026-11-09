@@ -6,7 +6,8 @@ import { dirname, join } from 'node:path'
 import { useRuntimeConfig } from 'nuxt/server'
 import { apiBasePath } from '#shared/contract'
 import { agentCatalog } from '../lib/agents/catalog'
-import { AgentManager } from '../lib/agents/manager'
+import { AgentManager, defaultProjectsDir } from '../lib/agents/manager'
+import { DatabaseProjectStore } from '../lib/app-projects/store'
 import { embedTokenKey } from '../lib/apps/embeds'
 import { reconcileManagedPackages } from '../lib/apps/packages'
 import { BackendRunner } from '../lib/apps/runner'
@@ -31,6 +32,7 @@ import { CredentialBroker } from '../lib/targets/credentials'
 import { studioPath } from '../lib/urls'
 import { WorkspaceWorkerClient } from '../lib/workspaces/client'
 import { WorkspaceManager } from '../lib/workspaces/manager'
+import { loadAppTemplate } from '../nitro/app-template'
 import { loadBundledApps } from '../nitro/bundled-apps'
 import { loadMigrationsFromAssets } from '../nitro/migration-assets'
 
@@ -189,7 +191,10 @@ async function initialize (): Promise<StudioRuntime> {
       : null
     const agents = config.appBuilder
       ? new AgentManager({
-          dataDir: config.appBuilder.dataDir,
+          projectsDir: config.appBuilder.projectsDir ?? defaultProjectsDir(),
+          store: new DatabaseProjectStore(deps.db),
+          template: loadAppTemplate,
+          studioVersion: String(runtimeConfig.version ?? '0.0.0'),
           // The adapters are started as scripts, never imported; Nitro's file
           // tracing copies them into the server output (nuxt.config.ts).
           agents: agentCatalog(createRequire(import.meta.url).resolve),
@@ -211,7 +216,7 @@ async function initialize (): Promise<StudioRuntime> {
       containers,
       agents,
       close: async () => {
-        agents?.dispose()
+        await agents?.dispose()
         backends?.dispose()
         await containers?.dispose()
         workspaces?.dispose()

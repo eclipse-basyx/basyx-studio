@@ -5,13 +5,11 @@
   },
   "chats": {
     "heading": "Chats",
-    "new": "Neuer Chat",
     "untitled": "Neuer Chat",
-    "empty": "Noch keine Chats.",
-    "close": "Chat schließen",
-    "closeTitle": "Diesen Chat schließen?",
-    "closeText": "Der Agent wird beendet, und der Chat verschwindet aus der Liste. Dateien, die er geschrieben hat, bleiben in seinem Ordner.",
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "delete": "Chat löschen",
+    "deleteTitle": "Diesen Chat löschen?",
+    "deleteText": "Der Chat und sein Verlauf werden gelöscht. Die Dateien der App und ihr Git-Verlauf bleiben."
   },
   "agents": {
     "heading": "Agenten",
@@ -33,15 +31,12 @@
     "model": "Modell",
     "starting": "{agent} wird gestartet …",
     "working": "{agent} arbeitet …",
-    "closed": "Dieser Chat ist beendet.",
-    "failed": "Der Agent wurde beendet. Starte einen neuen Chat, um weiterzumachen.",
+    "failed": "Der Agent wurde beendet. Sende eine Nachricht, um ihn neu zu starten.",
     "reconnecting": "Verbindung wird wiederhergestellt …",
     "emptyTitle": "Was sollen wir bauen?",
-    "emptyText": "Wähle einen Agenten und beschreibe die App. Vorerst arbeitet jeder Chat in einem eigenen Arbeitsordner; Projekte, Vorschau und Installation folgen.",
-    "folder": "Ordner",
-    "copyFolder": "Ordnerpfad kopieren",
-    "copied": "Kopiert",
-    "thinking": "Denkt nach"
+    "emptyText": "Beschreibe, was die App tun soll, oder die gewünschte Änderung.",
+    "thinking": "Denkt nach",
+    "inactive": "Der Agent startet mit deiner nächsten Nachricht."
   },
   "tool": {
     "read": "Lesen",
@@ -84,5 +79,45 @@
     "max_turn_requests": "Der Agent hat seine Schrittgrenze erreicht.",
     "refusal": "Der Agent hat abgelehnt.",
     "error": "Der Durchgang endete mit einem Fehler."
+  },
+  "projects": {
+    "heading": "Apps",
+    "new": "Neue App",
+    "empty": "Noch keine Apps.",
+    "newChat": "Neuer Chat mit {agent}",
+    "openFolder": "Ordner öffnen",
+    "copyPath": "Ordnerpfad kopieren",
+    "actions": "Aktionen für {name}",
+    "remove": "App entfernen …",
+    "removeTitle": "{name} aus Studio entfernen?",
+    "removeText": "Ihre Chats werden gelöscht. Der Ordner mit den Quellen der App bleibt auf diesem Computer, außer du setzt das Häkchen.",
+    "deleteFolder": "Auch den Ordner {folder} löschen",
+    "removeConfirm": "Entfernen"
+  },
+  "newApp": {
+    "title": "Neue App",
+    "name": "Name",
+    "agent": "Agent",
+    "prompt": "Was soll die App tun?",
+    "promptHint": "Zum Beispiel: eine Ansicht für das digitale Typenschild, die die Seriennummer als QR-Code zeigt.",
+    "where": "Studio legt die App in einem eigenen Ordner unter Dokumente/BaSyx Studio/Apps an und committet jede Änderung des Agenten.",
+    "create": "Erstellen",
+    "cancel": "Abbrechen"
+  },
+  "checkpoint": {
+    "title": "{count} geänderte Dateien committet",
+    "titleOne": "1 geänderte Datei committet",
+    "show": "Änderungen zeigen",
+    "undo": "Ab hier rückgängig machen",
+    "undone": "Rückgängig gemacht",
+    "undoTitle": "Diesen Durchgang und die folgenden rückgängig machen?",
+    "undoText": "Die Dateien der App kehren in einem neuen Commit zum Stand vor diesem Durchgang zurück. Der Agent erfährt es mit deiner nächsten Nachricht. Nichts geht verloren: Die rückgängig gemachten Änderungen bleiben im Git-Verlauf.",
+    "undoConfirm": "Rückgängig machen",
+    "changesTitle": "Änderungen",
+    "close": "Schließen",
+    "added": "neu",
+    "modified": "geändert",
+    "deleted": "gelöscht",
+    "renamed": "umbenannt"
   }
 }
