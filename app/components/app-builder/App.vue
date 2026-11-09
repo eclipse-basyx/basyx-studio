@@ -95,6 +95,7 @@
           :transcript="activeTranscript"
           @answer="(approvalId, decision) => answer(active!.conversation.id, approvalId, decision)"
           @delete="deleting = active!.conversation.id"
+          @install="installing = active!.project"
           @send="text => send(active!.conversation.id, text)"
           @set-model="value => setModel(active!.conversation.id, value)"
           @show-changes="commit => showChanges(active!.project.id, commit)"
@@ -120,6 +121,8 @@
     <NewAppDialog v-model="newApp" :agents="readyAgents" :busy="creating" @create="createApp" />
 
     <ChangesDialog :patch="patch" @close="patch = null" />
+
+    <InstallDialog :project="installing" @close="installing = null" @installed="onInstalled" />
 
     <v-dialog max-width="480" :model-value="deleting !== null" @update:model-value="open => { if (!open) deleting = null }">
       <v-card :text="t('chats.deleteText')" :title="t('chats.deleteTitle')">
@@ -171,6 +174,7 @@
   import ChangesDialog from './ChangesDialog.vue'
   import ChatView from './ChatView.vue'
   import { provideI18n } from './i18n'
+  import InstallDialog from './InstallDialog.vue'
   import NewAppDialog from './NewAppDialog.vue'
   import PreviewPane from './PreviewPane.vue'
   import { applyEvent, emptyTranscript } from './transcript'
@@ -195,6 +199,7 @@
   const activeId = ref<string | null>(null)
   const newApp = ref(false)
   const previewOpen = ref(true)
+  const installing = ref<AppProject | null>(null)
   const patch = ref<string | null>(null)
   const deleting = ref<string | null>(null)
   const undoing = ref<{ conversationId: string, commit: string } | null>(null)
@@ -391,6 +396,11 @@
 
   async function openFolder (project: AppProject) {
     await run(() => client.call('openFolder', { projectId: project.id }))
+  }
+
+  function onInstalled (text: string) {
+    installing.value = null
+    notifications.notify({ text, color: 'success' })
   }
 
   async function copyPath (folder: string) {

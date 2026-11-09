@@ -369,6 +369,24 @@ Done when an app goes from preview to installed signed with the machine key,
 an update with the same key passes, and an update with another key is refused
 as in ADR 0044.
 
+*Built on macOS, 2026-11-09; the click-through with a real app is open.*
+*Install in Studio* in the chat header opens a dialog with the version
+(kept when it is higher than the installed one, else raised by patch or
+minor, written to `studio-app.json` and `package.json` and committed as
+`Release <version>`) and the signature: this computer's key (default for
+`local.*`), the user's own PEM key (file grant `signing-key`, with an
+optional passphrase, used once) or developer mode. *Build and check* builds
+with the fixed commands, signs, and shows the Apps page's consent dialog,
+now the shared `AppInstallDialog.vue`; *Install* runs `installApp` as an
+upload does, and *Save package…* writes the ZIP and its `.sig` (file grant
+`app-package`). The machine key (`machine_signing_keys`, migration
+`0012_machine_signing_key`) is a P-256 key encrypted with the data key; it is
+added to the trust store in memory at start and on creation, as *This
+computer* for `local.*`, with no reserved permissions or remote code.
+`test/apps/machine-key.test.ts` installs and updates with it and is refused
+outside `local.*`. The file grant kinds of the App Builder sit beside the
+SDK's stack kinds in `shared/file-grant-kinds.ts`.
+
 ### Phase E: copies and existing folders
 
 Shipping the sources of bundled apps, *Copy and change* (also on the *Apps*

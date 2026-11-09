@@ -155,5 +155,41 @@
     "running": "Wird gebaut",
     "succeeded": "Gebaut",
     "failed": "Build fehlgeschlagen"
+  },
+  "install": {
+    "title": "{name} installieren",
+    "version": "Version {version} im Ordner",
+    "installed": "Installiert: Version {version}",
+    "notInstalled": "Noch nicht installiert",
+    "versionHeading": "Version",
+    "keep": "{version} behalten",
+    "patch": "Auf {version} erhöhen (Patch)",
+    "minor": "Auf {version} erhöhen (Minor)",
+    "mustRaise": "Ein Update braucht eine höhere Version als die installierte {version}. Studio erhöht sie und committet die Änderung.",
+    "signingHeading": "Signatur",
+    "machine": "Mit dem Schlüssel dieses Computers signiert",
+    "own": "Mit meinem eigenen Schlüssel signiert",
+    "unsigned": "Entwicklermodus, unsigniert",
+    "machineKey": "Schlüssel {fingerprint}…, dem dieses Studio für local.*-Apps vertraut. Updates brauchen denselben Schlüssel.",
+    "machineKeyNew": "Studio erzeugt den Schlüssel dieses Computers bei der ersten Verwendung und vertraut ihm für local.*-Apps.",
+    "copyKey": "Öffentlichen Schlüssel kopieren",
+    "keyCopied": "Öffentlicher Schlüssel kopiert. Ein anderes Studio kann ihm in seinem Trust Store vertrauen.",
+    "machineOnlyLocal": "Der Schlüssel dieses Computers signiert nur Apps mit einer local.*-ID.",
+    "chooseKey": "Schlüssel wählen …",
+    "keyHint": "Ein privater ECDSA-P-256-Schlüssel (PEM), wie cosign ihn schreibt. Einmal verwendet, nie gespeichert.",
+    "passphrase": "Passphrase, falls der Schlüssel eine hat",
+    "unsignedHint": "Wird nur im Entwicklermodus installiert und als unsigniert angezeigt.",
+    "cancel": "Abbrechen",
+    "check": "Bauen und prüfen",
+    "export": "Paket speichern …",
+    "exported": "{file} und seine Signatur gespeichert.",
+    "done": "{name} {version} ist installiert.",
+    "action": "In Studio installieren"
+  },
+  "installTrust": {
+    "bundled": "Mit Studio ausgeliefert",
+    "signed": "Signiert",
+    "managed": "Vom Betrieb installiert",
+    "unsigned": "Unsigniert (Entwicklermodus)"
   }
 }

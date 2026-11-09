@@ -329,6 +329,8 @@ answers `unsupported_operation`.
 | `setModel` | Switches the agent's model, where it offers a choice |
 | `getChanges`, `undoTurn` | A turn's commit as a patch; undoes a turn and the ones after it in a new commit |
 | `getPreview`, `buildPreview`, `approvePreview` | A project's last build and its preview installation (`<appId>.preview`, shown only in the App Builder); builds it now; installs a build that waited for the user's OK on new permissions |
+| `getReleaseInfo`, `getMachineKey` | The app's version and the installed one, with the versions it could take; this computer's signing key (created on first use) |
+| `inspectRelease`, `installRelease`, `exportRelease` | Raises the version if asked, builds and signs (unsigned, this computer's key, or an own key from a `signing-key` grant) and checks the package as an upload; installs the checked package; saves it with its `.sig` to an `app-package` grant. Administrators only |
 
 `GET /app-builder/conversations/{conversationId}/events` streams a
 conversation's events as Server-Sent Events, each with its number as `id`;

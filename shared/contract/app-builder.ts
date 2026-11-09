@@ -1,3 +1,4 @@
+import type { AppInstallation, AppPackageInspection } from './apps'
 import { z } from 'zod'
 import { appContributionsSchema } from './apps'
 
@@ -221,6 +222,26 @@ export const appPreviewSchema = z.object({
 })
 export type AppPreview = z.infer<typeof appPreviewSchema>
 
+/** How an installed release is signed (plan B6): developer mode, this computer's key, or the user's own key. */
+export const releaseSigningSchema = z.enum(['unsigned', 'machine', 'own'])
+export type ReleaseSigning = z.infer<typeof releaseSigningSchema>
+
+/** What installing a project's app would replace, and the versions it could take (plan B5). */
+export const releaseInfoSchema = z.object({
+  projectId: z.string(),
+  appId: z.string(),
+  version: z.string(),
+  installed: z.object({ version: z.string(), trust: z.string(), publisher: z.string().nullable() }).nullable(),
+  /** Whether `version` is higher than the installed one, so it can update it as it is. */
+  newVersion: z.boolean(),
+  patch: z.string(),
+  minor: z.string(),
+  /** This computer's key, once created; it signs only `local.*` apps. */
+  machineKey: z.object({ publicKey: z.string(), fingerprint: z.string() }).nullable(),
+  machineKeyApplies: z.boolean(),
+})
+export type ReleaseInfo = z.infer<typeof releaseInfoSchema>
+
 const projectId = z.string().min(1).max(64)
 const prompt = z.string().trim().min(1).max(100_000)
 const commit = z.string().regex(/^[\da-f]{7,64}$/, 'must be a commit hash')
@@ -245,6 +266,19 @@ export const appBuilderOperationSchemas = {
   getPreview: z.object({ projectId }),
   buildPreview: z.object({ projectId }),
   approvePreview: z.object({ projectId }),
+  getReleaseInfo: z.object({ projectId }),
+  inspectRelease: z.object({
+    projectId,
+    bump: z.enum(['none', 'patch', 'minor']).default('none'),
+    signing: releaseSigningSchema,
+    /** A `signing-key` file grant, for `own`. */
+    keyHandle: z.string().min(1).max(200).optional(),
+    /** The passphrase of an encrypted own key; used once, never stored. */
+    passphrase: z.string().max(1024).optional(),
+  }),
+  installRelease: z.object({ projectId, digest: z.string().regex(/^sha256:[\da-f]{64}$/) }),
+  exportRelease: z.object({ projectId, digest: z.string().regex(/^sha256:[\da-f]{64}$/), fileHandle: z.string().min(1).max(200) }),
+  getMachineKey: z.object({}),
   undoTurn: z.object({ conversationId, commit }),
 } as const
 export type AppBuilderOperation = keyof typeof appBuilderOperationSchemas
@@ -268,4 +302,10 @@ export interface AppBuilderOperationResults {
   getPreview: AppPreview
   buildPreview: AppPreview
   approvePreview: AppPreview
+  getReleaseInfo: ReleaseInfo
+  /** The built package as the install dialog shows it; `digest` installs or exports it. */
+  inspectRelease: { inspection: AppPackageInspection, digest: string, version: string, signed: boolean }
+  installRelease: AppInstallation
+  exportRelease: { fileName: string }
+  getMachineKey: { publicKey: string, fingerprint: string }
 }

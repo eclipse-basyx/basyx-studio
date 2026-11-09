@@ -155,5 +155,41 @@
     "running": "Building",
     "succeeded": "Built",
     "failed": "Build failed"
+  },
+  "install": {
+    "title": "Install {name}",
+    "version": "Version {version} in its folder",
+    "installed": "Installed: version {version}",
+    "notInstalled": "Not installed yet",
+    "versionHeading": "Version",
+    "keep": "Keep {version}",
+    "patch": "Raise to {version} (patch)",
+    "minor": "Raise to {version} (minor)",
+    "mustRaise": "An update needs a higher version than the installed {version}. Studio raises it and commits the change.",
+    "signingHeading": "Signature",
+    "machine": "Signed with this computer's key",
+    "own": "Signed with my own key",
+    "unsigned": "Developer mode, unsigned",
+    "machineKey": "Key {fingerprint}…, trusted by this Studio for local.* apps. Updates need the same key.",
+    "machineKeyNew": "Studio creates this computer's key on first use and trusts it for local.* apps.",
+    "copyKey": "Copy public key",
+    "keyCopied": "Public key copied. Another Studio can trust it in its trust store.",
+    "machineOnlyLocal": "This computer's key signs only apps with a local.* ID.",
+    "chooseKey": "Choose key…",
+    "keyHint": "An ECDSA P-256 private key (PEM), as cosign writes it. Used once, never stored.",
+    "passphrase": "Passphrase, if the key has one",
+    "unsignedHint": "Installs only while developer mode is on, and shows as unsigned.",
+    "cancel": "Cancel",
+    "check": "Build and check",
+    "export": "Save package…",
+    "exported": "Saved {file} and its signature.",
+    "done": "{name} {version} is installed.",
+    "action": "Install in Studio"
+  },
+  "installTrust": {
+    "bundled": "Shipped with Studio",
+    "signed": "Signed",
+    "managed": "Installed by the deployment",
+    "unsigned": "Unsigned (developer mode)"
   }
 }

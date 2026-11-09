@@ -1,20 +1,40 @@
 import type { AppBuilderOperation, AppBuilderOperationResults } from '#shared/contract'
 import type { AgentManager } from '../lib/agents/manager'
 import type { PreviewInstaller } from '../lib/app-projects/previews'
-import type { StudioDeps } from '../lib/deps'
+import type { ReleaseInstaller } from '../lib/app-projects/release'
+import type { Actor, StudioDeps } from '../lib/deps'
+import type { FileGrantStore } from '../lib/desktop/grants'
 import type { StudioRuntime } from './studio'
 import type { z } from 'zod'
+import { readFile, writeFile } from 'node:fs/promises'
+import { basename } from 'node:path'
+import { signPackage } from '@basyx/studio-app-kit/signature'
 import { appBuilderOperationSchemas } from '#shared/contract'
+import { ensureMachineKey, findMachineKey, signWithMachineKey } from '../lib/app-projects/keys'
 import { contributionsFor } from '../lib/apps/contributions'
 import { readAppPackage } from '../lib/apps/package'
-import { findPreviewApp, installPreviewApp, removeInstallation } from '../lib/apps/store'
+import { describeInstallation, findPreviewApp, inspectAppPackage, installApp, installPreviewApp, listInstallations, removeInstallation } from '../lib/apps/store'
 import { StudioProblem } from '../lib/problem'
 
 /** The validated parameters of an operation, with their defaults applied. */
 type Params<O extends AppBuilderOperation> = z.output<(typeof appBuilderOperationSchemas)[O]>
 
+/** Who calls: installing a release needs an administrator, as an upload does. */
+export interface AppBuilderCall {
+  actor: Actor
+  requestId: string
+}
+
+function requireAdmin (call: AppBuilderCall): void {
+  if (!call.actor.isAdmin) {
+    throw new StudioProblem('forbidden', 'Installing apps needs an administrator.')
+  }
+}
+
+type Handler<O extends AppBuilderOperation> = (params: Params<O>, agents: AgentManager, call: AppBuilderCall) => Promise<AppBuilderOperationResults[O]> | AppBuilderOperationResults[O]
+
 /** One handler per App Builder operation; adding an operation without one does not compile. */
-const handlers: { [O in AppBuilderOperation]: (params: Params<O>, agents: AgentManager) => Promise<AppBuilderOperationResults[O]> | AppBuilderOperationResults[O] } = {
+const handlers: { [O in AppBuilderOperation]: Handler<O> } = {
   getStatus: ({ refresh }, agents) => agents.status(refresh),
   listProjects: (_, agents) => agents.projects(),
   createProject: ({ name, agentId, prompt }, agents) => agents.createProject(name, agentId, prompt),
@@ -52,6 +72,20 @@ const handlers: { [O in AppBuilderOperation]: (params: Params<O>, agents: AgentM
   getPreview: ({ projectId }, agents) => agents.preview(projectId),
   buildPreview: ({ projectId }, agents) => agents.buildPreview(projectId),
   approvePreview: ({ projectId }, agents) => agents.approvePreview(projectId),
+  getReleaseInfo: ({ projectId }, agents) => agents.releaseInfo(projectId),
+  inspectRelease: ({ projectId, bump, signing, keyHandle, passphrase }, agents, call) => {
+    requireAdmin(call)
+    return agents.inspectRelease(projectId, { bump, signing, keyHandle: keyHandle ?? null, passphrase: passphrase ?? null })
+  },
+  installRelease: ({ projectId, digest }, agents, call) => {
+    requireAdmin(call)
+    return agents.installRelease(projectId, digest, call)
+  },
+  exportRelease: ({ projectId, digest, fileHandle }, agents, call) => {
+    requireAdmin(call)
+    return agents.exportRelease(projectId, digest, fileHandle)
+  },
+  getMachineKey: (_, agents) => agents.machineKey(),
 }
 
 export function isAppBuilderOperation (name: string): name is AppBuilderOperation {
@@ -67,9 +101,9 @@ export function requireAgents (studio: StudioRuntime): AgentManager {
 }
 
 /** Runs an App Builder operation whose parameters were validated with its schema. */
-export async function performAppBuilderOperation<O extends AppBuilderOperation> (studio: StudioRuntime, operation: O, params: Params<O>): Promise<AppBuilderOperationResults[O]> {
-  const handler = handlers[operation] as (params: Params<O>, agents: AgentManager) => Promise<AppBuilderOperationResults[O]> | AppBuilderOperationResults[O]
-  return await handler(params, requireAgents(studio))
+export async function performAppBuilderOperation<O extends AppBuilderOperation> (studio: StudioRuntime, operation: O, params: Params<O>, call: AppBuilderCall): Promise<AppBuilderOperationResults[O]> {
+  const handler = handlers[operation] as Handler<O>
+  return await handler(params, requireAgents(studio), call)
 }
 
 /**
@@ -110,5 +144,53 @@ export function previewInstaller (studio: StudioDeps & { backends: { stop: (id: 
         await removeInstallation(studio, record, installedBy)
       }
     },
+  }
+}
+
+/**
+ * Releases in Studio's app store (ADR 0054, plan B5–B8): signed with this
+ * computer's key or the user's own, checked and installed as an upload is
+ * (ADR 0044).
+ */
+export function releaseInstaller (studio: StudioDeps & { backends: { stop: (id: string) => Promise<void> } | null, fileGrants: FileGrantStore }): ReleaseInstaller | null {
+  if (!studio.config.apps.baseUrl) {
+    return null
+  }
+  return {
+    installed: async appId => {
+      const record = (await listInstallations(studio)).find(entry => entry.appId === appId && !entry.preview)
+      return record ? { version: record.version, trust: record.trust, publisher: record.publisher } : null
+    },
+    sign: async (bytes, signing, keyHandle, passphrase) => {
+      if (signing === 'unsigned') {
+        return null
+      }
+      if (signing === 'machine') {
+        return await signWithMachineKey(studio, bytes)
+      }
+      const pem = await readFile(studio.fileGrants.take(keyHandle ?? '', 'signing-key'), 'utf8')
+      try {
+        return signPackage(bytes, pem, passphrase ?? undefined)
+      } catch (error) {
+        throw new StudioProblem('invalid_request', 'The key could not sign: it is not an ECDSA P-256 private key in PEM, or it needs its passphrase.', { cause: error })
+      }
+    },
+    inspect: (bytes, signature) => inspectAppPackage(studio, bytes, signature),
+    install: async (bytes, signature, caller) => {
+      const { record, previous } = await installApp(studio, caller.actor as Actor, bytes, signature, caller.requestId)
+      if (previous) {
+        await studio.backends?.stop(record.id)
+      }
+      return await describeInstallation(studio, record)
+    },
+    save: async (bytes, signature, fileHandle) => {
+      const path = studio.fileGrants.take(fileHandle, 'app-package')
+      await writeFile(path, bytes)
+      if (signature) {
+        await writeFile(`${path}.sig`, signature)
+      }
+      return basename(path)
+    },
+    machineKey: create => create ? ensureMachineKey(studio) : findMachineKey(studio),
   }
 }

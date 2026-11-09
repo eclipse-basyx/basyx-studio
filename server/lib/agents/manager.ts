@@ -1,5 +1,6 @@
-import type { AgentId, AgentStatus, AppBuilderOperationResults, AppBuilderStatus, AppPreview, AppProject, ApprovalDecision, ConversationEvent, ConversationEventEnvelope, ConversationSummary, ToolStatus } from '#shared/contract'
+import type { AgentId, AgentStatus, AppBuilderOperationResults, AppBuilderStatus, AppInstallation, AppPreview, AppProject, ApprovalDecision, ConversationEvent, ConversationEventEnvelope, ConversationSummary, ReleaseInfo, ReleaseSigning, ToolStatus } from '#shared/contract'
 import type { PreviewInstaller } from '../app-projects/previews'
+import type { PreparedRelease, ReleaseCaller, ReleaseInstaller, VersionBump } from '../app-projects/release'
 import type { ProjectRecord, ProjectStore } from '../app-projects/store'
 import type { TemplateFiles } from '../app-projects/template'
 import type { AgentDefinition } from './catalog'
@@ -10,9 +11,11 @@ import { existsSync, readdirSync } from 'node:fs'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
+import semver from 'semver'
 import { buildProject } from '../app-projects/build'
 import { ProjectGit } from '../app-projects/git'
 import { ProjectPreviews } from '../app-projects/previews'
+import { bumpVersion, readIdentity, setVersion } from '../app-projects/release'
 import { EventWriter } from '../app-projects/store'
 import { localAppId, scaffoldFiles, slugOf } from '../app-projects/template'
 import { StudioProblem } from '../problem'
@@ -48,6 +51,8 @@ export interface AgentManagerOptions {
   idleStopMs?: number
   /** Installs the projects' previews; `null` when apps are off. */
   previews: PreviewInstaller | null
+  /** Signs and installs releases; `null` when apps are off. */
+  releases: ReleaseInstaller | null
 }
 
 interface Discovery {
@@ -83,6 +88,8 @@ export class AgentManager {
   #lastDiscovery: Discovery | null = null
   #sweeper: ReturnType<typeof setInterval> | null = null
   readonly #previews: ProjectPreviews | null
+  /** Built packages waiting for the install dialog's consent, by project. */
+  readonly #prepared = new Map<string, PreparedRelease>()
 
   constructor (options: AgentManagerOptions) {
     this.#options = options
@@ -257,6 +264,81 @@ export class AgentManager {
     return await this.#requirePreviews().describe(project)
   }
 
+  /** What installing the project's app would replace, and the versions it could take (plan B5). */
+  async releaseInfo (projectId: string): Promise<ReleaseInfo> {
+    const project = await this.#project(projectId)
+    const releases = this.#requireReleases()
+    const { id, version } = await readIdentity(project.folder)
+    const installed = await releases.installed(id)
+    return {
+      projectId,
+      appId: id,
+      version,
+      installed,
+      newVersion: installed === null || (semver.valid(installed.version) !== null && semver.valid(version) !== null && semver.gt(version, installed.version)),
+      patch: bumpVersion(version, 'patch'),
+      minor: bumpVersion(version, 'minor'),
+      machineKey: await releases.machineKey(false),
+      machineKeyApplies: id.startsWith('local.'),
+    }
+  }
+
+  /**
+   * Raises the version if asked (and commits it), builds, signs, and checks
+   * the package as an upload is checked (plan B5–B8); the result is what the
+   * install dialog shows. Nothing is installed yet.
+   */
+  async inspectRelease (projectId: string, options: { bump: VersionBump, signing: ReleaseSigning, keyHandle: string | null, passphrase: string | null }): Promise<AppBuilderOperationResults['inspectRelease']> {
+    const project = await this.#project(projectId)
+    const releases = this.#requireReleases()
+    const busy = [...this.#conversations.values()].some(conversation => conversation.projectId === projectId && (conversation.state === 'working' || conversation.state === 'starting'))
+    if (busy) {
+      throw new StudioProblem('agent_busy', 'Wait until the agent has finished its turn.')
+    }
+    if (options.signing === 'own' && !options.keyHandle) {
+      throw new StudioProblem('invalid_request', 'Choose the key to sign with.')
+    }
+    if (options.bump !== 'none') {
+      const { version } = await readIdentity(project.folder)
+      const next = bumpVersion(version, options.bump)
+      await setVersion(project.folder, next)
+      await this.#git(project.folder, await this.#discover(false)).commitAll(`Release ${next}`)
+    }
+    const built = await this.#buildFolder(project.folder)
+    if (!built.ok || !built.packageBytes) {
+      throw new StudioProblem('app_package_rejected', `The build failed:\n${built.log.split('\n').slice(-20).join('\n')}`)
+    }
+    const signature = await releases.sign(built.packageBytes, options.signing, options.keyHandle, options.passphrase)
+    const inspection = await releases.inspect(built.packageBytes, signature)
+    this.#prepared.set(projectId, { digest: inspection.digest, bytes: built.packageBytes, signature, version: inspection.version })
+    return { inspection, digest: inspection.digest, version: inspection.version, signed: signature !== null }
+  }
+
+  /** Installs the package the user consented to in the install dialog. */
+  async installRelease (projectId: string, digest: string, caller: ReleaseCaller): Promise<AppInstallation> {
+    const prepared = this.#prepared.get(projectId)
+    if (prepared?.digest !== digest) {
+      throw new StudioProblem('not_found', 'Build and check the app again: this package is no longer prepared.')
+    }
+    const installed = await this.#requireReleases().install(prepared.bytes, prepared.signature, caller)
+    this.#prepared.delete(projectId)
+    return installed
+  }
+
+  /** Saves the checked package, and its signature, where the user chose (plan B8). */
+  async exportRelease (projectId: string, digest: string, fileHandle: string): Promise<{ fileName: string }> {
+    const prepared = this.#prepared.get(projectId)
+    if (prepared?.digest !== digest) {
+      throw new StudioProblem('not_found', 'Build and check the app again: this package is no longer prepared.')
+    }
+    return { fileName: await this.#requireReleases().save(prepared.bytes, prepared.signature, fileHandle) }
+  }
+
+  /** This computer's key, made on first use, to give its public key to other Studios (plan B7). */
+  async machineKey (): Promise<{ publicKey: string, fingerprint: string }> {
+    return (await this.#requireReleases().machineKey(true))!
+  }
+
   /** Undoes a turn and the turns after it (plan A5), and tells the agent with the next prompt. */
   async undo (conversationId: string, commit: string): Promise<void> {
     const conversation = await this.conversation(conversationId)
@@ -341,6 +423,13 @@ export class AgentManager {
       },
     })
     return conversation
+  }
+
+  #requireReleases (): ReleaseInstaller {
+    if (!this.#options.releases) {
+      throw new StudioProblem('unsupported_operation', 'Installing apps needs apps to be enabled (STUDIO_APPS_URL).')
+    }
+    return this.#options.releases
   }
 
   #requirePreviews (): ProjectPreviews {

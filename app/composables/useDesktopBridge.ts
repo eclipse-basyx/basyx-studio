@@ -1,5 +1,5 @@
 import type { FileGrant } from '#shared/contract'
-import type { StackFileKind } from '#shared/file-grant-kinds'
+import type { FileGrantKind } from '#shared/file-grant-kinds'
 
 /** The native bridge exposed by the Electron preload (electron/preload.ts). */
 export interface DesktopBridge {
@@ -7,7 +7,7 @@ export interface DesktopBridge {
   chooseAasxFiles: () => Promise<FileGrant[]>
   chooseSaveLocation: (suggestedName: string) => Promise<FileGrant | null>
   /** Files for local BaSyx instances (ADR 0033); empty when cancelled. Absent in older desktop builds. */
-  chooseStackFiles?: (kind: StackFileKind, suggestedName?: string) => Promise<FileGrant[]>
+  chooseStackFiles?: (kind: FileGrantKind, suggestedName?: string) => Promise<FileGrant[]>
 }
 
 declare global {

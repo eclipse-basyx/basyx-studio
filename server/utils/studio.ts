@@ -7,6 +7,7 @@ import { useRuntimeConfig } from 'nuxt/server'
 import { apiBasePath } from '#shared/contract'
 import { agentCatalog } from '../lib/agents/catalog'
 import { AgentManager, defaultProjectsDir } from '../lib/agents/manager'
+import { findMachineKey, trustMachineKey } from '../lib/app-projects/keys'
 import { DatabaseProjectStore } from '../lib/app-projects/store'
 import { embedTokenKey } from '../lib/apps/embeds'
 import { reconcileManagedPackages } from '../lib/apps/packages'
@@ -35,7 +36,7 @@ import { WorkspaceManager } from '../lib/workspaces/manager'
 import { loadAppTemplate } from '../nitro/app-template'
 import { loadBundledApps } from '../nitro/bundled-apps'
 import { loadMigrationsFromAssets } from '../nitro/migration-assets'
-import { previewInstaller } from './app-builder'
+import { previewInstaller, releaseInstaller } from './app-builder'
 
 export interface StudioRuntime extends StudioDeps {
   broker: CredentialBroker
@@ -145,6 +146,14 @@ async function initialize (): Promise<StudioRuntime> {
       // Apps before infrastructures: declared settings values are checked against them (ADR 0048).
       await installManagedPackages(deps)
       await installBundledApps(deps)
+      if (config.appBuilder) {
+        // The App Builder's key signs this computer's apps (ADR 0054); without
+        // it here, their installations would read as revoked.
+        const machineKey = await findMachineKey(deps)
+        if (machineKey) {
+          trustMachineKey(config.apps.trustStore, machineKey.publicKey)
+        }
+      }
       await reportRevokedApps(deps)
     }
     const declared = await reconcileManagedInfrastructures(deps, parseInfrastructureSources(config.managedInfrastructures))
@@ -197,6 +206,7 @@ async function initialize (): Promise<StudioRuntime> {
           template: loadAppTemplate,
           studioVersion: String(runtimeConfig.version ?? '0.0.0'),
           previews: previewInstaller({ ...deps, backends }, 'app-builder'),
+          releases: releaseInstaller({ ...deps, backends, fileGrants }),
           // The adapters are started as scripts, never imported; Nitro's file
           // tracing copies them into the server output (nuxt.config.ts).
           agents: agentCatalog(createRequire(import.meta.url).resolve),

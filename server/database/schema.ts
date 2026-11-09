@@ -224,3 +224,16 @@ export const appBuilderEvents = pgTable('app_builder_events', {
   at: timestamp('at', { withTimezone: true }).notNull(),
   event: jsonb('event').$type<ConversationEvent>().notNull(),
 }, table => [primaryKey({ columns: [table.conversationId, table.seq] })])
+
+/**
+ * The App Builder's signing key of this computer (ADR 0054, plan B7): it
+ * signs the apps this computer builds, and Studio trusts it for `local.*`.
+ * The private key is encrypted with Studio's data key.
+ */
+export const machineSigningKeys = pgTable('machine_signing_keys', {
+  id: text('id').primaryKey(),
+  publicKey: text('public_key').notNull(),
+  privateKeyCiphertext: text('private_key_ciphertext').notNull(),
+  fingerprint: text('fingerprint').notNull(),
+  ...timestamps,
+})

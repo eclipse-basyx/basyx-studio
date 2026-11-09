@@ -10,7 +10,7 @@ import { join } from 'node:path'
 
 import { app, BrowserWindow, dialog, ipcMain, protocol, safeStorage, session, shell } from 'electron'
 import packageJson from '../package.json'
-import { isSaveKind, isStackFileKind, stackFileExtensions } from '../shared/file-grant-kinds'
+import { fileGrantExtensions, isFileGrantKind, isSaveKind } from '../shared/file-grant-kinds'
 
 const launchSecretHeader = 'X-Studio-Launch-Secret'
 const brokerSecretHeader = 'X-Studio-Broker-Secret'
@@ -379,21 +379,22 @@ function registerDesktopBridge (): void {
 
 /**
  * Native dialogs for local BaSyx instances (ADR 0033): AASX files to load,
- * an export to import, and where to save an export. Each chosen path becomes
- * a single-use grant; the renderer only sees the handles.
+ * an export to import, and where to save an export; and for the App Builder
+ * (ADR 0054): a signing key, and where to save a package. Each chosen path
+ * becomes a single-use grant; the renderer only sees the handles.
  */
 async function chooseStackFiles (event: Electron.IpcMainInvokeEvent, kind: unknown, suggestedName: unknown): Promise<StudioFileGrantResult[]> {
   if (!isTrustedSender(event)) {
     throw new Error('Untrusted sender.')
   }
-  if (!isStackFileKind(kind)) {
+  if (!isFileGrantKind(kind)) {
     throw new Error('Unknown file kind.')
   }
   const window = BrowserWindow.fromWebContents(event.sender)
   const grant = (path: string, purpose: 'open' | 'save') => callService<StudioFileGrantResult>('desktop/file-grants', { method: 'POST', body: { path, purpose, kind } })
-  const extensions = [...stackFileExtensions[kind]]
+  const extensions = [...fileGrantExtensions[kind]]
   if (isSaveKind(kind)) {
-    const name = typeof suggestedName === 'string' && suggestedName ? suggestedName.replaceAll(/[/\\:*?"<>|]/g, '_').slice(0, 200) : 'basyx'
+    const name = typeof suggestedName === 'string' && suggestedName ? suggestedName.replaceAll(/[/\\:*?"<>|]/g, '_').slice(0, 200) : (kind === 'app-package' ? 'app' : 'basyx')
     const extension = extensions[0]!
     const options = { defaultPath: `${name}.${extension}`, filters: [{ name: extension.toUpperCase(), extensions }] }
     const result = window ? await dialog.showSaveDialog(window, options) : await dialog.showSaveDialog(options)
@@ -405,7 +406,7 @@ async function chooseStackFiles (event: Electron.IpcMainInvokeEvent, kind: unkno
   }
   const options: Electron.OpenDialogOptions = kind === 'stack-aasx'
     ? { properties: ['openFile', 'multiSelections'], filters: aasxFilters }
-    : { properties: ['openFile'], filters: [{ name: 'BaSyx setup', extensions }] }
+    : { properties: ['openFile'], filters: [{ name: kind === 'signing-key' ? 'Private key (PEM)' : 'BaSyx setup', extensions }] }
   const result = window ? await dialog.showOpenDialog(window, options) : await dialog.showOpenDialog(options)
   if (result.canceled) {
     return []

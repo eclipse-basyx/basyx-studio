@@ -1,7 +1,7 @@
 // The renderer's only native bridge (SEC-009). Its calls let the user pick
 // files in a native dialog and return opaque, single-use handles; the
 // renderer never sees a native path.
-import type { StackFileKind } from '../shared/file-grant-kinds'
+import type { FileGrantKind } from '../shared/file-grant-kinds'
 import { contextBridge, ipcRenderer } from 'electron'
 
 export interface StudioFileGrant {
@@ -14,7 +14,7 @@ export interface StudioDesktopBridge {
   chooseAasxFiles: () => Promise<StudioFileGrant[]>
   chooseSaveLocation: (suggestedName: string) => Promise<StudioFileGrant | null>
   /** Files for local BaSyx instances (ADR 0033); empty when cancelled. */
-  chooseStackFiles: (kind: StackFileKind, suggestedName?: string) => Promise<StudioFileGrant[]>
+  chooseStackFiles: (kind: FileGrantKind, suggestedName?: string) => Promise<StudioFileGrant[]>
 }
 
 const bridge: StudioDesktopBridge = {

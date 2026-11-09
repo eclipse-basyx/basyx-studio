@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, extname, isAbsolute, resolve } from 'node:path'
 import { z } from 'zod'
 import { appsHostOf, installationPlaceholder } from './apps/origins'
-import { emptyTrustStore, parseTrustStore, TrustStoreError } from './apps/trust'
+import { parseTrustStore, TrustStoreError } from './apps/trust'
 import { parseOutboundProxy, ProxyConfigurationError } from './network/proxy'
 
 const csv = z
@@ -195,7 +195,8 @@ function readInfrastructureSources (file: string | undefined, inline: string | u
 
 function readTrustStore (file: string | undefined): TrustStore {
   if (!file) {
-    return emptyTrustStore
+    // A store of its own: the App Builder adds this computer's key to it (ADR 0054).
+    return { publishers: [] }
   }
   let text: string
   try {

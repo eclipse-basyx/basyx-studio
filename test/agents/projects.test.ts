@@ -122,6 +122,7 @@ function setup () {
     open: ({ folder }) => ({ target: fakeAgent(folder, fake), stop: () => {}, exited: new Promise(() => {}) }),
     idleStopMs: 0,
     previews: null,
+    releases: null,
   })
   return { root, store, fake, manager }
 }

@@ -21,6 +21,14 @@
         @update:model-value="value => emit('set-model', value)"
       />
 
+      <v-btn-secondary
+        data-test="app-builder-install-open"
+        :disabled="busy"
+        prepend-icon="mdi-package-variant-closed-plus"
+        :text="t('install.action')"
+        @click="emit('install')"
+      />
+
       <v-btn
         v-tooltip="t('preview.toggle')"
         :active="previewOpen"
@@ -193,6 +201,7 @@
     'undo': [commit: string]
     'delete': []
     'toggle-preview': []
+    'install': []
   }>()
   const { t } = useI18n()
 
