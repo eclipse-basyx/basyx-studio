@@ -52,13 +52,13 @@
     "monaco-editor": "^0.57.0",
     "typescript": "^6.0.3",
     "vite": "^8.3.6",
-    "vue": "^3.5.44",
+    "vue": "^3.5.45",
     "vue-tsc": "^3.3.12",
     "vuetify": "^4.2.6"
   },
   "peerDependencies": {
     "monaco-editor": "^0.57.0",
-    "vue": "^3.5.44",
+    "vue": "^3.5.45",
     "vuetify": "^4.2.6"
   },
   "peerDependenciesMeta": {
