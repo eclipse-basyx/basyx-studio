@@ -130,6 +130,7 @@ Register `<public URL>/api/studio/v1/auth/callback` as redirect URI and
 | `STUDIO_APPS_ALLOW_UNSIGNED` | `false` | Developer-mode installs of unsigned packages. A signature that is present must still verify. |
 | `STUDIO_APPS_ALLOW_INSTALL` | `true` | `false` keeps administrators from installing, updating or removing apps; bundled and managed apps stay. |
 | `STUDIO_APP_PACKAGES` | none | Comma-separated `.zip` files or directories of them, installed and updated at startup ([below](#managed-packages)). |
+| `STUDIO_APP_PROJECTS_DIR` | `~/Documents/BaSyx Studio/Apps` | Desktop app only: where the App Builder creates new projects ([ADR 0054](../adr/0054-app-builder-with-coding-agents.md)). |
 
 ### Branding, legal links and switches
 

@@ -30,7 +30,9 @@ function defaultDirs () {
   const appDirs = readdirSync(apps, { withFileTypes: true })
     .filter(entry => entry.isDirectory())
     .map(entry => join(apps, entry.name, 'ui', 'src', 'locales'))
-  return [join(root, 'i18n', 'locales'), join(root, 'packages', 'file-viewer', 'src', 'locales'), join(root, 'packages', 'studio-app-kit', 'src', 'locales'), ...appDirs].filter(dir => existsSync(dir))
+  // Native pages with catalogues of their own (ADR 0054).
+  const pageDirs = [join(root, 'app', 'components', 'app-builder', 'locales')]
+  return [join(root, 'i18n', 'locales'), join(root, 'packages', 'file-viewer', 'src', 'locales'), join(root, 'packages', 'studio-app-kit', 'src', 'locales'), ...appDirs, ...pageDirs].filter(dir => existsSync(dir))
 }
 
 /**

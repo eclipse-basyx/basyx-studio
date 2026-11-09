@@ -5,12 +5,21 @@
         <div class="d-flex align-center ga-3 flex-grow-1 overflow-hidden">
           <v-progress-circular
             v-if="item.status === 'in_progress' || item.status === 'pending'"
+            :aria-label="t('tool.running')"
             indeterminate
+            role="img"
             size="18"
             width="2"
           />
 
-          <v-icon v-else :color="item.status === 'failed' ? 'error' : 'success'" :icon="item.status === 'failed' ? 'mdi-close-circle-outline' : 'mdi-check-circle-outline'" />
+          <v-icon
+            v-else
+            :aria-label="item.status === 'failed' ? t('tool.failed') : t('tool.completed')"
+            :color="item.status === 'failed' ? 'error' : 'success'"
+            :icon="item.status === 'failed' ? 'mdi-close-circle-outline' : 'mdi-check-circle-outline'"
+            role="img"
+          />
+
           <v-icon color="medium-emphasis" :icon="icons[item.toolKind]" />
 
           <span class="text-body-medium text-truncate">

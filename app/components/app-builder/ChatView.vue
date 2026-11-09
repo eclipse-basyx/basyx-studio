@@ -130,13 +130,16 @@
     </div>
 
     <div class="px-4 pb-4 pt-2">
-      <div v-if="status" class="d-flex align-center ga-2 text-body-small text-medium-emphasis mb-2">
-        <v-progress-circular v-if="transcript.state === 'working' || transcript.state === 'starting' || !connected" indeterminate size="14" width="2" />
-        <span>{{ status }}</span>
+      <!-- Read out as it changes; the transcript itself is not, so streamed text does not flood a screen reader. -->
+      <div aria-live="polite" class="d-flex align-center ga-2 text-body-small text-medium-emphasis mb-2" role="status">
+        <v-progress-circular v-if="status && (transcript.state === 'working' || transcript.state === 'starting' || !connected)" indeterminate size="14" width="2" />
+        <span v-if="status">{{ status }}</span>
+        <span v-else class="d-sr-only">{{ announcement }}</span>
       </div>
 
       <v-textarea
         v-model="draft"
+        :aria-label="t('chat.placeholder')"
         auto-grow
         data-test="app-builder-prompt"
         :disabled="transcript.state === 'closed'"
@@ -237,6 +240,14 @@
   function fixPrompt (log: string | null): string {
     return `Studio's build of this app failed (pnpm install, pnpm build, studio-app pack). Fix the cause, then run pnpm typecheck, pnpm test and pnpm build again.\n\n\`\`\`\n${(log ?? '').split('\n').slice(-80).join('\n')}\n\`\`\``
   }
+
+  /** What a screen reader hears when a turn ends. */
+  const announcement = ref('')
+  watch(() => props.transcript.state, (state, previous) => {
+    if (previous === 'working' && state === 'idle') {
+      announcement.value = t('chat.finished', { agent: props.agentName })
+    }
+  })
 
   function send () {
     if (!canSend.value) {

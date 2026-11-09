@@ -14,6 +14,7 @@ This directory is the central source of product, architecture, decision, and dev
 ## Product
 
 - [Requirements](requirements.md): traceable product capabilities, priorities, and non-goals
+- [App Builder](app-builder.md): build, preview and install apps by chatting with a coding agent in the desktop app
 
 ## Architecture
 

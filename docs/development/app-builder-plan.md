@@ -419,6 +419,19 @@ accessibility (keyboard, announced streaming and status), docs
 (`docs/architecture/app-platform.md`, user guide), ADR 0054 to *Accepted*
 once the platforms are qualified.
 
+*Done on macOS, 2026-11-09, except the platforms.* The App Builder's texts
+are in all seven locales, and `pnpm i18n:check` covers its catalogue. The
+chat's status line is a live region and announces when the agent has
+finished; the transcript is not live, so streamed text does not flood a
+screen reader; permission requests are alerts; tool-call states have text;
+the message box has a label; Enter sends and Shift+Enter starts a new line.
+Docs: [the user guide](../app-builder.md), the App Builder section of
+[app-platform.md](../architecture/app-platform.md), and
+`STUDIO_APP_PROJECTS_DIR` in the [configuration reference](../deployment/README.md).
+
+ADR 0054 stays *Proposed*: Windows and Linux, and a packaged build (with the
+adapters traced into it), are not qualified yet.
+
 ## Tests
 
 - Unit (`test/`): policy decisions for paths and commands (inside, outside,

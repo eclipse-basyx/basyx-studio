@@ -4,7 +4,6 @@
     "subtitle": "Beschreibe eine App, und ein Coding-Agent baut sie auf diesem Computer."
   },
   "chats": {
-    "heading": "Chats",
     "untitled": "Neuer Chat",
     "cancel": "Abbrechen",
     "delete": "Chat löschen",
@@ -15,7 +14,6 @@
     "heading": "Agenten",
     "ready": "Bereit",
     "missing": "Nicht installiert",
-    "signedOut": "Abgemeldet",
     "error": "Prüfung fehlgeschlagen",
     "install": "{agent} holen",
     "signIn": "Im Terminal anmelden: {command}",
@@ -36,7 +34,8 @@
     "emptyTitle": "Was sollen wir bauen?",
     "emptyText": "Beschreibe, was die App tun soll, oder die gewünschte Änderung.",
     "thinking": "Denkt nach",
-    "inactive": "Der Agent startet mit deiner nächsten Nachricht."
+    "inactive": "Der Agent startet mit deiner nächsten Nachricht.",
+    "finished": "{agent} ist fertig."
   },
   "tool": {
     "read": "Lesen",
@@ -49,13 +48,12 @@
     "fetch": "Abrufen",
     "switch_mode": "Modus wechseln",
     "other": "Werkzeug",
-    "pending": "Wartet",
-    "in_progress": "Läuft",
-    "completed": "Fertig",
     "failed": "Fehlgeschlagen",
     "output": "Ausgabe",
     "changes": "Änderungen",
-    "newFile": "Neue Datei"
+    "newFile": "Neue Datei",
+    "running": "Läuft",
+    "completed": "Fertig"
   },
   "plan": {
     "title": "Plan"
