@@ -100,6 +100,9 @@ export class Conversation {
         this.#model = event.model
       }
     }
+    if (options.history) {
+      this.#settleInterruptedTurn()
+    }
   }
 
   get state (): ConversationState {
@@ -326,6 +329,41 @@ export class Conversation {
       this.#emit({ type: 'notice', text: `${this.definition.name} cannot continue earlier sessions, so it starts a new one in the same folder. It does not remember this chat.` })
     }
     return await connection.agent.request(methods.agent.session.new, { cwd: this.folder, mcpServers: [] })
+  }
+
+  /**
+   * A saved chat whose agent ended mid-turn (Studio restarted): its open
+   * permission requests have nobody to answer them, and its running tool
+   * calls will not finish. Settles them, so the chat shows what happened.
+   */
+  #settleInterruptedTurn (): void {
+    const approvals = new Map<string, Extract<ConversationEvent, { type: 'approval' }>>()
+    const tools = new Map<string, string>()
+    let working = false
+    for (const { event } of this.#events) {
+      if (event.type === 'approval') {
+        approvals.set(event.approvalId, event)
+      } else if (event.type === 'toolCall' && event.status) {
+        tools.set(event.toolCallId, event.status)
+      } else if (event.type === 'state') {
+        working = event.state === 'working' || event.state === 'starting'
+      }
+    }
+    for (const approval of approvals.values()) {
+      if (approval.state === 'pending') {
+        this.#emit({ ...approval, state: 'cancelled' })
+      }
+    }
+    for (const [toolCallId, status] of tools) {
+      if (status === 'pending' || status === 'in_progress') {
+        this.#emit({ type: 'toolCall', toolCallId, status: 'failed' })
+      }
+    }
+    if (working) {
+      this.#emit({ type: 'turnEnded', stopReason: 'cancelled' })
+      this.#emit({ type: 'notice', text: `Studio restarted while ${this.definition.name} was working, so the turn stopped. Send a message to go on; the agent continues its session.` })
+      this.#emit({ type: 'state', state: 'inactive', model: this.#model })
+    }
   }
 
   #stopProcess (): void {

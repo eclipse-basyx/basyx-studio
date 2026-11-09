@@ -160,6 +160,7 @@
   import type { AgentId, AppBuilderStatus, AppProject, ApprovalDecision, ConversationSummary } from '#shared/contract'
   import type { Transcript } from './transcript'
   import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowReactive } from 'vue'
+  import { StudioApiError } from '~/composables/useStudioApi'
   import AgentStatusList from './AgentStatusList.vue'
   import ChangesDialog from './ChangesDialog.vue'
   import ChatView from './ChatView.vue'
@@ -315,6 +316,15 @@
     answering.add(approvalId)
     if (!await succeeded(() => client.call('answerApproval', { conversationId, approvalId, decision }))) {
       answering.delete(approvalId)
+      // The agent no longer waits for it (its turn ended): the card says so.
+      if (error.value instanceof StudioApiError && error.value.code === 'not_found') {
+        error.value = null
+        for (const item of transcripts.get(conversationId)?.items ?? []) {
+          if (item.kind === 'approval' && item.id === approvalId) {
+            item.state = 'cancelled'
+          }
+        }
+      }
     }
   }
 

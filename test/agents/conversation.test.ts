@@ -193,4 +193,38 @@ describe('App Builder conversation over ACP (ADR 0054)', () => {
     expect(opened).toBe(2)
     expect(conversation.state).toBe('working')
   })
+
+  it('settles the turn of a saved chat that Studio interrupted', () => {
+    const at = '2026-11-09T00:00:00Z'
+    const history: ConversationEventEnvelope[] = [
+      { seq: 1, at, event: { type: 'state', state: 'idle', model: null } },
+      { seq: 2, at, event: { type: 'userMessage', text: 'Build it' } },
+      { seq: 3, at, event: { type: 'state', state: 'working', model: null } },
+      { seq: 4, at, event: { type: 'toolCall', toolCallId: 't1', kind: 'execute', status: 'completed' } },
+      { seq: 5, at, event: { type: 'toolCall', toolCallId: 't2', kind: 'execute', status: 'in_progress' } },
+      { seq: 6, at, event: { type: 'approval', approvalId: 'a1', toolCallId: 't2', title: 'pnpm i', kind: 'execute', command: 'pnpm i', paths: [], state: 'pending', denyEndsTurn: false } },
+    ]
+    const saved: ConversationEventEnvelope[] = []
+    const conversation = new Conversation({
+      projectId: 'p1',
+      definition: claude,
+      folder,
+      history,
+      open: () => {
+        throw new Error('not started')
+      },
+      hooks: { onEvent: envelope => saved.push(envelope) },
+    })
+    expect(conversation.state).toBe('inactive')
+    expect(saved.map(({ event }) => event.type === 'approval' ? `approval:${event.state}` : (event.type === 'toolCall' ? `toolCall:${event.toolCallId}:${event.status}` : event.type)))
+      .toEqual(['approval:cancelled', 'toolCall:t2:failed', 'turnEnded', 'notice', 'state'])
+    expect(saved.map(({ seq }) => seq)).toEqual([7, 8, 9, 10, 11])
+
+    // A chat that ended cleanly is left as it was.
+    const clean: ConversationEventEnvelope[] = []
+    new Conversation({ projectId: 'p1', definition: claude, folder, history: [history[0]!], open: () => {
+      throw new Error('not started')
+    }, hooks: { onEvent: envelope => clean.push(envelope) } })
+    expect(clean).toEqual([])
+  })
 })
