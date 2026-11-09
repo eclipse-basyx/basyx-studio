@@ -278,8 +278,9 @@ Consequences for the design (folded into ADR 0054):
 
 Not covered yet:
 
-- Windows and Linux, and the packaged app started from Finder, the Dock or
-  the Start menu (the spike used Electron's binary from `node_modules`).
+- Windows and Linux, and the packaged app started from the Start menu (the
+  spike used Electron's binary from `node_modules`; the packaged app on
+  macOS is checked under phase F).
 
 Claude was tested after `claude auth login`. A first run before that, with
 the CLI signed out, is where the sign-in finding comes from.
@@ -298,8 +299,8 @@ in-process ACP agent (`test/agents`). Conversations live in memory and end
 with the Studio Service, each in a scratch folder under
 `STUDIO_DATA_DIR/app-builder/scratch`; saved chats and projects are phase B.
 The page's texts are in English and German; the other locales fall back to
-English until phase F. Not yet checked: the adapters in a packaged build
-(`traceInclude` in `nuxt.config.ts`).
+English until phase F. The adapters in a packaged build (`traceInclude` in
+`nuxt.config.ts`) are checked under phase F.
 
 ### Phase B: projects
 
@@ -429,8 +430,20 @@ Docs: [the user guide](../app-builder.md), the App Builder section of
 [app-platform.md](../architecture/app-platform.md), and
 `STUDIO_APP_PROJECTS_DIR` in the [configuration reference](../deployment/README.md).
 
-ADR 0054 stays *Proposed*: Windows and Linux, and a packaged build (with the
-adapters traced into it), are not qualified yet.
+*Packaged app on macOS, 2026-11-09.* `pnpm build:electron:dir` puts both
+adapters, the ACP SDK and the Claude Agent SDK into
+`.output/server/node_modules` inside `app.asar` (about 5 MB, of a 33 MB
+`node_modules`), and the bundled apps' sources and the template into the
+server assets. Started with `open`, so with launchd's PATH and no shell
+environment, the packaged app found all three agents and `node`, `pnpm` and
+`git` through the login shell, copied the Digital Nameplate, ran a Claude
+turn and a Codex turn through their adapters from `app.asar` on Electron's
+Node, built the preview, and signed the app with this computer's key,
+checked and installed it. Codex starts with the model in the user's
+`~/.codex/config.toml`; a model the account may not use ends the turn with
+Codex's own message, and the model menu switches it.
+
+ADR 0054 stays *Proposed*: Windows and Linux are not qualified yet.
 
 ## Tests
 
