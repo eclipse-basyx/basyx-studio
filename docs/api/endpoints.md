@@ -320,10 +320,14 @@ answers `unsupported_operation`.
 | Operation | Purpose |
 | --- | --- |
 | `getStatus` | Which agent CLIs are installed and signed in, and where node, pnpm and git are (`refresh: true` checks again) |
-| `listConversations`, `startConversation`, `closeConversation` | Chats; each starts its agent in a folder of its own |
-| `sendPrompt`, `cancelTurn` | Starts a turn, or stops it; the turn's progress arrives as events |
+| `listProjects` | The projects (an app's sources in a git folder on this computer), each with its chats |
+| `createProject` | Creates a project from the template under the projects folder, commits it, and starts a chat with the first prompt |
+| `removeProject`, `openFolder` | Removes a project from Studio, with `deleteFolder: true` also its folder; opens the folder in the file manager |
+| `startConversation`, `deleteConversation` | A new chat in a project's folder with one agent; deletes a chat and its history (the files stay) |
+| `sendPrompt`, `cancelTurn` | Starts a turn (and a saved chat's agent, resuming its session), or stops it; the turn's progress arrives as events |
 | `answerApproval` | `allowOnce`, `allowInChat` or `deny` for a permission request that Studio's policy did not answer |
 | `setModel` | Switches the agent's model, where it offers a choice |
+| `getChanges`, `undoTurn` | A turn's commit as a patch; undoes a turn and the ones after it in a new commit |
 
 `GET /app-builder/conversations/{conversationId}/events` streams a
 conversation's events as Server-Sent Events, each with its number as `id`;
