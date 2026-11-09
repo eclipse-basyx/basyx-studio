@@ -35,6 +35,7 @@ import { WorkspaceManager } from '../lib/workspaces/manager'
 import { loadAppTemplate } from '../nitro/app-template'
 import { loadBundledApps } from '../nitro/bundled-apps'
 import { loadMigrationsFromAssets } from '../nitro/migration-assets'
+import { previewInstaller } from './app-builder'
 
 export interface StudioRuntime extends StudioDeps {
   broker: CredentialBroker
@@ -195,6 +196,7 @@ async function initialize (): Promise<StudioRuntime> {
           store: new DatabaseProjectStore(deps.db),
           template: loadAppTemplate,
           studioVersion: String(runtimeConfig.version ?? '0.0.0'),
+          previews: previewInstaller({ ...deps, backends }, 'app-builder'),
           // The adapters are started as scripts, never imported; Nitro's file
           // tracing copies them into the server output (nuxt.config.ts).
           agents: agentCatalog(createRequire(import.meta.url).resolve),

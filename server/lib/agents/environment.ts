@@ -13,10 +13,10 @@ export interface CommandResult {
   stderr: string
 }
 
-export type RunCommand = (file: string, args: string[], options: { env: NodeJS.ProcessEnv, timeoutMs: number }) => Promise<CommandResult>
+export type RunCommand = (file: string, args: string[], options: { env: NodeJS.ProcessEnv, timeoutMs: number, cwd?: string }) => Promise<CommandResult>
 
-export const runCommand: RunCommand = (file, args, { env, timeoutMs }) => new Promise(resolve => {
-  execFile(file, args, { env, timeout: timeoutMs, windowsHide: true, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
+export const runCommand: RunCommand = (file, args, { env, timeoutMs, cwd }) => new Promise(resolve => {
+  execFile(file, args, { env, cwd, timeout: timeoutMs, windowsHide: true, maxBuffer: 16 * 1024 * 1024 }, (error, stdout, stderr) => {
     const code = error ? (typeof error.code === 'number' ? error.code : null) : 0
     resolve({ code, stdout: String(stdout), stderr: String(stderr) })
   })

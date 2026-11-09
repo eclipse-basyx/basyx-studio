@@ -342,6 +342,25 @@ picker, consent on permission changes.
 Done when each turn's result is visible in the pane within seconds of the
 build, and preview apps appear nowhere else in Studio.
 
+*Built on macOS, 2026-11-09.* After every turn that changed files, Studio
+runs `pnpm install` (only when `package.json` or the lockfile is newer than
+`node_modules`), `pnpm build` and `pnpm exec studio-app pack` in the folder
+(`server/lib/app-projects/build.ts`); the chat shows the build, and a failed
+one offers *Ask the agent to fix it* with the end of its log. The package
+installs as `<appId>.preview`, flagged `preview` (migration
+`0011_app_previews`), unsigned, with the checks of an upload but without
+version rules, so it never replaces the app and follows the folder. Previews
+are left out of `listActiveInstallations` (contributions, `openView`,
+`embedView`) and of the *Apps* list. The pane (`PreviewPane.vue`) asks first,
+and again when a build adds permissions, origins, sandbox features,
+connections or a backend; it shows a module or submodel view on a target,
+shell and submodel the user picks. AAS Clicker built in about 6 seconds.
+
+Open: the build state and a preview waiting for the OK live in memory, so
+after a restart the pane says *Not built* until the next build; settings and
+connection bindings are not yet copied from the installed app (B4); backends
+of previews are not tried yet.
+
 ### Phase D: install and signing
 
 Install dialog, version bump, unsigned and signed installs, machine key and

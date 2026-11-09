@@ -328,6 +328,7 @@ answers `unsupported_operation`.
 | `answerApproval` | `allowOnce`, `allowInChat` or `deny` for a permission request that Studio's policy did not answer |
 | `setModel` | Switches the agent's model, where it offers a choice |
 | `getChanges`, `undoTurn` | A turn's commit as a patch; undoes a turn and the ones after it in a new commit |
+| `getPreview`, `buildPreview`, `approvePreview` | A project's last build and its preview installation (`<appId>.preview`, shown only in the App Builder); builds it now; installs a build that waited for the user's OK on new permissions |
 
 `GET /app-builder/conversations/{conversationId}/events` streams a
 conversation's events as Server-Sent Events, each with its number as `id`;

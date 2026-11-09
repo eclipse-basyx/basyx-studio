@@ -119,5 +119,41 @@
     "modified": "changed",
     "deleted": "deleted",
     "renamed": "renamed"
+  },
+  "build": {
+    "running": "Studio is building the app…",
+    "failed": "The build failed",
+    "log": "Build log",
+    "fix": "Ask the agent to fix it",
+    "succeeded": "Built. The preview shows the new version.",
+    "waitsForConsent": "Built. The preview waits for your OK in the preview pane."
+  },
+  "preview": {
+    "title": "Preview",
+    "toggle": "Show or hide the preview",
+    "rebuild": "Build again",
+    "close": "Hide the preview",
+    "consentFirst": "Allow the preview",
+    "consentChanged": "The new version asks for more",
+    "consentText": "The preview runs on the target you choose, with your rights, like an installed app.",
+    "permissions": "It asks for",
+    "added": "New since the last preview",
+    "allow": "Allow and show",
+    "building": "Studio is building the app…",
+    "none": "No preview yet. It appears after the agent's next change, or build it now.",
+    "show": "Show",
+    "target": "Target",
+    "chooseShell": "Choose a shell",
+    "submodel": "Submodel",
+    "noSubmodel": "This shell has no submodel for this view.",
+    "needsTarget": "Choose a target to run the app on.",
+    "needsShell": "Choose a shell for this part of the app.",
+    "needsSubmodel": "Choose a submodel this view applies to."
+  },
+  "previewBuild": {
+    "none": "Not built",
+    "running": "Building",
+    "succeeded": "Built",
+    "failed": "Build failed"
   }
 }

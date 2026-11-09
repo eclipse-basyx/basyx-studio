@@ -349,8 +349,46 @@ export async function getInstallation (deps: Pick<StudioDeps, 'db'>, id: string)
 }
 
 /** The installations whose files may be served and whose contributions are offered: all but revoked ones (ADR 0044). */
+/** The installations Studio shows and calls: not revoked, and not an App Builder preview (ADR 0054). */
 export async function listActiveInstallations (deps: Pick<StudioDeps, 'db' | 'config'>): Promise<AppInstallationRecord[]> {
-  return (await listInstallations(deps)).filter(record => !installationTrust(record, deps.config.apps.trustStore).revoked)
+  return (await listInstallations(deps)).filter(record => !record.preview && !installationTrust(record, deps.config.apps.trustStore).revoked)
+}
+
+/** The App Builder's preview installed under `previewAppId`, if there is one. */
+export async function findPreviewApp (deps: Pick<StudioDeps, 'db'>, previewAppId: string): Promise<AppInstallationRecord | null> {
+  const [record] = await deps.db.select().from(appInstallations).where(eq(appInstallations.appId, previewAppId))
+  return record?.preview ? record : null
+}
+
+/**
+ * Installs or replaces the App Builder's preview of a project's app
+ * (ADR 0054, plan B3): the package under `previewAppId`, unsigned as in
+ * developer mode, with the checks of an upload except signatures and
+ * versions, since Studio built it from the project's folder itself. The
+ * user confirmed its permissions in the preview pane.
+ */
+export async function installPreviewApp (deps: StudioDeps, bytes: Uint8Array, previewAppId: string, installedBy: string): Promise<{ record: AppInstallationRecord, previous: AppInstallationRecord | null }> {
+  requireAppsEnabled(deps)
+  if (!deps.config.apps.allowUnsigned) {
+    throw new StudioProblem('app_unsigned_disabled', 'App Builder previews install unsigned, as in developer mode; set STUDIO_APPS_ALLOW_UNSIGNED=true.')
+  }
+  const read = readAppPackage(bytes, deps.config.deploymentMode)
+  const pkg = { ...read, manifest: { ...read.manifest, id: previewAppId } }
+  const reserved = pkg.manifest.permissions.filter(permission => (bundledOnlyPermissions as readonly string[]).includes(permission))
+  if (reserved.length > 0) {
+    throw new StudioProblem('app_package_rejected', `${reserved.join(', ')} is reserved for the apps shipped with Studio (ADR 0033).`)
+  }
+  checkSandbox(deps.config, pkg.manifest, { publisher: null, developerMode: true })
+  return await deps.db.transaction(async tx => {
+    await lockAppId(tx, previewAppId)
+    const [existing] = await tx.select().from(appInstallations).where(eq(appInstallations.appId, previewAppId))
+    if (existing && !existing.preview) {
+      throw new StudioProblem('app_already_installed', `${previewAppId} is installed as an app of its own, so Studio does not replace it with a preview.`)
+    }
+    const written = await writeInstallation(tx, existing?.id ?? newInstallationId(), existing !== undefined, pkg, sourceOf(null, 'unsigned', { bundled: false, managed: false, installedBy }))
+    const [record] = await tx.update(appInstallations).set({ preview: true }).where(eq(appInstallations.id, written.id)).returning()
+    return { record: record!, previous: existing ?? null }
+  })
 }
 
 /** Removes the installation and every blob no other installation uses. */

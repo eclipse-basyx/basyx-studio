@@ -90,6 +90,7 @@
           :answering="answering"
           :connected="connected.get(active.conversation.id) ?? true"
           :conversation="active.conversation"
+          :preview-open="previewOpen"
           :project-name="active.project.name"
           :transcript="activeTranscript"
           @answer="(approvalId, decision) => answer(active!.conversation.id, approvalId, decision)"
@@ -98,10 +99,11 @@
           @set-model="value => setModel(active!.conversation.id, value)"
           @show-changes="commit => showChanges(active!.project.id, commit)"
           @stop="stop(active!.conversation.id)"
+          @toggle-preview="previewOpen = !previewOpen"
           @undo="commit => undoing = { conversationId: active!.conversation.id, commit }"
         />
 
-        <div v-else class="d-flex flex-column align-center justify-center flex-grow-1 pa-6 text-center">
+        <div v-else class="d-flex flex-column align-center justify-center flex-grow-1 pa-6 text-center" data-test="app-builder-welcome">
           <v-icon color="medium-emphasis" icon="mdi-creation-outline" size="48" />
           <div class="text-headline-small mt-3">{{ t('app.title') }}</div>
           <div class="text-body-medium text-medium-emphasis mt-1 mb-4">{{ t('app.subtitle') }}</div>
@@ -109,6 +111,10 @@
           <div v-else-if="status" class="text-body-medium text-medium-emphasis">{{ t('agents.noneReady') }}</div>
         </div>
       </div>
+
+      <v-sheet v-if="previewOpen && active" class="flex-shrink-0 border-s" width="45%">
+        <PreviewPane :build-seq="buildSeq" :project-id="active.project.id" @close="previewOpen = false" />
+      </v-sheet>
     </div>
 
     <NewAppDialog v-model="newApp" :agents="readyAgents" :busy="creating" @create="createApp" />
@@ -166,6 +172,7 @@
   import ChatView from './ChatView.vue'
   import { provideI18n } from './i18n'
   import NewAppDialog from './NewAppDialog.vue'
+  import PreviewPane from './PreviewPane.vue'
   import { applyEvent, emptyTranscript } from './transcript'
 
   // The App Builder (ADR 0054): apps on this computer, each a folder with a
@@ -187,6 +194,7 @@
   const followers = new Map<string, () => void>()
   const activeId = ref<string | null>(null)
   const newApp = ref(false)
+  const previewOpen = ref(true)
   const patch = ref<string | null>(null)
   const deleting = ref<string | null>(null)
   const undoing = ref<{ conversationId: string, commit: string } | null>(null)
@@ -203,6 +211,8 @@
     return null
   })
   const activeTranscript = computed(() => activeId.value ? transcripts.get(activeId.value) ?? null : null)
+  /** Changes with each finished build of the open chat, so the preview loads again. */
+  const buildSeq = computed(() => activeTranscript.value?.items.filter(item => item.kind === 'build' && item.state !== 'running').length ?? 0)
 
   function agentName (id: AgentId): string {
     return status.value?.agents.find(agent => agent.id === id)?.name ?? id

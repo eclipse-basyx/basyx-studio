@@ -119,5 +119,41 @@
     "modified": "geändert",
     "deleted": "gelöscht",
     "renamed": "umbenannt"
+  },
+  "build": {
+    "running": "Studio baut die App …",
+    "failed": "Der Build ist fehlgeschlagen",
+    "log": "Build-Protokoll",
+    "fix": "Den Agenten reparieren lassen",
+    "succeeded": "Gebaut. Die Vorschau zeigt die neue Version.",
+    "waitsForConsent": "Gebaut. Die Vorschau wartet in der Vorschau-Leiste auf dein OK."
+  },
+  "preview": {
+    "title": "Vorschau",
+    "toggle": "Vorschau ein- oder ausblenden",
+    "rebuild": "Erneut bauen",
+    "close": "Vorschau ausblenden",
+    "consentFirst": "Vorschau erlauben",
+    "consentChanged": "Die neue Version möchte mehr",
+    "consentText": "Die Vorschau läuft auf dem gewählten Ziel mit deinen Rechten, wie eine installierte App.",
+    "permissions": "Sie möchte",
+    "added": "Neu seit der letzten Vorschau",
+    "allow": "Erlauben und zeigen",
+    "building": "Studio baut die App …",
+    "none": "Noch keine Vorschau. Sie erscheint nach der nächsten Änderung des Agenten, oder baue sie jetzt.",
+    "show": "Zeigen",
+    "target": "Ziel",
+    "chooseShell": "Verwaltungsschale wählen",
+    "submodel": "Teilmodell",
+    "noSubmodel": "Diese Verwaltungsschale hat kein Teilmodell für diese Ansicht.",
+    "needsTarget": "Wähle ein Ziel, auf dem die App läuft.",
+    "needsShell": "Wähle eine Verwaltungsschale für diesen Teil der App.",
+    "needsSubmodel": "Wähle ein Teilmodell, für das diese Ansicht gilt."
+  },
+  "previewBuild": {
+    "none": "Nicht gebaut",
+    "running": "Wird gebaut",
+    "succeeded": "Gebaut",
+    "failed": "Build fehlgeschlagen"
   }
 }

@@ -22,6 +22,15 @@
       />
 
       <v-btn
+        v-tooltip="t('preview.toggle')"
+        :active="previewOpen"
+        :aria-label="t('preview.toggle')"
+        data-test="app-builder-toggle-preview"
+        icon="mdi-application-outline"
+        @click="emit('toggle-preview')"
+      />
+
+      <v-btn
         v-tooltip="t('chats.delete')"
         :aria-label="t('chats.delete')"
         data-test="app-builder-delete-chat"
@@ -84,6 +93,13 @@
             :item="item"
             @show="emit('show-changes', item.commit)"
             @undo="emit('undo', item.commit)"
+          />
+
+          <BuildItem
+            v-else-if="item.kind === 'build'"
+            :can-fix="['idle', 'inactive', 'failed'].includes(transcript.state)"
+            :item="item"
+            @fix="emit('send', fixPrompt(item.log))"
           />
 
           <v-alert v-else-if="item.kind === 'info'" density="compact" :text="item.text" type="info" />
@@ -152,6 +168,7 @@
   import type { Transcript } from './transcript'
   import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
   import ApprovalCard from './ApprovalCard.vue'
+  import BuildItem from './BuildItem.vue'
   import CheckpointItem from './CheckpointItem.vue'
   import { useI18n } from './i18n'
   import MarkdownText from './MarkdownText.vue'
@@ -162,6 +179,7 @@
     conversation: ConversationSummary
     projectName: string
     transcript: Transcript
+    previewOpen: boolean
     agentName: string
     connected: boolean
     answering: Set<string>
@@ -174,6 +192,7 @@
     'show-changes': [commit: string]
     'undo': [commit: string]
     'delete': []
+    'toggle-preview': []
   }>()
   const { t } = useI18n()
 
@@ -204,6 +223,11 @@
       }
     }
   })
+
+  /** The prompt that hands a failed build to the agent (plan B2). */
+  function fixPrompt (log: string | null): string {
+    return `Studio's build of this app failed (pnpm install, pnpm build, studio-app pack). Fix the cause, then run pnpm typecheck, pnpm test and pnpm build again.\n\n\`\`\`\n${(log ?? '').split('\n').slice(-80).join('\n')}\n\`\`\``
+  }
 
   function send () {
     if (!canSend.value) {

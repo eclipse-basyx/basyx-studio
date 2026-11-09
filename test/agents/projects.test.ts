@@ -121,6 +121,7 @@ function setup () {
     env: { HOME: root, PATH: process.env.PATH },
     open: ({ folder }) => ({ target: fakeAgent(folder, fake), stop: () => {}, exited: new Promise(() => {}) }),
     idleStopMs: 0,
+    previews: null,
   })
   return { root, store, fake, manager }
 }

@@ -1,8 +1,13 @@
 import type { AppBuilderOperation, AppBuilderOperationResults } from '#shared/contract'
 import type { AgentManager } from '../lib/agents/manager'
+import type { PreviewInstaller } from '../lib/app-projects/previews'
+import type { StudioDeps } from '../lib/deps'
 import type { StudioRuntime } from './studio'
 import type { z } from 'zod'
 import { appBuilderOperationSchemas } from '#shared/contract'
+import { contributionsFor } from '../lib/apps/contributions'
+import { readAppPackage } from '../lib/apps/package'
+import { findPreviewApp, installPreviewApp, removeInstallation } from '../lib/apps/store'
 import { StudioProblem } from '../lib/problem'
 
 /** The validated parameters of an operation, with their defaults applied. */
@@ -44,6 +49,9 @@ const handlers: { [O in AppBuilderOperation]: (params: Params<O>, agents: AgentM
     await agents.undo(conversationId, commit)
     return null
   },
+  getPreview: ({ projectId }, agents) => agents.preview(projectId),
+  buildPreview: ({ projectId }, agents) => agents.buildPreview(projectId),
+  approvePreview: ({ projectId }, agents) => agents.approvePreview(projectId),
 }
 
 export function isAppBuilderOperation (name: string): name is AppBuilderOperation {
@@ -62,4 +70,45 @@ export function requireAgents (studio: StudioRuntime): AgentManager {
 export async function performAppBuilderOperation<O extends AppBuilderOperation> (studio: StudioRuntime, operation: O, params: Params<O>): Promise<AppBuilderOperationResults[O]> {
   const handler = handlers[operation] as (params: Params<O>, agents: AgentManager) => Promise<AppBuilderOperationResults[O]> | AppBuilderOperationResults[O]
   return await handler(params, requireAgents(studio))
+}
+
+/**
+ * The App Builder's previews in Studio's app store (ADR 0054, plan B3):
+ * installed by the local user, unsigned, flagged as previews.
+ */
+export function previewInstaller (studio: StudioDeps & { backends: { stop: (id: string) => Promise<void> } | null }, installedBy: string): PreviewInstaller | null {
+  const baseUrl = studio.config.apps.baseUrl
+  if (!baseUrl) {
+    return null
+  }
+  return {
+    read: bytes => readAppPackage(bytes, studio.config.deploymentMode).manifest,
+    current: async id => {
+      const record = await findPreviewApp(studio, id)
+      return record ? { installationId: record.id, manifest: record.manifest } : null
+    },
+    install: async (bytes, id) => {
+      const { record, previous } = await installPreviewApp(studio, bytes, id, installedBy)
+      if (previous) {
+        await studio.backends?.stop(record.id)
+      }
+      return record.id
+    },
+    contributions: async id => {
+      const record = await findPreviewApp(studio, id)
+      if (!record) {
+        return null
+      }
+      // Every view, for the first semantic ID it applies to.
+      const semanticIds = [...new Set((record.manifest.contributes.submodelViews ?? []).flatMap(view => view.semanticIds.slice(0, 1)))]
+      const contributions = contributionsFor([record], baseUrl, semanticIds)
+      return { ...contributions, submodelViews: contributions.submodelViews.filter((view, index, all) => all.findIndex(other => other.id === view.id) === index) }
+    },
+    remove: async id => {
+      const record = await findPreviewApp(studio, id)
+      if (record) {
+        await removeInstallation(studio, record, installedBy)
+      }
+    },
+  }
 }

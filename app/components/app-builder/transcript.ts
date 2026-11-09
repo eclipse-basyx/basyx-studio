@@ -13,6 +13,7 @@ export type TranscriptItem
     | { kind: 'approval', id: string, title: string, toolKind: ToolCallKind, command: string | null, paths: string[], state: ApprovalState, denyEndsTurn: boolean }
     | { kind: 'notice', id: string, stopReason: string }
     | { kind: 'info', id: string, text: string }
+    | { kind: 'build', id: string, state: 'running' | 'succeeded' | 'failed', log: string | null, consentNeeded: boolean }
     | { kind: 'checkpoint', id: string, commit: string, message: string, files: ChangedFile[], undone: boolean }
     | { kind: 'error', id: string, message: string }
 
@@ -93,6 +94,10 @@ export function applyEvent (transcript: Transcript, { seq, event }: Conversation
       markUndone(items, event.commit)
       break
     }
+    case 'build': {
+      applyBuild(items, id, event)
+      break
+    }
     case 'notice': {
       items.push({ kind: 'info', id, text: event.text })
       break
@@ -133,6 +138,16 @@ function applyToolCall (items: TranscriptItem[], event: Extract<ConversationEven
   existing.locations = event.locations ?? existing.locations
   existing.diffs = event.diffs ?? existing.diffs
   existing.output = event.output ?? existing.output
+}
+
+/** A build's result replaces its "running" card. */
+function applyBuild (items: TranscriptItem[], id: string, event: Extract<ConversationEventEnvelope['event'], { type: 'build' }>): void {
+  const running = items.findLast((item): item is Extract<TranscriptItem, { kind: 'build' }> => item.kind === 'build' && item.state === 'running')
+  if (running && event.state !== 'running') {
+    Object.assign(running, { state: event.state, log: event.log, consentNeeded: event.consentNeeded })
+  } else {
+    items.push({ kind: 'build', id, state: event.state, log: event.log, consentNeeded: event.consentNeeded })
+  }
 }
 
 /** That turn's commit and every one after it. */

@@ -10,7 +10,7 @@ export default defineStudioHandler(async (event): Promise<AppInstallationList> =
   const studio = await useStudio()
   const { trustStore } = studio.config.apps
   return {
-    items: await Promise.all((await listInstallations(studio)).map(record => describeInstallation(studio, record))),
+    items: await Promise.all((await listInstallations(studio)).filter(record => !record.preview).map(record => describeInstallation(studio, record))),
     enabled: studio.config.apps.baseUrl !== null,
     allowUnsigned: studio.config.apps.allowUnsigned,
     trustedPublishers: trustStore.publishers.map(publisher => publisher.name),

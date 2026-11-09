@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { appContributionsSchema } from './apps'
 
 // The App Builder (ADR 0054): chats with coding agents that Studio runs
 // over the Agent Client Protocol on the desktop. The page sends operations;
@@ -177,6 +178,8 @@ export const conversationEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('checkpoint'), commit: z.string(), message: z.string(), files: z.array(changedFileSchema) }),
   /** The user undid this turn and the ones after it. */
   z.object({ type: z.literal('checkpointUndone'), commit: z.string() }),
+  /** Studio built the project after a turn (plan B1); a failed build has its log. */
+  z.object({ type: z.literal('build'), state: z.enum(['running', 'succeeded', 'failed']), log: z.string().nullable(), consentNeeded: z.boolean() }),
   /** Something Studio tells about the chat, such as a session that could not be resumed. */
   z.object({ type: z.literal('notice'), text: z.string() }),
   z.object({ type: z.literal('state'), state: conversationStateSchema, model: agentSettingSchema.nullable() }),
@@ -192,6 +195,31 @@ export const conversationEventEnvelopeSchema = z.object({
 export type ConversationEventEnvelope = z.infer<typeof conversationEventEnvelopeSchema>
 
 const conversationId = z.string().min(1).max(64)
+
+/** What the preview's package asks for that the user has not allowed yet (plan B4). */
+export const previewConsentSchema = z.object({
+  /** No preview was installed before. */
+  first: z.boolean(),
+  permissions: z.array(z.string()),
+  /** Permissions, origins, sandbox features and connections new since the last preview. */
+  added: z.array(z.string()),
+})
+export type PreviewConsent = z.infer<typeof previewConsentSchema>
+
+/** A project's preview (plan B3): the last build, and the preview installation's views and modules. */
+export const appPreviewSchema = z.object({
+  projectId: z.string(),
+  build: z.object({
+    state: z.enum(['none', 'running', 'succeeded', 'failed']),
+    log: z.string().nullable(),
+    at: z.string().nullable(),
+  }),
+  /** Set while a built package waits for the user to allow what it asks for. */
+  consent: previewConsentSchema.nullable(),
+  installationId: z.string().nullable(),
+  contributions: appContributionsSchema.nullable(),
+})
+export type AppPreview = z.infer<typeof appPreviewSchema>
 
 const projectId = z.string().min(1).max(64)
 const prompt = z.string().trim().min(1).max(100_000)
@@ -214,6 +242,9 @@ export const appBuilderOperationSchemas = {
   answerApproval: z.object({ conversationId, approvalId: z.string().min(1).max(64), decision: approvalDecisionSchema }),
   setModel: z.object({ conversationId, value: z.string().min(1).max(200) }),
   getChanges: z.object({ projectId, commit }),
+  getPreview: z.object({ projectId }),
+  buildPreview: z.object({ projectId }),
+  approvePreview: z.object({ projectId }),
   undoTurn: z.object({ conversationId, commit }),
 } as const
 export type AppBuilderOperation = keyof typeof appBuilderOperationSchemas
@@ -234,4 +265,7 @@ export interface AppBuilderOperationResults {
   /** The commit as a patch, and its files. */
   getChanges: { patch: string, files: ChangedFile[] }
   undoTurn: null
+  getPreview: AppPreview
+  buildPreview: AppPreview
+  approvePreview: AppPreview
 }

@@ -1,4 +1,5 @@
-import type { AgentId, AgentStatus, AppBuilderOperationResults, AppBuilderStatus, AppProject, ApprovalDecision, ConversationEvent, ConversationEventEnvelope, ConversationSummary, ToolStatus } from '#shared/contract'
+import type { AgentId, AgentStatus, AppBuilderOperationResults, AppBuilderStatus, AppPreview, AppProject, ApprovalDecision, ConversationEvent, ConversationEventEnvelope, ConversationSummary, ToolStatus } from '#shared/contract'
+import type { PreviewInstaller } from '../app-projects/previews'
 import type { ProjectRecord, ProjectStore } from '../app-projects/store'
 import type { TemplateFiles } from '../app-projects/template'
 import type { AgentDefinition } from './catalog'
@@ -9,7 +10,9 @@ import { existsSync, readdirSync } from 'node:fs'
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
+import { buildProject } from '../app-projects/build'
 import { ProjectGit } from '../app-projects/git'
+import { ProjectPreviews } from '../app-projects/previews'
 import { EventWriter } from '../app-projects/store'
 import { localAppId, scaffoldFiles, slugOf } from '../app-projects/template'
 import { StudioProblem } from '../problem'
@@ -43,6 +46,8 @@ export interface AgentManagerOptions {
   now?: () => Date
   /** Idle agents are stopped after this long; 0 keeps them. */
   idleStopMs?: number
+  /** Installs the projects' previews; `null` when apps are off. */
+  previews: PreviewInstaller | null
 }
 
 interface Discovery {
@@ -77,11 +82,15 @@ export class AgentManager {
   #discovery: Promise<Discovery> | null = null
   #lastDiscovery: Discovery | null = null
   #sweeper: ReturnType<typeof setInterval> | null = null
+  readonly #previews: ProjectPreviews | null
 
   constructor (options: AgentManagerOptions) {
     this.#options = options
     this.#store = options.store
     this.#writer = new EventWriter(options.store)
+    this.#previews = options.previews
+      ? new ProjectPreviews({ installer: options.previews, build: folder => this.#buildFolder(folder), now: options.now })
+      : null
     const idleStopMs = options.idleStopMs ?? 15 * 60_000
     if (idleStopMs > 0) {
       this.#sweeper = setInterval(() => this.#stopIdle(idleStopMs), Math.min(idleStopMs, 60_000))
@@ -137,9 +146,10 @@ export class AgentManager {
     return { project: { ...describeProject(project), conversations: [conversation] }, conversation }
   }
 
-  /** Removes a project from Studio; its folder only when asked (plan P6). */
+  /** Removes a project from Studio, with its preview; its folder only when asked (plan P6). */
   async removeProject (projectId: string, deleteFolder: boolean): Promise<void> {
     const project = await this.#project(projectId)
+    await this.#previews?.remove(project)
     for (const conversation of this.#conversations.values()) {
       if (conversation.projectId === projectId) {
         conversation.close()
@@ -228,6 +238,25 @@ export class AgentManager {
     return await this.#git(project.folder, await this.#discover(false)).show(commit)
   }
 
+  /** The project's last build and its preview installation (plan B3). */
+  async preview (projectId: string): Promise<AppPreview> {
+    return await this.#requirePreviews().describe(await this.#project(projectId))
+  }
+
+  /** Builds the project now and updates its preview. */
+  async buildPreview (projectId: string): Promise<AppPreview> {
+    const project = await this.#project(projectId)
+    await this.#requirePreviews().build(project)
+    return await this.#requirePreviews().describe(project)
+  }
+
+  /** Installs the preview that waits for the user's OK (plan B4). */
+  async approvePreview (projectId: string): Promise<AppPreview> {
+    const project = await this.#project(projectId)
+    await this.#requirePreviews().approve(project)
+    return await this.#requirePreviews().describe(project)
+  }
+
   /** Undoes a turn and the turns after it (plan A5), and tells the agent with the next prompt. */
   async undo (conversationId: string, commit: string): Promise<void> {
     const conversation = await this.conversation(conversationId)
@@ -283,7 +312,7 @@ export class AgentManager {
   #create (project: ProjectRecord, agentId: AgentId, discovery: Discovery | null, saved: SavedConversation): Conversation {
     const definition = this.#options.agents.find(agent => agent.id === agentId)!
     const open = this.#options.open ?? openAgentProcess
-    return new Conversation({
+    const conversation: Conversation = new Conversation({
       ...saved,
       projectId: project.id,
       definition,
@@ -301,9 +330,34 @@ export class AgentManager {
       hooks: {
         onEvent: envelope => this.#writer.add(saved.id, envelope),
         onSession: values => void this.#store.updateConversation(saved.id, values).catch(() => {}),
-        afterTurn: async prompt => await this.#commitTurn(project, definition, prompt),
+        afterTurn: async prompt => {
+          const events = await this.#commitTurn(project, definition, prompt)
+          if (events.some(event => event.type === 'checkpoint') && this.#previews) {
+            // The build runs on; its events follow the turn's in the chat.
+            setTimeout(() => void this.#previews!.build(project, event => conversation.record(event)), 0)
+          }
+          return events
+        },
       },
     })
+    return conversation
+  }
+
+  #requirePreviews (): ProjectPreviews {
+    if (!this.#previews) {
+      throw new StudioProblem('unsupported_operation', 'Previews need apps to be enabled (STUDIO_APPS_URL).')
+    }
+    return this.#previews
+  }
+
+  /** Builds a project's folder with fixed commands (plan B1). */
+  async #buildFolder (folder: string) {
+    const discovery = await this.#discover(false)
+    const pnpm = discovery.status.tools.find(tool => tool.name === 'pnpm')?.path
+    if (!pnpm) {
+      throw new StudioProblem('agent_unavailable', 'pnpm was not found on this computer. Install it (for example with `corepack enable pnpm`), then check again.')
+    }
+    return await buildProject(folder, { pnpm, env: agentProcessEnv(this.#options.env ?? process.env, discovery.path), run: this.#options.run ?? runCommand })
   }
 
   /** Commits what the turn changed (plan A5); nothing when nothing changed. */

@@ -126,6 +126,8 @@ export const appInstallations = pgTable('app_installations', {
   bundled: boolean('bundled').notNull().default(false),
   /** Installed from STUDIO_APP_PACKAGES at startup; not changed or uninstalled in the UI. */
   managed: boolean('managed').notNull().default(false),
+  /** The App Builder's preview of a project's app (ADR 0054): shown only in its preview pane, not in Studio's navigation or views. */
+  preview: boolean('preview').notNull().default(false),
   /** The values an administrator set for the installation's settings (ADR 0048); kept by updates where they still fit. */
   settings: jsonb('settings').$type<AppSettingValues>().notNull().default({}),
   installedBy: text('installed_by').notNull(),
