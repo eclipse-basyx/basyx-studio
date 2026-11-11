@@ -23,6 +23,7 @@
     "noneReady": "没有就绪的编码代理。请安装 Claude Code、Codex 或 opencode，登录后重新检查。"
   },
   "chat": {
+    "contextUnavailable": "暂无上下文使用量",
     "placeholder": "描述应用或你想要的更改…",
     "send": "发送",
     "stop": "停止",
@@ -35,7 +36,13 @@
     "emptyText": "描述应用应该做什么，或你想要的更改。",
     "thinking": "思考中",
     "inactive": "代理会在你的下一条消息时启动。",
-    "finished": "{agent} 已完成。"
+    "finished": "{agent} 已完成。",
+    "modelMenu": "模型、推理强度和速度",
+    "effort": "推理强度",
+    "fastMode": "快速模式",
+    "fastModeHint": "回答更快；会消耗更多套餐额度",
+    "context": "上下文：已使用 {used}/{size} 个令牌（{percent} %）",
+    "moreModels": "更多模型"
   },
   "mode": {
     "label": "权限",
@@ -75,6 +82,22 @@
     "running": "运行中",
     "completed": "完成"
   },
+  "toolGroup": {
+    "read": "读取了 {count} 个文件",
+    "readOne": "读取了 1 个文件",
+    "edit": "编辑了 {count} 个文件",
+    "editOne": "编辑了 1 个文件",
+    "search": "搜索了 {count} 次",
+    "searchOne": "搜索了 1 次",
+    "execute": "运行了 {count} 条命令",
+    "executeOne": "运行了 1 条命令",
+    "fetch": "获取了 {count} 个页面",
+    "fetchOne": "获取了 1 个页面",
+    "other": "使用了 {count} 个工具",
+    "otherOne": "使用了 1 个工具",
+    "failed": "{count} 个失败",
+    "separator": "，"
+  },
   "plan": {
     "title": "计划"
   },
@@ -100,6 +123,22 @@
     "refusal": "代理拒绝了。",
     "error": "这一轮以错误结束。"
   },
+  "files": {
+    "closeFile": "关闭文件",
+    "browse": "浏览文件",
+    "heading": "文件",
+    "refresh": "刷新文件夹",
+    "choose": "选择要在 Monaco 中打开的文件。",
+    "save": "保存",
+    "unsaved": "未保存的更改",
+    "reload": "从磁盘重新加载文件",
+    "close": "关闭文件",
+    "agentWorking": "代理正在处理此应用。你可以浏览和编辑文件，请在本轮工作结束后保存。",
+    "discardTitle": "放弃未保存的更改？",
+    "discardText": "如果继续，将放弃未保存的文件更改。",
+    "cancel": "取消",
+    "discard": "放弃更改"
+  },
   "projects": {
     "heading": "应用",
     "new": "新建应用",
@@ -116,6 +155,8 @@
     "keepsFolder": "文件夹 {folder} 保持不变。"
   },
   "newApp": {
+    "previewTarget": "默认预览目标",
+    "previewTargetHint": "打开此应用的预览时使用。留空则使用 Studio 的当前目标。",
     "title": "新建应用",
     "name": "名称",
     "agent": "代理",
@@ -163,6 +204,10 @@
     "waitsForConsent": "已构建。预览正在预览窗格中等待你的同意。"
   },
   "preview": {
+    "popOut": "在独立窗口中打开预览",
+    "closeWindow": "关闭预览窗口",
+    "projectMissing": "此应用已不在 App Builder 中。",
+    "desktopOnly": "预览窗口仅在桌面应用中可用。",
     "title": "预览",
     "toggle": "显示或隐藏预览",
     "rebuild": "重新构建",
@@ -225,5 +270,28 @@
     "signed": "已签名",
     "managed": "由部署安装",
     "unsigned": "未签名（开发者模式）"
+  },
+  "planning": {
+    "title": "规划 {name}",
+    "stepIdea": "想法",
+    "stepRequirements": "需求",
+    "stepPlan": "计划",
+    "start": "与 {agent} 一起规划",
+    "skip": "不规划直接创建",
+    "next": "继续到计划",
+    "back": "返回想法",
+    "create": "创建应用",
+    "edit": "编辑",
+    "preview": "预览",
+    "requirementsTitle": "需求",
+    "planTitle": "计划",
+    "placeholder": "向 {agent} 提问，或说明要修改的内容…",
+    "drafting": "{agent} 正在撰写初稿…",
+    "starting": "正在启动 {agent}…",
+    "working": "{agent} 正在撰写…",
+    "updatedRequirements": "需求已更新",
+    "updatedPlan": "计划已更新",
+    "hint": "你可以自己编辑文档，或告诉 {agent} 要修改什么。{agent} 在这里只做规划：它会阅读 Studio 的应用模板，不会修改任何文件。",
+    "files": "Studio 会将两者保存在应用的 docs 文件夹中（requirements.md、plan.md），{agent} 将据此构建应用。"
   }
 }

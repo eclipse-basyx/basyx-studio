@@ -23,6 +23,7 @@
     "noneReady": "準備のできたコーディングエージェントがありません。Claude Code、Codex または opencode をインストールしてサインインし、もう一度確認してください。"
   },
   "chat": {
+    "contextUnavailable": "コンテキスト使用量は不明です",
     "placeholder": "アプリ、または望む変更を説明してください…",
     "send": "送信",
     "stop": "停止",
@@ -35,7 +36,13 @@
     "emptyText": "アプリが何をするべきか、または望む変更を説明してください。",
     "thinking": "考え中",
     "inactive": "エージェントは次のメッセージで起動します。",
-    "finished": "{agent} が完了しました。"
+    "finished": "{agent} が完了しました。",
+    "modelMenu": "モデル、思考量、速度",
+    "effort": "思考量",
+    "fastMode": "高速モード",
+    "fastModeHint": "応答が速くなりますが、プランの使用量が増えます",
+    "context": "コンテキスト: {size} トークン中 {used} を使用 ({percent} %)",
+    "moreModels": "その他のモデル"
   },
   "mode": {
     "label": "権限",
@@ -75,6 +82,22 @@
     "running": "実行中",
     "completed": "完了"
   },
+  "toolGroup": {
+    "read": "{count} 件のファイルを読み取り",
+    "readOne": "1 件のファイルを読み取り",
+    "edit": "{count} 件のファイルを編集",
+    "editOne": "1 件のファイルを編集",
+    "search": "{count} 回検索",
+    "searchOne": "1 回検索",
+    "execute": "{count} 件のコマンドを実行",
+    "executeOne": "1 件のコマンドを実行",
+    "fetch": "{count} ページを取得",
+    "fetchOne": "1 ページを取得",
+    "other": "{count} 個のツールを使用",
+    "otherOne": "1 個のツールを使用",
+    "failed": "{count} 件失敗",
+    "separator": "、"
+  },
   "plan": {
     "title": "計画"
   },
@@ -100,6 +123,22 @@
     "refusal": "エージェントが断りました。",
     "error": "ターンはエラーで終了しました。"
   },
+  "files": {
+    "closeFile": "ファイルを閉じる",
+    "browse": "ファイルを参照",
+    "heading": "ファイル",
+    "refresh": "フォルダーを更新",
+    "choose": "Monaco で開くファイルを選んでください。",
+    "save": "保存",
+    "unsaved": "未保存の変更",
+    "reload": "ディスクからファイルを再読み込み",
+    "close": "ファイルを閉じる",
+    "agentWorking": "エージェントがこのアプリで作業中です。参照と編集はできますが、保存は作業の完了後に行ってください。",
+    "discardTitle": "未保存の変更を破棄しますか？",
+    "discardText": "続行すると、ファイルへの未保存の変更は破棄されます。",
+    "cancel": "キャンセル",
+    "discard": "変更を破棄"
+  },
   "projects": {
     "heading": "アプリ",
     "new": "新しいアプリ",
@@ -116,6 +155,8 @@
     "keepsFolder": "フォルダー {folder} はそのまま残ります。"
   },
   "newApp": {
+    "previewTarget": "プレビューの既定ターゲット",
+    "previewTargetHint": "このアプリのプレビューを開くときに使用します。空欄の場合は Studio の現在のターゲットを使用します。",
     "title": "新しいアプリ",
     "name": "名前",
     "agent": "エージェント",
@@ -163,6 +204,10 @@
     "waitsForConsent": "ビルドしました。プレビューはプレビュー欄であなたの許可を待っています。"
   },
   "preview": {
+    "popOut": "プレビューを別のウィンドウで開く",
+    "closeWindow": "プレビューウィンドウを閉じる",
+    "projectMissing": "このアプリは App Builder にありません。",
+    "desktopOnly": "プレビューウィンドウはデスクトップアプリで利用できます。",
     "title": "プレビュー",
     "toggle": "プレビューの表示と非表示",
     "rebuild": "もう一度ビルド",
@@ -225,5 +270,28 @@
     "signed": "署名済み",
     "managed": "デプロイでインストール",
     "unsigned": "未署名 (開発者モード)"
+  },
+  "planning": {
+    "title": "{name} を計画",
+    "stepIdea": "アイデア",
+    "stepRequirements": "要件",
+    "stepPlan": "計画",
+    "start": "{agent} と計画する",
+    "skip": "計画せずに作成",
+    "next": "計画へ進む",
+    "back": "アイデアに戻る",
+    "create": "アプリを作成",
+    "edit": "編集",
+    "preview": "プレビュー",
+    "requirementsTitle": "要件",
+    "planTitle": "計画",
+    "placeholder": "{agent} に質問するか、変更内容を伝えてください…",
+    "drafting": "{agent} が最初の下書きを書いています…",
+    "starting": "{agent} を起動しています…",
+    "working": "{agent} が書いています…",
+    "updatedRequirements": "要件を更新しました",
+    "updatedPlan": "計画を更新しました",
+    "hint": "ドキュメントを自分で編集するか、{agent} に変更内容を伝えてください。ここでは {agent} は計画するだけです。Studio のアプリテンプレートを読み、ファイルは変更しません。",
+    "files": "Studio は両方をアプリの docs フォルダー (requirements.md、plan.md) に保存し、{agent} がそれに基づいてアプリを作ります。"
   }
 }

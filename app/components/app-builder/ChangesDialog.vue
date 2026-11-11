@@ -1,15 +1,13 @@
 <template>
   <v-dialog :model-value="patch !== null" scrollable @update:model-value="open => { if (!open) emit('close') }">
-    <v-card :title="t('checkpoint.changesTitle')">
-      <v-card-text>
-        <pre class="text-body-small" data-test="app-builder-patch"><template v-for="(line, index) in lines" :key="index"><span :class="line.class">{{ line.text }}</span>
+    <DialogCard :title="t('checkpoint.changesTitle')">
+      <pre class="text-body-small" data-test="app-builder-patch"><template v-for="(line, index) in lines" :key="index"><span :class="line.class">{{ line.text }}</span>
 </template></pre>
-      </v-card-text>
 
       <template #actions>
         <v-btn-primary :text="t('checkpoint.close')" @click="emit('close')" />
       </template>
-    </v-card>
+    </DialogCard>
   </v-dialog>
 </template>
 

@@ -154,6 +154,13 @@ export interface PermissionOptionLike {
   kind: 'allow_once' | 'allow_always' | 'reject_once' | 'reject_always' | string
 }
 
+const readingKinds = new Set<ToolCallKind>(['read', 'search', 'think'])
+
+/** In a read-only chat: reading, searching and thinking in the folder, nothing else. */
+export function isReading (subject: PermissionSubject, folder: string): boolean {
+  return readingKinds.has(subject.kind) && subject.paths.every(path => isInside(folder, path))
+}
+
 /** The agent's option for Studio's answer: allow once, or reject once. */
 export function pickOption (options: PermissionOptionLike[], allow: boolean): string | null {
   const wanted = allow ? ['allow_once'] : ['reject_once', 'reject_always']

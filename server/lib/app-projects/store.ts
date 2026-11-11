@@ -13,6 +13,7 @@ export interface ProjectRecord {
   folder: string
   origin: AppProjectOrigin
   source: string | null
+  previewTargetId: string | null
   createdAt: Date
 }
 

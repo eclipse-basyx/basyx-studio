@@ -1,13 +1,14 @@
-import type { AgentSetting, ApprovalDecision, ConversationEvent, ConversationEventEnvelope, ConversationState, ConversationSummary, PermissionMode } from '#shared/contract'
+import type { AgentSetting, AgentSettingKind, ApprovalDecision, ConversationEvent, ConversationEventEnvelope, ConversationState, ConversationSummary, PermissionMode } from '#shared/contract'
 import type { AgentDefinition } from './catalog'
 import type { PermissionSubject } from './policy'
 import type { AgentProcess } from './process'
 import type { ClientConnection, RequestPermissionRequest, RequestPermissionResponse, SessionConfigOption } from '@agentclientprotocol/sdk'
 import { randomUUID } from 'node:crypto'
 import { client, methods, PROTOCOL_VERSION } from '@agentclientprotocol/sdk'
+import { agentSettingKinds } from '#shared/contract'
 import { StudioProblem } from '../problem'
-import { eventsFromUpdate, modelSetting } from './events'
-import { chatRuleKey, decidePermission, permissionSubject, pickOption } from './policy'
+import { effortSetting, eventsFromUpdate, mergeSetting, modelSetting, speedSetting } from './events'
+import { chatRuleKey, decidePermission, isReading, permissionSubject, pickOption } from './policy'
 
 // One chat with one coding agent over ACP (ADR 0054): the agent process, its
 // session in the project folder, the events the page reads, and the
@@ -51,6 +52,11 @@ export interface ConversationOptions {
   model?: string | null
   /** The permission mode a new chat starts in; a saved chat takes it from its history. */
   permissionMode?: PermissionMode
+  /**
+   * A chat that only reads (the planning chat): Studio allows reading and
+   * searching in the folder and denies every other request.
+   */
+  readOnly?: boolean
   hooks?: ConversationHooks
 }
 
@@ -59,11 +65,15 @@ export class Conversation {
   readonly projectId: string
   readonly definition: AgentDefinition
   readonly folder: string
+  readonly readOnly: boolean
   readonly createdAt: Date
   #title: string
   #state: ConversationState
   #model: AgentSetting | null = null
-  #preferredModel: string | null
+  #effort: AgentSetting | null = null
+  #speed: AgentSetting | null = null
+  /** The settings chosen in Studio, applied when the agent starts; the model is saved with the chat. */
+  #preferred: Partial<Record<AgentSettingKind, string>> = {}
   #permissionMode: PermissionMode
   /** The session modes the running agent offers. */
   #agentModes: string[] = []
@@ -90,6 +100,7 @@ export class Conversation {
     this.projectId = options.projectId
     this.definition = options.definition
     this.folder = options.folder
+    this.readOnly = options.readOnly ?? false
     this.#open = options.open
     this.#now = options.now ?? (() => new Date())
     this.#hooks = options.hooks ?? {}
@@ -98,14 +109,18 @@ export class Conversation {
     this.#events = options.history?.slice(-maxEvents) ?? []
     this.#seq = options.history?.at(-1)?.seq ?? 0
     this.#sessionId = options.sessionId ?? null
-    this.#preferredModel = options.model ?? null
+    if (options.model) {
+      this.#preferred.model = options.model
+    }
     this.#state = options.history ? 'inactive' : 'starting'
     this.#lastActive = this.#now().getTime()
     // The model list and permission mode of a saved chat, as it was last shown.
     let savedMode: PermissionMode = 'ask'
     for (const { event } of this.#events) {
-      if (event.type === 'state' && event.model) {
-        this.#model = event.model
+      if (event.type === 'state') {
+        this.#model = event.model ?? this.#model
+        this.#effort = event.effort ?? this.#effort
+        this.#speed = event.speed ?? this.#speed
       }
       if (event.type === 'state' && event.permissionMode) {
         savedMode = event.permissionMode
@@ -117,7 +132,7 @@ export class Conversation {
       this.#settleInterruptedTurn()
       if (savedMode === 'unrestricted') {
         this.#emit({ type: 'notice', text: `Studio restarted, so ${this.definition.name} asks again: the unrestricted mode is not kept.` })
-        this.#emit({ type: 'state', state: this.#state, model: this.#model, permissionMode: this.#permissionMode })
+        this.#emit(this.#stateEvent())
       }
     }
   }
@@ -140,6 +155,8 @@ export class Conversation {
       folder: this.folder,
       state: this.#state,
       model: this.#model,
+      effort: this.#effort,
+      speed: this.#speed,
       permissionMode: this.#permissionMode,
       createdAt: this.createdAt.toISOString(),
       lastSeq: this.#seq,
@@ -154,8 +171,12 @@ export class Conversation {
     return this.#starting
   }
 
-  /** Sends a prompt; the turn runs on, and its progress arrives as events. Starts a saved chat's agent first. */
-  async prompt (text: string): Promise<void> {
+  /**
+   * Sends a prompt; the turn runs on, and its progress arrives as events.
+   * Starts a saved chat's agent first. `shown` is what the chat shows of it,
+   * when Studio wrapped the user's words in a longer prompt.
+   */
+  async prompt (text: string, shown = text): Promise<void> {
     if (this.#state === 'working' || this.#state === 'starting') {
       throw new StudioProblem('agent_busy', 'The agent is still working on the previous message.')
     }
@@ -163,11 +184,13 @@ export class Conversation {
       await this.start()
     }
     const { connection, sessionId } = this.#ready()
-    if (!this.#title) {
-      this.#title = text.split('\n', 1)[0]!.slice(0, 80)
+    if (!this.#title && shown) {
+      this.#title = shown.split('\n', 1)[0]!.slice(0, 80)
       this.#saveSession()
     }
-    this.#emit({ type: 'userMessage', text })
+    if (shown) {
+      this.#emit({ type: 'userMessage', text: shown })
+    }
     this.#setState('working')
     const notes = this.#notes.splice(0)
     const sent = notes.length > 0 ? `${notes.map(note => `(Note from BaSyx Studio: ${note})`).join('\n')}\n\n${text}` : text
@@ -210,21 +233,29 @@ export class Conversation {
   }
 
   async setModel (value: string): Promise<void> {
-    if (!this.#model?.options.some(option => option.value === value)) {
-      throw new StudioProblem('invalid_request', `${this.definition.name} offers no model ${value}.`)
+    await this.setSetting('model', value)
+  }
+
+  /** Sets the model, effort or speed; a stopped agent takes it when it starts. */
+  async setSetting (kind: AgentSettingKind, value: string): Promise<void> {
+    const setting = this.#setting(kind)
+    if (!setting?.options.some(option => option.value === value)) {
+      throw new StudioProblem('invalid_request', `${this.definition.name} offers no ${kind} ${value}.`)
     }
-    this.#preferredModel = value
+    this.#preferred[kind] = value
     if (this.#state === 'inactive' || this.#state === 'failed') {
-      // Applied when the agent starts.
-      this.#model = { ...this.#model, current: value }
-      this.#saveSession()
-      this.#emit({ type: 'state', state: this.#state, model: this.#model, permissionMode: this.#permissionMode })
-      return
+      this.#assign(kind, { ...setting, current: value })
+    } else {
+      const { connection, sessionId } = this.#ready()
+      const result = await connection.agent.request(methods.agent.session.setConfigOption, { sessionId, configId: setting.id, value })
+      if (!this.#applyOptions(result.configOptions as SessionConfigOption[])) {
+        this.#assign(kind, { ...setting, current: value })
+      }
     }
-    const { connection, sessionId } = this.#ready()
-    const result = await connection.agent.request(methods.agent.session.setConfigOption, { sessionId, configId: this.#model.id, value })
-    this.#setModel(modelSetting(result.configOptions as SessionConfigOption[]) ?? { ...this.#model, current: value })
-    this.#saveSession()
+    if (kind === 'model') {
+      this.#saveSession()
+    }
+    this.#emit(this.#stateEvent())
   }
 
   /**
@@ -237,7 +268,7 @@ export class Conversation {
       throw new StudioProblem('agent_unavailable', 'This chat was deleted.')
     }
     this.#permissionMode = mode
-    this.#emit({ type: 'state', state: this.#state, model: this.#model, permissionMode: mode })
+    this.#emit(this.#stateEvent())
     if (this.#connection && this.#sessionId && this.#state !== 'starting') {
       const agentMode = this.#agentMode()
       if (agentMode) {
@@ -255,6 +286,20 @@ export class Conversation {
         this.#emit({ ...pending.event, state: 'autoAllowed', reason: decision.reason })
         pending.resolve({ outcome: { outcome: 'selected', optionId } })
       }
+    }
+  }
+
+  /** Settings the chat has not shown yet, as its agent reported them elsewhere; the agent's own replace them when it starts. */
+  adoptSettings (settings: { effort: AgentSetting | null, speed: AgentSetting | null }): void {
+    if (this.#state === 'closed' || this.#connection) {
+      return
+    }
+    const effort = this.#effort ?? settings.effort
+    const speed = this.#speed ?? settings.speed
+    if (effort !== this.#effort || speed !== this.#speed) {
+      this.#effort = effort
+      this.#speed = speed
+      this.#emit(this.#stateEvent())
     }
   }
 
@@ -309,10 +354,13 @@ export class Conversation {
       .onNotification(methods.client.session.update, ({ params }) => {
         const { update } = params
         if (update.sessionUpdate === 'config_option_update') {
-          this.#setModel(modelSetting(update.configOptions))
+          if (this.#applyOptions(update.configOptions)) {
+            this.#emit(this.#stateEvent())
+          }
           return
         }
-        if (this.#replaying) {
+        // The chat has the replayed history already; the context it fills is new.
+        if (this.#replaying && update.sessionUpdate !== 'usage_update') {
           return
         }
         for (const event of eventsFromUpdate(update)) {
@@ -347,12 +395,18 @@ export class Conversation {
       if (agentMode) {
         await connection.agent.request(methods.agent.session.setMode, { sessionId: session.sessionId, modeId: agentMode })
       }
-      this.#model = modelSetting(session.configOptions) ?? this.#model
-      // The agent starts with the model of the user's own configuration; the
-      // chat keeps the one chosen in Studio (Phase 0: Codex after a load).
-      if (this.#preferredModel && this.#model && this.#model.current !== this.#preferredModel && this.#model.options.some(option => option.value === this.#preferredModel)) {
-        const result = await connection.agent.request(methods.agent.session.setConfigOption, { sessionId: session.sessionId, configId: this.#model.id, value: this.#preferredModel })
-        this.#model = modelSetting(result.configOptions as SessionConfigOption[]) ?? { ...this.#model, current: this.#preferredModel }
+      this.#applyOptions(session.configOptions)
+      // The agent starts with the settings of the user's own configuration;
+      // the chat keeps those chosen in Studio (Phase 0: Codex after a load).
+      for (const kind of agentSettingKinds) {
+        const wanted = this.#preferred[kind]
+        const setting = this.#setting(kind)
+        if (wanted && setting && setting.current !== wanted && setting.options.some(option => option.value === wanted)) {
+          const result = await connection.agent.request(methods.agent.session.setConfigOption, { sessionId: session.sessionId, configId: setting.id, value: wanted })
+          if (!this.#applyOptions(result.configOptions as SessionConfigOption[])) {
+            this.#assign(kind, { ...setting, current: wanted })
+          }
+        }
       }
       this.#sessionId = session.sessionId
       this.#saveSession()
@@ -412,13 +466,16 @@ export class Conversation {
     if (working) {
       this.#emit({ type: 'turnEnded', stopReason: 'cancelled' })
       this.#emit({ type: 'notice', text: `Studio restarted while ${this.definition.name} was working, so the turn stopped. Send a message to go on; the agent continues its session.` })
-      this.#emit({ type: 'state', state: 'inactive', model: this.#model, permissionMode: this.#permissionMode })
+      this.#emit(this.#stateEvent('inactive'))
     }
   }
 
   /** The agent's session mode for the chat's permission mode, where the agent offers it. */
   #agentMode (): string | null {
-    const { editMode, unrestrictedMode } = this.definition
+    const { editMode, unrestrictedMode, readOnlyMode } = this.definition
+    if (this.readOnly) {
+      return readOnlyMode && this.#agentModes.includes(readOnlyMode) ? readOnlyMode : null
+    }
     const wanted = this.#permissionMode === 'unrestricted' && unrestrictedMode && this.#agentModes.includes(unrestrictedMode) ? unrestrictedMode : editMode
     return wanted && this.#agentModes.includes(wanted) ? wanted : null
   }
@@ -443,6 +500,10 @@ export class Conversation {
 
   #requestPermission (params: RequestPermissionRequest, signal: AbortSignal): Promise<RequestPermissionResponse> {
     const subject = permissionSubject(params.toolCall, this.folder)
+    if (this.readOnly) {
+      const optionId = pickOption(params.options, isReading(subject, this.folder))
+      return Promise.resolve(optionId ? { outcome: { outcome: 'selected', optionId } } : { outcome: { outcome: 'cancelled' } })
+    }
     const decision = decidePermission(subject, this.folder, this.#allowedInChat, this.#permissionMode)
     const event: Extract<ConversationEvent, { type: 'approval' }> = {
       type: 'approval',
@@ -511,18 +572,46 @@ export class Conversation {
       return
     }
     this.#state = state
-    this.#emit({ type: 'state', state, model: this.#model, permissionMode: this.#permissionMode })
+    this.#emit(this.#stateEvent())
   }
 
-  #setModel (model: AgentSetting | null): void {
+  /** Takes the settings the agent reports; true when it reported any. */
+  #applyOptions (options: SessionConfigOption[] | null | undefined): boolean {
+    const model = modelSetting(options)
+    const effort = effortSetting(options)
+    const speed = speedSetting(options)
     if (model) {
-      this.#model = model
-      this.#emit({ type: 'state', state: this.#state, model, permissionMode: this.#permissionMode })
+      this.#model = mergeSetting(this.#model, model)
+    }
+    if (effort) {
+      this.#effort = mergeSetting(this.#effort, effort)
+    }
+    if (speed) {
+      this.#speed = mergeSetting(this.#speed, speed)
+    }
+    return model !== null || effort !== null || speed !== null
+  }
+
+  #setting (kind: AgentSettingKind): AgentSetting | null {
+    return kind === 'model' ? this.#model : (kind === 'effort' ? this.#effort : this.#speed)
+  }
+
+  #assign (kind: AgentSettingKind, setting: AgentSetting): void {
+    if (kind === 'model') {
+      this.#model = setting
+    } else if (kind === 'effort') {
+      this.#effort = setting
+    } else {
+      this.#speed = setting
     }
   }
 
+  #stateEvent (state: ConversationState = this.#state): ConversationEvent {
+    return { type: 'state', state, model: this.#model, effort: this.#effort, speed: this.#speed, permissionMode: this.#permissionMode }
+  }
+
   #saveSession (): void {
-    this.#hooks.onSession?.({ sessionId: this.#sessionId, model: this.#preferredModel ?? this.#model?.current ?? null, title: this.#title })
+    this.#hooks.onSession?.({ sessionId: this.#sessionId, model: this.#preferred.model ?? this.#model?.current ?? null, title: this.#title })
   }
 
   #emit (event: ConversationEvent): void {

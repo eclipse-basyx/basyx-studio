@@ -1,76 +1,76 @@
 <template>
   <v-dialog max-width="600" :model-value="project !== null" @update:model-value="open => { if (!open) close() }">
-    <v-card v-if="project" data-test="app-builder-install" :title="t('install.title', { name: project.name })">
-      <v-card-text>
-        <v-progress-linear v-if="!info && !error" />
+    <DialogCard v-if="project" data-test="app-builder-install" :title="t('install.title', { name: project.name })">
+      <v-progress-linear v-if="!info && !error" />
 
-        <ProblemAlert v-if="error" class="mb-3" :error="error" />
+      <ProblemAlert v-if="error" class="mb-3" :error="error" />
 
-        <template v-if="info">
-          <v-list>
-            <v-list-item prepend-icon="mdi-identifier" :subtitle="t('install.version', { version: info.version })" :title="info.appId" />
+      <template v-if="info">
+        <v-list>
+          <v-list-item prepend-icon="mdi-identifier" :subtitle="t('install.version', { version: info.version })" :title="info.appId" />
 
-            <v-list-item
-              :prepend-icon="info.installed ? 'mdi-package-variant-closed-check' : 'mdi-package-variant-closed'"
-              :subtitle="info.installed ? t(`installTrust.${info.installed.trust}`) : undefined"
-              :title="info.installed ? t('install.installed', { version: info.installed.version }) : t('install.notInstalled')"
-            />
-          </v-list>
+          <v-list-item
+            :prepend-icon="info.installed ? 'mdi-package-variant-closed-check' : 'mdi-package-variant-closed'"
+            :subtitle="info.installed ? t(`installTrust.${info.installed.trust}`) : undefined"
+            :title="info.installed ? t('install.installed', { version: info.installed.version }) : t('install.notInstalled')"
+          />
+        </v-list>
 
-          <div class="text-label-large mt-2">{{ t('install.versionHeading') }}</div>
+        <div class="text-label-large mt-2">{{ t('install.versionHeading') }}</div>
 
-          <v-radio-group v-model="bump" data-test="app-builder-install-version" hide-details>
-            <v-radio v-if="info.newVersion" :label="t('install.keep', { version: info.version })" value="none" />
-            <v-radio :label="t('install.patch', { version: info.patch })" value="patch" />
-            <v-radio :label="t('install.minor', { version: info.minor })" value="minor" />
-          </v-radio-group>
+        <v-radio-group v-model="bump" data-test="app-builder-install-version" hide-details>
+          <v-radio v-if="info.newVersion" :label="t('install.keep', { version: info.version })" value="none" />
+          <v-radio :label="t('install.patch', { version: info.patch })" value="patch" />
+          <v-radio :label="t('install.minor', { version: info.minor })" value="minor" />
+        </v-radio-group>
 
-          <div v-if="!info.newVersion" class="text-body-small text-medium-emphasis">{{ t('install.mustRaise', { version: info.installed?.version ?? '' }) }}</div>
+        <div v-if="!info.newVersion" class="text-body-small text-medium-emphasis">{{ t('install.mustRaise', { version: info.installed?.version ?? '' }) }}</div>
 
-          <div class="text-label-medium mt-3">{{ t('install.signingHeading') }}</div>
+        <div class="text-label-medium mt-3">{{ t('install.signingHeading') }}</div>
 
-          <v-radio-group v-model="signing" data-test="app-builder-install-signing" hide-details>
-            <v-radio :disabled="!info.machineKeyApplies" :label="t('install.machine')" value="machine" />
-            <v-radio :label="t('install.own')" value="own" />
-            <v-radio :label="t('install.unsigned')" value="unsigned" />
-          </v-radio-group>
+        <v-radio-group v-model="signing" data-test="app-builder-install-signing" hide-details>
+          <v-radio :disabled="!info.machineKeyApplies" :label="t('install.machine')" value="machine" />
+          <v-radio :label="t('install.own')" value="own" />
+          <v-radio :label="t('install.unsigned')" value="unsigned" />
+        </v-radio-group>
 
-          <div v-if="signing === 'machine'" class="text-body-small text-medium-emphasis mt-1">
-            {{ info.machineKey ? t('install.machineKey', { fingerprint: info.machineKey.fingerprint.slice(7, 23) }) : t('install.machineKeyNew') }}
-            <v-btn class="ms-1" data-test="app-builder-copy-key" :text="t('install.copyKey')" @click="copyKey" />
+        <div v-if="signing === 'machine'" class="text-body-small text-medium-emphasis mt-1">
+          {{ info.machineKey ? t('install.machineKey', { fingerprint: info.machineKey.fingerprint.slice(7, 23) }) : t('install.machineKeyNew') }}
+          <v-btn class="ms-1" data-test="app-builder-copy-key" :text="t('install.copyKey')" @click="copyKey" />
+        </div>
+
+        <div v-else-if="!info.machineKeyApplies" class="text-body-small text-medium-emphasis mt-1">{{ t('install.machineOnlyLocal') }}</div>
+
+        <div v-if="signing === 'own'" class="d-flex flex-column ga-2 mt-2">
+          <div class="d-flex align-center ga-2">
+            <v-btn-secondary data-test="app-builder-choose-key" prepend-icon="mdi-key-outline" :text="keyName ?? t('install.chooseKey')" @click="chooseKey" />
+            <span class="text-body-small text-medium-emphasis">{{ t('install.keyHint') }}</span>
           </div>
 
-          <div v-else-if="!info.machineKeyApplies" class="text-body-small text-medium-emphasis mt-1">{{ t('install.machineOnlyLocal') }}</div>
+          <v-text-field
+            v-model="passphrase"
+            autocomplete="off"
+            hide-details
+            :label="t('install.passphrase')"
+            type="password"
+          />
+        </div>
 
-          <div v-if="signing === 'own'" class="d-flex flex-column ga-2 mt-2">
-            <div class="d-flex align-center ga-2">
-              <v-btn-secondary data-test="app-builder-choose-key" prepend-icon="mdi-key-outline" :text="keyName ?? t('install.chooseKey')" @click="chooseKey" />
-              <span class="text-body-small text-medium-emphasis">{{ t('install.keyHint') }}</span>
-            </div>
+        <div v-if="signing === 'unsigned'" class="text-body-small text-medium-emphasis mt-1">{{ t('install.unsignedHint') }}</div>
+      </template>
 
-            <v-text-field
-              v-model="passphrase"
-              autocomplete="off"
-              hide-details
-              :label="t('install.passphrase')"
-              type="password"
-            />
-          </div>
-
-          <div v-if="signing === 'unsigned'" class="text-body-small text-medium-emphasis mt-1">{{ t('install.unsignedHint') }}</div>
-        </template>
-      </v-card-text>
-
-      <template #actions>
-        <v-btn-secondary :text="t('install.cancel')" @click="close" />
-
-        <v-btn
+      <template #actions-start>
+        <v-btn-secondary
           v-if="prepared"
           data-test="app-builder-export"
           prepend-icon="mdi-content-save-outline"
           :text="t('install.export')"
           @click="exportPackage"
         />
+      </template>
+
+      <template #actions>
+        <v-btn :text="t('install.cancel')" @click="close" />
 
         <v-btn-primary
           data-test="app-builder-install-check"
@@ -80,7 +80,7 @@
           @click="check"
         />
       </template>
-    </v-card>
+    </DialogCard>
   </v-dialog>
 
   <AppInstallDialog

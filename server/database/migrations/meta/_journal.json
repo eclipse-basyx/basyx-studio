@@ -92,6 +92,13 @@
       "when": 1794237738795,
       "tag": "0012_machine_signing_key",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794408147341,
+      "tag": "0013_app_preview_target",
+      "breakpoints": true
     }
   ]
 }

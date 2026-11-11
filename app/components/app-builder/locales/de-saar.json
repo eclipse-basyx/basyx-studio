@@ -149,5 +149,13 @@
     "check": "Baue unn gugge",
     "done": "{name} {version} is druff.",
     "action": "In Studio installiere"
+  },
+  "planning": {
+    "start": "Mit {agent} plane",
+    "skip": "Ohne Plan mache",
+    "next": "Weider zum Plan",
+    "create": "App mache",
+    "drafting": "{agent} schreibt de erschde Entworf …",
+    "working": "{agent} schreibt …"
   }
 }

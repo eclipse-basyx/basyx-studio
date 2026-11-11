@@ -51,6 +51,8 @@ export interface AgentDefinition {
   editMode: string | null
   /** The session mode without the agent's own checks, for `unrestricted`; `null` when Studio's answers are the only checks. */
   unrestrictedMode: string | null
+  /** The session mode for a read-only chat (the planning chat), where edits ask; Studio denies them. */
+  readOnlyMode: string | null
   /** Whether a denied permission request ends the agent's turn. */
   denyEndsTurn: boolean
   launch: AgentLaunch
@@ -75,6 +77,7 @@ export function agentCatalog (resolve: (specifier: string) => string): AgentDefi
       signInCommand: 'claude auth login',
       editMode: 'acceptEdits',
       unrestrictedMode: 'bypassPermissions',
+      readOnlyMode: 'default',
       denyEndsTurn: false,
       launch: {
         runner: 'adapter',
@@ -104,6 +107,7 @@ export function agentCatalog (resolve: (specifier: string) => string): AgentDefi
       editMode: 'workspace-write',
       // No sandbox and no approvals; network and files outside the folder too.
       unrestrictedMode: 'agent-full-access',
+      readOnlyMode: 'read-only',
       denyEndsTurn: false,
       launch: {
         runner: 'adapter',
@@ -125,6 +129,7 @@ export function agentCatalog (resolve: (specifier: string) => string): AgentDefi
       editMode: null,
       // opencode asks Studio for everything its rules do not allow, and Studio allows it.
       unrestrictedMode: null,
+      readOnlyMode: null,
       denyEndsTurn: true,
       launch: {
         runner: 'cli',

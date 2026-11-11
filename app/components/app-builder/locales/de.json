@@ -23,6 +23,7 @@
     "noneReady": "Kein Coding-Agent ist bereit. Installiere Claude Code, Codex oder opencode, melde dich an und prüfe erneut."
   },
   "chat": {
+    "contextUnavailable": "Kontextauslastung nicht verfügbar",
     "placeholder": "Beschreibe die App oder die gewünschte Änderung …",
     "send": "Senden",
     "stop": "Stoppen",
@@ -35,7 +36,13 @@
     "emptyText": "Beschreibe, was die App tun soll, oder die gewünschte Änderung.",
     "thinking": "Denkt nach",
     "inactive": "Der Agent startet mit deiner nächsten Nachricht.",
-    "finished": "{agent} ist fertig."
+    "finished": "{agent} ist fertig.",
+    "modelMenu": "Modell, Aufwand und Tempo",
+    "effort": "Aufwand",
+    "fastMode": "Schneller Modus",
+    "fastModeHint": "Schnellere Antworten; verbraucht mehr von deinem Kontingent",
+    "context": "Kontext: {used} von {size} Tokens belegt ({percent} %)",
+    "moreModels": "Weitere Modelle"
   },
   "mode": {
     "label": "Rechte",
@@ -75,6 +82,22 @@
     "running": "Läuft",
     "completed": "Fertig"
   },
+  "toolGroup": {
+    "read": "{count} Dateien gelesen",
+    "readOne": "1 Datei gelesen",
+    "edit": "{count} Dateien bearbeitet",
+    "editOne": "1 Datei bearbeitet",
+    "search": "{count}-mal gesucht",
+    "searchOne": "einmal gesucht",
+    "execute": "{count} Befehle ausgeführt",
+    "executeOne": "1 Befehl ausgeführt",
+    "fetch": "{count} Seiten abgerufen",
+    "fetchOne": "1 Seite abgerufen",
+    "other": "{count} Werkzeuge genutzt",
+    "otherOne": "1 Werkzeug genutzt",
+    "failed": "{count} fehlgeschlagen",
+    "separator": ", "
+  },
   "plan": {
     "title": "Plan"
   },
@@ -100,6 +123,22 @@
     "refusal": "Der Agent hat abgelehnt.",
     "error": "Der Durchgang endete mit einem Fehler."
   },
+  "files": {
+    "closeFile": "Datei schließen",
+    "browse": "Dateien durchsuchen",
+    "heading": "Dateien",
+    "refresh": "Ordner aktualisieren",
+    "choose": "Wähle eine Datei, um sie in Monaco zu öffnen.",
+    "save": "Speichern",
+    "unsaved": "Ungespeicherte Änderungen",
+    "reload": "Datei von der Festplatte neu laden",
+    "close": "Dateien schließen",
+    "agentWorking": "Der Agent arbeitet an dieser App. Du kannst Dateien ansehen und bearbeiten; speichern kannst du nach seinem Durchgang.",
+    "discardTitle": "Ungespeicherte Änderungen verwerfen?",
+    "discardText": "Wenn du fortfährst, werden die ungespeicherten Dateiänderungen verworfen.",
+    "cancel": "Abbrechen",
+    "discard": "Änderungen verwerfen"
+  },
   "projects": {
     "heading": "Apps",
     "new": "Neue App",
@@ -116,6 +155,8 @@
     "keepsFolder": "Der Ordner {folder} bleibt, wie er ist."
   },
   "newApp": {
+    "previewTarget": "Standardziel für die Vorschau",
+    "previewTargetHint": "Wird beim Öffnen der Vorschau dieser App verwendet. Leer lassen, um das aktuelle Ziel von Studio zu verwenden.",
     "title": "Neue App",
     "name": "Name",
     "agent": "Agent",
@@ -163,6 +204,10 @@
     "waitsForConsent": "Gebaut. Die Vorschau wartet in der Vorschau-Leiste auf dein OK."
   },
   "preview": {
+    "popOut": "Vorschau in eigenem Fenster öffnen",
+    "closeWindow": "Vorschaufenster schließen",
+    "projectMissing": "Diese App ist nicht mehr im App Builder.",
+    "desktopOnly": "Vorschaufenster sind in der Desktop-App verfügbar.",
     "title": "Vorschau",
     "toggle": "Vorschau ein- oder ausblenden",
     "rebuild": "Erneut bauen",
@@ -225,5 +270,28 @@
     "signed": "Signiert",
     "managed": "Vom Betrieb installiert",
     "unsigned": "Unsigniert (Entwicklermodus)"
+  },
+  "planning": {
+    "title": "{name} planen",
+    "stepIdea": "Idee",
+    "stepRequirements": "Anforderungen",
+    "stepPlan": "Plan",
+    "start": "Mit {agent} planen",
+    "skip": "Ohne Planung erstellen",
+    "next": "Weiter zum Plan",
+    "back": "Zurück zur Idee",
+    "create": "App erstellen",
+    "edit": "Bearbeiten",
+    "preview": "Vorschau",
+    "requirementsTitle": "Anforderungen",
+    "planTitle": "Plan",
+    "placeholder": "{agent} fragen oder sagen, was sich ändern soll …",
+    "drafting": "{agent} schreibt den ersten Entwurf …",
+    "starting": "{agent} startet …",
+    "working": "{agent} schreibt …",
+    "updatedRequirements": "Anforderungen aktualisiert",
+    "updatedPlan": "Plan aktualisiert",
+    "hint": "Bearbeite das Dokument selbst oder sag {agent}, was sich ändern soll. {agent} plant hier nur: Es liest Studios App-Vorlage und ändert keine Dateien.",
+    "files": "Studio speichert beides im Ordner docs der App (requirements.md, plan.md), und {agent} baut die App danach."
   }
 }

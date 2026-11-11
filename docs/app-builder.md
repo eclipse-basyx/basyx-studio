@@ -31,6 +31,24 @@ something, choose *Check again*.
      `studio-app.json`. Studio works in that folder and never moves or
      deletes it.
 3. Give the app a name, pick an agent, and describe what it should do.
+   Optionally choose a **Default preview target**. Studio saves it with the
+   app and selects it whenever its preview opens. Leave it empty to use
+   Studio's current target.
+4. For an empty app, choose *Plan with …* to work out the app with the agent
+   before it is built, or *Create without planning* to start right away.
+   Planning opens full screen, with the chat on the left and the document on
+   the right; *Requirements* and *Plan* at the top switch between the two, and
+   the close button goes back to the idea:
+   - **Requirements**: the agent drafts what the app should do from your
+     idea. Edit the document yourself, or tell the agent in the chat beside
+     it what to change; it answers your questions and asks its own.
+   - **Plan**: the agent proposes how to build it: views, components, how it
+     reads AAS data, and the steps in order. Discuss and edit it the same way.
+   - *Create app* saves both in the app's `docs` folder (`requirements.md`,
+     `plan.md`), and the agent builds the app from them.
+
+   While planning, the agent only reads Studio's app template; it changes no
+   files and runs no commands.
 
 New apps and copies go to `Documents/BaSyx Studio/Apps/<name>`. Each folder
 is a git repository.
@@ -62,6 +80,23 @@ is a git repository.
 - Chats are saved. An agent that has been idle for a while is stopped and
   continues its session with your next message.
 
+## Browsing and editing source files
+
+Choose **Browse files** in an app's menu, or use the file-tree button in the
+chat header. A docked Files pane keeps the chat visible, with editor tabs
+on the left and a compact folder tree on the right. Folders load on demand;
+dependencies and Git internals are hidden, and symbolic links cannot be opened.
+
+The editor opens UTF-8 text files up to 2 MiB, with highlighting for source
+code and configuration files. Use **Save** or **Ctrl+S / ⌘S** to save to the
+app's folder. Changes are not committed automatically. Studio checks the
+file's revision before saving and asks you to reload if the agent or another
+editor changed it. Saving waits while an agent is working on the app.
+Tabs retain their drafts when switching files, projects or back to the
+preview. Closing a changed tab, reloading or leaving the Builder asks before
+discarding unsaved changes. **Refresh folders** reloads the tree without
+replacing your open editors.
+
 ## Preview
 
 After each turn that changed files, Studio builds the app and shows it in
@@ -72,6 +107,13 @@ fails, *Ask the agent to fix it* hands the log to the agent.
 
 The preview is installed beside your app, not over it; it appears only in
 the App Builder.
+
+Use **Open preview in a separate window** in the preview header to move it
+into a resizable desktop window, for example on a second monitor. The
+selected app part, target, shell, submodel and app path carry over, and the
+window refreshes after builds. Each app has one preview window; opening it
+again focuses the existing window. Closing it leaves the app and its chat
+open. Use the chat's preview toggle to show the inline preview again.
 
 ## Installing
 

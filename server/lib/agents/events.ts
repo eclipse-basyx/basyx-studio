@@ -4,7 +4,7 @@ import { toolCallKinds } from '#shared/contract'
 
 // Maps the agent's ACP `session/update` notifications onto the App Builder's
 // conversation events (ADR 0054). Updates the page does not show (commands,
-// usage, session titles) map to nothing.
+// session titles) map to nothing.
 
 const maxOutputLength = 20_000
 
@@ -74,6 +74,9 @@ export function eventsFromUpdate (update: SessionUpdate): ConversationEvent[] {
     case 'plan': {
       return [{ type: 'plan', entries: update.entries.map(entry => ({ content: entry.content, status: entry.status })) }]
     }
+    case 'usage_update': {
+      return [{ type: 'usage', used: update.used, size: update.size }]
+    }
     default: {
       return []
     }
@@ -82,7 +85,30 @@ export function eventsFromUpdate (update: SessionUpdate): ConversationEvent[] {
 
 /** The agent's model setting, from its session config options. */
 export function modelSetting (options: SessionConfigOption[] | null | undefined): AgentSetting | null {
-  const option = options?.find(entry => entry.category === 'model') ?? options?.find(entry => entry.id === 'model')
+  return selectSetting(options?.find(entry => entry.category === 'model') ?? options?.find(entry => entry.id === 'model'))
+}
+
+/** The reasoning effort (Claude's `effort`, Codex's `reasoning_effort`), from the session config options. */
+export function effortSetting (options: SessionConfigOption[] | null | undefined): AgentSetting | null {
+  return selectSetting(options?.find(entry => entry.category === 'thought_level'))
+}
+
+/** Fast mode (Claude's `fast`: `on`, `off`), from the session config options; Studio asks for it as a select. */
+export function speedSetting (options: SessionConfigOption[] | null | undefined): AgentSetting | null {
+  return selectSetting(options?.find(entry => entry.id === 'fast' && entry.category === 'model_config'))
+}
+
+/**
+ * A setting as an update reports it. Some agents report only the current
+ * value of a setting whose choices they told before (Claude's effort after a
+ * model switch), which keeps the earlier choices.
+ */
+export function mergeSetting (previous: AgentSetting | null, next: AgentSetting): AgentSetting {
+  const partial = previous && next.options.length < previous.options.length && next.options.every(option => previous.options.some(known => known.value === option.value))
+  return partial ? { ...previous, current: next.current } : next
+}
+
+function selectSetting (option: SessionConfigOption | undefined): AgentSetting | null {
   if (!option || option.type !== 'select') {
     return null
   }

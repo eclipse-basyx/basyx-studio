@@ -105,7 +105,10 @@ describe('App Builder project template (ADR 0054, plan P2)', () => {
 interface Fake { prompts: string[], loaded: string[], sessions: string[], models: string[] }
 
 function modelOptions (current: string) {
-  return [{ id: 'model', name: 'Model', category: 'model' as const, type: 'select' as const, currentValue: current, options: [{ value: 'small', name: 'Small' }, { value: 'large', name: 'Large' }] }]
+  return [
+    { id: 'model', name: 'Model', category: 'model' as const, type: 'select' as const, currentValue: current, options: [{ value: 'small', name: 'Small' }, { value: 'large', name: 'Large' }] },
+    { id: 'effort', name: 'Effort', category: 'thought_level' as const, type: 'select' as const, currentValue: 'medium', options: [{ value: 'low', name: 'Low' }, { value: 'medium', name: 'Medium' }] },
+  ]
 }
 
 function fakeAgent (folder: string, fake: Fake) {
@@ -183,11 +186,37 @@ function git (folder: string, ...args: string[]): string {
 }
 
 describe.skipIf(process.platform === 'win32')('App Builder projects (ADR 0054, phase B)', () => {
+  it('browses and edits files only in a registered project, detecting newer edits', async () => {
+    const { manager } = setup()
+    const instance = manager()
+    const { project } = await instance.createProject('Source Files', 'opencode', null)
+    expect((await instance.listProjectFiles(project.id, '')).map(entry => entry.name)).toContain('package.json')
+    const opened = await instance.readProjectFile(project.id, 'README.md')
+    const saved = await instance.saveProjectFile(project.id, opened.path, `${opened.content}\nEdited in Studio.\n`, opened.revision)
+    expect(saved.content).toContain('Edited in Studio.')
+    await expect(instance.saveProjectFile(project.id, opened.path, 'stale', opened.revision)).rejects.toMatchObject({ code: 'revision_conflict' })
+    await expect(instance.readProjectFile('missing', 'README.md')).rejects.toMatchObject({ code: 'not_found' })
+    await instance.dispose()
+  })
+
+  it.each([null, 'nameplate'])('keeps a default preview target when creating from %s and reopening', async source => {
+    const { store, manager } = setup()
+    const first = manager()
+    const { project } = await first.createProject('Preview App', 'opencode', null, source, null, null, 'target-a')
+    expect(project.previewTargetId).toBe('target-a')
+    expect(store.projects.get(project.id)?.previewTargetId).toBe('target-a')
+    await first.dispose()
+
+    const second = manager()
+    expect((await second.projects())[0]?.previewTargetId).toBe('target-a')
+    await second.dispose()
+  })
+
   it('creates a project, commits each turn, shows and undoes it, and resumes after a restart', async () => {
     const { root, store, fake, manager } = setup()
     const first = manager()
     const { project, conversation } = await first.createProject('Shell List', 'opencode', 'List the shells')
-    expect(project).toMatchObject({ name: 'Shell List', appId: 'local.shell-list', folder: join(root, 'Apps', 'shell-list'), origin: 'new' })
+    expect(project).toMatchObject({ name: 'Shell List', appId: 'local.shell-list', folder: join(root, 'Apps', 'shell-list'), origin: 'new', previewTargetId: null })
     expect(existsSync(join(project.folder, 'AGENTS.md'))).toBe(true)
 
     const live = await first.conversation(conversation.id)
@@ -266,6 +295,70 @@ describe.skipIf(process.platform === 'win32')('App Builder projects (ADR 0054, p
     await instance.dispose()
   })
 
+  it('plans a new app in a read-only chat, then creates it with its requirements and plan', async () => {
+    const { fake, manager } = setup()
+    const instance = manager()
+    const draft = await instance.startDraft('opencode', 'large', 'Shell List')
+    expect(draft.projectId).toBe('')
+    const live = await instance.conversation(draft.id)
+    const events: ConversationEventEnvelope[] = []
+    live.subscribe(0, envelope => events.push(envelope))
+    // The first draft: no message of the user's, so the chat shows none.
+    await instance.draftTurn(draft.id, { stage: 'requirements', message: '', name: 'Shell List', idea: 'List the shells', requirements: '', plan: '' })
+    await until(() => live.state === 'idle' && fake.prompts.length === 1)
+    const folder = fake.sessions.at(-1)!
+    // The template as the app would be created now: its name and ID, not a placeholder's.
+    expect(JSON.parse(readFileSync(join(folder, 'studio-app.json'), 'utf8'))).toMatchObject({ id: 'local.shell-list' })
+    expect(fake.prompts[0]).toContain('Write the first draft of the requirements')
+    expect(events.some(({ event }) => event.type === 'userMessage')).toBe(false)
+    // The user's message shows as they wrote it; the agent gets the stage's prompt.
+    await instance.draftTurn(draft.id, { stage: 'plan', message: 'Use a table', name: 'Shell List', idea: 'List the shells', requirements: '1. R1', plan: '' })
+    await until(() => live.state === 'idle' && fake.prompts.length === 2)
+    expect(events.filter(({ event }) => event.type === 'userMessage').map(({ event }) => (event as { text: string }).text)).toEqual(['Use a table'])
+    expect(fake.prompts[1]).toContain('`studio-plan`')
+
+    const { project, conversation } = await instance.createProject('Shell List', 'opencode', 'List the shells', null, 'large', { requirements: '# Requirements\n\n1. R1', plan: '# Plan\n\n1. Scaffold', draftId: draft.id })
+    // The planning chat ends with its folder; the documents are in the project's first commit.
+    expect(existsSync(folder)).toBe(false)
+    await expect(instance.draftTurn(draft.id, { stage: 'plan', message: 'More', name: '', idea: '', requirements: '', plan: '' })).rejects.toMatchObject({ code: 'not_found' })
+    expect(readFileSync(join(project.folder, 'docs', 'requirements.md'), 'utf8')).toBe('# Requirements\n\n1. R1\n')
+    expect(git(project.folder, 'show', '--name-only', '--format=', 'HEAD~0').split('\n')).toEqual(expect.arrayContaining(['docs/plan.md', 'docs/requirements.md']))
+    const built = await instance.conversation(conversation.id)
+    await until(() => fake.prompts.length === 3 && built.state === 'idle')
+    expect(fake.prompts[2]).toMatch(/^Build this app as described in docs\/requirements\.md, following docs\/plan\.md\./)
+    expect(conversation.title).toMatch(/^Build this app/)
+    await instance.dispose()
+  })
+
+  it('shows the effort of a chat saved before Studio knew it, asking the agent once', async () => {
+    const { store, fake, manager } = setup()
+    const first = manager()
+    const { conversation } = await first.createProject('Shell List', 'opencode', 'List the shells')
+    const live = await first.conversation(conversation.id)
+    await until(() => live.state === 'idle' && fake.prompts.length === 1)
+    expect(live.summary().effort?.current).toBe('medium')
+    await first.dispose()
+    // As saved by an earlier Studio: state events without effort.
+    for (const envelope of store.events.get(conversation.id)!) {
+      if (envelope.event.type === 'state') {
+        delete envelope.event.effort
+        delete envelope.event.speed
+      }
+    }
+
+    const second = manager()
+    const sessions = fake.sessions.length
+    const saved = await second.conversation(conversation.id)
+    expect(saved.state).toBe('inactive')
+    // A session of its own, without a prompt; the chat's agent does not start.
+    await until(() => saved.summary().effort !== null)
+    expect(saved.summary().effort).toMatchObject({ current: 'medium', options: [{ value: 'low' }, { value: 'medium' }] })
+    expect(fake.sessions).toHaveLength(sessions + 1)
+    expect(fake.prompts).toHaveLength(1)
+    expect(saved.state).toBe('inactive')
+    await second.dispose()
+  })
+
   it('gives a second project with the same name its own folder', async () => {
     const { root, manager } = setup()
     const instance = manager()
@@ -339,8 +432,10 @@ describe.skipIf(process.platform === 'win32')('App Builder projects (ADR 0054, p
     const app = join(root, 'plain')
     execFileSync('mkdir', ['-p', app])
     writeFileSync(join(app, 'studio-app.json'), JSON.stringify({ id: 'org.example.plain', version: '1.0.0' }))
-    const { project } = await instance.addFolder(app, 'opencode', 'Plain App')
+    const { project } = await instance.addFolder(app, 'opencode', 'Plain App', null, 'target-b')
     expect(project.name).toBe('Plain App')
+    expect(project.previewTargetId).toBe('target-b')
+    expect((await instance.projects())[0]?.previewTargetId).toBe('target-b')
     expect(readFileSync(join(app, '.gitignore'), 'utf8')).toContain('node_modules')
     expect(git(app, 'log', '--format=%s').trim()).toBe('Add Plain App to the BaSyx Studio App Builder')
     await expect(instance.addFolder(root, 'opencode', null)).rejects.toMatchObject({ code: 'invalid_request' })

@@ -7,7 +7,7 @@
     </NuxtLayout>
 
     <ClientOnly>
-      <WelcomeScreen />
+      <WelcomeScreen v-if="!route.meta.previewWindow" />
     </ClientOnly>
   </v-defaults-provider>
 </template>
@@ -23,6 +23,7 @@
   // from shared/i18n/locales.ts: the module's tag for hidden dialects is only
   // for detection (nuxt.config.ts).
   const { locale, localeCodes, setLocale } = useI18n()
+  const route = useRoute()
   // The file viewer (ADR 0052) in the UI locale, with Studio's Monaco.
   provideFileViewer({ locale: () => locale.value, monaco: async () => (await import('~/utils/monaco')).monaco })
   useHead(() => ({ htmlAttrs: { lang: locales.find(entry => entry.code === locale.value)?.language ?? 'en-US', dir: 'ltr' } }))

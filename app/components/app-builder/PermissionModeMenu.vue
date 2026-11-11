@@ -1,13 +1,11 @@
 <template>
   <v-menu>
     <template #activator="{ props: menu }">
-      <v-btn
+      <v-btn-chat-setting
         v-bind="menu"
         :aria-label="t('mode.label')"
         :color="mode === 'unrestricted' ? 'error' : undefined"
         data-test="app-builder-permission-mode"
-        :prepend-icon="icons[mode]"
-        size="small"
         :text="t(`mode.${mode}`)"
       />
     </template>
@@ -28,27 +26,25 @@
   </v-menu>
 
   <v-dialog v-model="warning" max-width="520">
-    <v-card data-test="app-builder-unrestricted-dialog" :title="t('mode.warningTitle')">
-      <v-card-text>
-        <v-alert icon="mdi-alert-octagon-outline" :text="t('mode.warningText', { agent })" type="error" />
+    <DialogCard data-test="app-builder-unrestricted-dialog" :title="t('mode.warningTitle')">
+      <v-alert icon="mdi-alert-octagon-outline" :text="t('mode.warningText', { agent })" type="error" />
 
-        <ul class="text-body-medium mt-3 ps-5">
-          <li>{{ t('mode.warningFiles') }}</li>
-          <li>{{ t('mode.warningCommands') }}</li>
-          <li>{{ t('mode.warningNetwork') }}</li>
-          <li>{{ t('mode.warningScope') }}</li>
-        </ul>
+      <ul class="text-body-medium mt-3 ps-5">
+        <li>{{ t('mode.warningFiles') }}</li>
+        <li>{{ t('mode.warningCommands') }}</li>
+        <li>{{ t('mode.warningNetwork') }}</li>
+        <li>{{ t('mode.warningScope') }}</li>
+      </ul>
 
-        <v-checkbox
-          v-model="acknowledged"
-          class="mt-2"
-          data-test="app-builder-unrestricted-ack"
-          :label="t('mode.warningConfirm', { agent })"
-        />
-      </v-card-text>
+      <v-checkbox
+        v-model="acknowledged"
+        class="mt-2"
+        data-test="app-builder-unrestricted-ack"
+        :label="t('mode.warningConfirm', { agent })"
+      />
 
       <template #actions>
-        <v-btn-secondary :text="t('mode.cancel')" @click="warning = false" />
+        <v-btn :text="t('mode.cancel')" @click="warning = false" />
 
         <v-btn-primary
           color="error"
@@ -58,7 +54,7 @@
           @click="confirm"
         />
       </template>
-    </v-card>
+    </DialogCard>
   </v-dialog>
 </template>
 

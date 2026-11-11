@@ -4,17 +4,20 @@
     <v-sheet-app-builder>
       <div class="d-flex flex-grow-1 overflow-hidden">
         <v-sheet class="d-flex flex-column flex-shrink-0" color="sidebar" width="280">
-          <div class="d-flex align-center ga-2 ps-3 pe-2 pt-2 pb-1">
+          <div class="d-flex align-center ga-3 px-4 py-4">
             <v-icon color="primary" icon="mdi-creation" size="small" />
-            <span class="text-title-medium flex-grow-1">{{ t('app.title') }}</span>
+            <span class="text-title-medium font-weight-bold">{{ t('app.title') }}</span>
+          </div>
 
+          <div class="px-2 pb-2">
             <v-btn
-              v-tooltip="t('projects.new')"
-              :aria-label="t('projects.new')"
+              block
+              class="justify-start"
               color="primary"
               data-test="app-builder-new"
               :disabled="readyAgents.length === 0"
-              icon="mdi-plus-circle"
+              prepend-icon="mdi-plus"
+              :text="t('projects.new')"
               @click="newApp = true"
             />
           </div>
@@ -22,7 +25,13 @@
           <div class="flex-grow-1 overflow-y-auto">
             <div class="text-label-medium text-medium-emphasis px-3 pt-1">{{ t('projects.heading') }}</div>
 
-            <v-list v-if="projects.length > 0" v-model:opened="opened" color="on-surface" slim>
+            <v-list
+              v-if="projects.length > 0"
+              v-model:opened="opened"
+              class="mx-2"
+              color="on-surface"
+              slim
+            >
               <v-list-group v-for="project in projects" :key="project.id" :value="project.id">
                 <template #activator="{ props: activator, isOpen }">
                   <v-list-item
@@ -57,6 +66,7 @@
                             @click="startChat(project, agent.id)"
                           />
 
+                          <v-list-item data-test="app-builder-browse-files" prepend-icon="mdi-file-tree-outline" :title="t('files.browse')" @click="openFiles(project)" />
                           <v-list-item prepend-icon="mdi-folder-open-outline" :title="t('projects.openFolder')" @click="openFolder(project)" />
                           <v-list-item prepend-icon="mdi-content-copy" :title="t('projects.copyPath')" @click="copyPath(project.folder)" />
                           <v-list-item prepend-icon="mdi-delete-outline" :title="t('projects.remove')" @click="removing = { project, deleteFolder: false }" />
@@ -134,18 +144,20 @@
             :answering="answering"
             :connected="connected.get(active.conversation.id) ?? true"
             :conversation="active.conversation"
-            :preview-open="previewOpen"
+            :files-open="rightPane === 'files'"
+            :preview-open="rightPane === 'preview'"
             :project-name="active.project.name"
             :transcript="activeTranscript"
             @answer="(approvalId, decision) => answer(active!.conversation.id, approvalId, decision)"
             @delete="deleting = active!.conversation.id"
             @install="installing = active!.project"
             @send="text => send(active!.conversation.id, text)"
-            @set-model="value => setModel(active!.conversation.id, value)"
             @set-permission-mode="(mode, acknowledgeRisk) => setPermissionMode(active!.conversation.id, mode, acknowledgeRisk)"
+            @set-setting="(setting, value) => setSetting(active!.conversation.id, setting, value)"
             @show-changes="commit => showChanges(active!.project.id, commit)"
+            @show-files="rightPane === 'files' && filesProject?.id === active!.project.id ? rightPane = null : openFiles(active!.project)"
             @stop="stop(active!.conversation.id)"
-            @toggle-preview="previewOpen = !previewOpen"
+            @toggle-preview="rightPane = rightPane === 'preview' ? null : 'preview'"
             @undo="commit => undoing = { conversationId: active!.conversation.id, commit }"
           />
 
@@ -158,8 +170,18 @@
           </div>
         </div>
 
-        <v-sheet v-if="previewOpen && active" class="flex-shrink-0 border-s" width="42%">
-          <PreviewPane :build-seq="buildSeq" :project-id="active.project.id" @close="previewOpen = false" />
+        <v-sheet v-if="rightPane === 'preview' && active" class="flex-shrink-0 border-s" width="42%">
+          <PreviewPane
+            :key="active.project.id"
+            :build-seq="buildSeq"
+            :default-target-id="active.project.previewTargetId"
+            :project-id="active.project.id"
+            @close="rightPane = null"
+          />
+        </v-sheet>
+
+        <v-sheet v-if="filesProject" v-show="rightPane === 'files'" class="flex-shrink-0 border-s" width="52%">
+          <ProjectFilesPane :project="filesProject" :working="filesWorking" @close="rightPane = null" />
         </v-sheet>
       </div>
 
@@ -168,6 +190,7 @@
         :agents="readyAgents"
         :bundled="bundled"
         :busy="creating"
+        :error="newApp ? error : null"
         :preset-app-id="presetAppId"
         @create="createApp"
       />
@@ -177,64 +200,67 @@
       <InstallDialog :project="installing" @close="installing = null" @installed="onInstalled" />
 
       <v-dialog max-width="480" :model-value="deleting !== null" @update:model-value="open => { if (!open) deleting = null }">
-        <v-card :text="t('chats.deleteText')" :title="t('chats.deleteTitle')">
+        <DialogCard :title="t('chats.deleteTitle')">
+          {{ t('chats.deleteText') }}
+
           <template #actions>
-            <v-btn-secondary :text="t('chats.cancel')" @click="deleting = null" />
-            <v-btn-primary data-test="app-builder-delete-confirm" :text="t('chats.delete')" @click="deleteChat" />
+            <v-btn :text="t('chats.cancel')" @click="deleting = null" />
+            <v-btn-primary color="error" data-test="app-builder-delete-confirm" :text="t('chats.delete')" @click="deleteChat" />
           </template>
-        </v-card>
+        </DialogCard>
       </v-dialog>
 
       <v-dialog max-width="520" :model-value="undoing !== null" @update:model-value="open => { if (!open) undoing = null }">
-        <v-card :text="t('checkpoint.undoText')" :title="t('checkpoint.undoTitle')">
+        <DialogCard :title="t('checkpoint.undoTitle')">
+          {{ t('checkpoint.undoText') }}
+
           <template #actions>
-            <v-btn-secondary :text="t('chats.cancel')" @click="undoing = null" />
+            <v-btn :text="t('chats.cancel')" @click="undoing = null" />
             <v-btn-primary data-test="app-builder-undo-confirm" :text="t('checkpoint.undoConfirm')" @click="undo" />
           </template>
-        </v-card>
+        </DialogCard>
       </v-dialog>
 
       <v-dialog max-width="560" :model-value="removing !== null" @update:model-value="open => { if (!open) removing = null }">
-        <v-card v-if="removing" :title="t('projects.removeTitle', { name: removing.project.name })">
-          <v-card-text>
-            <div class="text-body-medium">{{ t('projects.removeText') }}</div>
+        <DialogCard v-if="removing" :title="t('projects.removeTitle', { name: removing.project.name })">
+          <div class="text-body-medium">{{ t('projects.removeText') }}</div>
 
-            <div v-if="removing.project.origin === 'folder'" class="text-body-medium mt-2">{{ t('projects.keepsFolder', { folder: removing.project.folder }) }}</div>
+          <div v-if="removing.project.origin === 'folder'" class="text-body-medium mt-2">{{ t('projects.keepsFolder', { folder: removing.project.folder }) }}</div>
 
-            <v-checkbox
-              v-else
-              v-model="removing.deleteFolder"
-              class="mt-2"
-              data-test="app-builder-remove-folder"
-              hide-details
-              :label="t('projects.deleteFolder', { folder: removing.project.folder })"
-            />
-          </v-card-text>
+          <v-checkbox
+            v-else
+            v-model="removing.deleteFolder"
+            class="mt-2"
+            data-test="app-builder-remove-folder"
+            hide-details
+            :label="t('projects.deleteFolder', { folder: removing.project.folder })"
+          />
 
           <template #actions>
-            <v-btn-secondary :text="t('chats.cancel')" @click="removing = null" />
-            <v-btn-primary data-test="app-builder-remove-confirm" :text="t('projects.removeConfirm')" @click="removeProject" />
+            <v-btn :text="t('chats.cancel')" @click="removing = null" />
+            <v-btn-primary color="error" data-test="app-builder-remove-confirm" :text="t('projects.removeConfirm')" @click="removeProject" />
           </template>
-        </v-card>
+        </DialogCard>
       </v-dialog>
     </v-sheet-app-builder>
   </v-theme-provider>
 </template>
 
 <script lang="ts" setup>
-  import type { AgentId, AppBuilderStatus, AppProject, ApprovalDecision, BundledAppSource, ConversationSummary, PermissionMode } from '#shared/contract'
+  import type { AgentId, AgentSettingKind, AppBuilderStatus, AppProject, ApprovalDecision, BundledAppSource, ConversationSummary, PermissionMode } from '#shared/contract'
   import type { NewAppRequest } from './NewAppDialog.vue'
   import type { Transcript } from './transcript'
-  import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowReactive, watch, watchEffect } from 'vue'
-  import { useTheme } from 'vuetify'
+  import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowReactive, watch } from 'vue'
   import { StudioApiError } from '~/composables/useStudioApi'
   import AgentStatusList from './AgentStatusList.vue'
   import ChangesDialog from './ChangesDialog.vue'
+  import { chatStreamIds } from './chat-streams'
   import ChatView from './ChatView.vue'
   import { provideI18n } from './i18n'
   import InstallDialog from './InstallDialog.vue'
   import NewAppDialog from './NewAppDialog.vue'
   import PreviewPane from './PreviewPane.vue'
+  import ProjectFilesPane from './ProjectFilesPane.vue'
   import { applyEvent, emptyTranscript } from './transcript'
 
   // The App Builder (ADR 0054): apps on this computer, each a folder with a
@@ -244,16 +270,7 @@
   const client = useAppBuilderClient()
   const notifications = useNotificationsStore()
 
-  const studioTheme = useTheme()
-  const builderTheme = computed(() => studioTheme.current.value.dark ? 'claude-dark' : 'claude-light')
-  // The accent is the user's (Settings, app.vue): copied from Studio's own
-  // themes into the App Builder's, so it follows a change at once.
-  watchEffect(() => {
-    for (const mode of ['light', 'dark'] as const) {
-      const { primary, 'on-primary': onPrimary } = studioTheme.themes.value[mode]!.colors
-      Object.assign(studioTheme.themes.value[`claude-${mode}`]!.colors, { primary, 'on-primary': onPrimary })
-    }
-  })
+  const builderTheme = useAppBuilderTheme()
 
   const status = ref<AppBuilderStatus | null>(null)
   const checking = ref(false)
@@ -267,8 +284,10 @@
   const followers = new Map<string, () => void>()
   const activeId = ref<string | null>(null)
   const newApp = ref(false)
-  const previewOpen = ref(true)
+  const rightPane = ref<'preview' | 'files' | null>('preview')
   const installing = ref<AppProject | null>(null)
+  const filesProject = ref<AppProject | null>(null)
+  const filesWorking = computed(() => filesProject.value?.conversations.some(conversation => ['working', 'starting'].includes(transcripts.get(conversation.id)?.state ?? conversation.state)) ?? false)
   const bundled = ref<BundledAppSource[]>([])
   const route = useRoute()
   /** A bundled app the Apps page sent here to copy (plan P4). */
@@ -289,8 +308,18 @@
     return null
   })
   const activeTranscript = computed(() => activeId.value ? transcripts.get(activeId.value) ?? null : null)
+  watch(() => active.value?.project.id, () => {
+    if (rightPane.value === 'files' && active.value) {
+      filesProject.value = active.value.project
+    }
+  })
   /** Changes with each finished build of the open chat, so the preview loads again. */
   const buildSeq = computed(() => activeTranscript.value?.items.filter(item => item.kind === 'build' && item.state !== 'running').length ?? 0)
+
+  function openFiles (project: AppProject) {
+    filesProject.value = project
+    rightPane.value = 'files'
+  }
 
   function agentName (id: AgentId): string {
     return status.value?.agents.find(agent => agent.id === id)?.name ?? id
@@ -377,18 +406,39 @@
     }
   }
 
+  // Release idle chats as soon as another one is selected. Keeping every
+  // visited EventSource open exhausts Chromium's HTTP/1 connection pool.
+  watch(() => ({
+    activeId: activeId.value,
+    conversations: projects.value.flatMap(project => project.conversations).map(conversation => ({
+      id: conversation.id,
+      state: transcripts.get(conversation.id)?.state ?? conversation.state,
+    })),
+  }), ({ conversations, activeId }) => {
+    const ids = new Set(chatStreamIds(conversations, activeId))
+    for (const [id, stopFollowing] of followers) {
+      if (!ids.has(id)) {
+        stopFollowing()
+        followers.delete(id)
+      }
+    }
+    for (const conversation of projects.value.flatMap(project => project.conversations)) {
+      if (ids.has(conversation.id)) follow(conversation)
+    }
+  })
+
   async function createApp (request: NewAppRequest) {
     creating.value = true
     const created = await run(() => {
       switch (request.kind) {
         case 'new': {
-          return client.call('createProject', { name: request.name, agentId: request.agentId, ...(request.model ? { model: request.model } : {}), prompt: request.prompt })
+          return client.call('createProject', { name: request.name, agentId: request.agentId, previewTargetId: request.previewTargetId, ...(request.model ? { model: request.model } : {}), prompt: request.prompt, ...(request.planning ? { planning: { requirements: request.planning.requirements, plan: request.planning.plan, ...(request.planning.draftId ? { draftId: request.planning.draftId } : {}) } } : {}) })
         }
         case 'copy': {
-          return client.call('createProject', { name: request.name, agentId: request.agentId, ...(request.model ? { model: request.model } : {}), source: request.source, ...(request.prompt ? { prompt: request.prompt } : {}) })
+          return client.call('createProject', { name: request.name, agentId: request.agentId, previewTargetId: request.previewTargetId, ...(request.model ? { model: request.model } : {}), source: request.source, ...(request.prompt ? { prompt: request.prompt } : {}) })
         }
         default: {
-          return client.call('addFolder', { folderHandle: request.folderHandle, agentId: request.agentId, ...(request.model ? { model: request.model } : {}), ...(request.name ? { name: request.name } : {}) })
+          return client.call('addFolder', { folderHandle: request.folderHandle, agentId: request.agentId, previewTargetId: request.previewTargetId, ...(request.model ? { model: request.model } : {}), ...(request.name ? { name: request.name } : {}) })
         }
       }
     })
@@ -434,8 +484,8 @@
     }
   }
 
-  async function setModel (conversationId: string, value: string) {
-    await run(() => client.call('setModel', { conversationId, value }))
+  async function setSetting (conversationId: string, setting: AgentSettingKind, value: string) {
+    await run(() => client.call('setSetting', { conversationId, setting, value }))
   }
 
   async function setPermissionMode (conversationId: string, mode: PermissionMode, acknowledgeRisk: boolean) {

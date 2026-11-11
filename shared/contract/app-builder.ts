@@ -1,5 +1,6 @@
 import type { AppInstallation, AppPackageInspection } from './apps'
 import { z } from 'zod'
+import { planningStages } from '../app-builder-planning'
 import { appContributionsSchema } from './apps'
 
 // The App Builder (ADR 0054): chats with coding agents that Studio runs
@@ -34,6 +35,11 @@ export const agentSettingSchema = z.object({
   options: z.array(agentOptionSchema),
 })
 export type AgentSetting = z.infer<typeof agentSettingSchema>
+
+/** The settings of a chat's agent that the chat offers, where the agent has them: the model, the reasoning effort and fast mode. */
+export const agentSettingKinds = ['model', 'effort', 'speed'] as const
+export const agentSettingKindSchema = z.enum(agentSettingKinds)
+export type AgentSettingKind = z.infer<typeof agentSettingKindSchema>
 
 export const agentStatusSchema = z.object({
   id: agentIdSchema,
@@ -101,6 +107,9 @@ export const conversationSummarySchema = z.object({
   state: conversationStateSchema,
   /** The model the agent offers to switch between, when it offers one. */
   model: agentSettingSchema.nullable(),
+  /** The reasoning effort, and fast mode (`on`, `off`), where the agent offers them. */
+  effort: agentSettingSchema.nullable(),
+  speed: agentSettingSchema.nullable(),
   permissionMode: permissionModeSchema,
   createdAt: z.string(),
   /** The number of the last event, for resuming the event stream. */
@@ -161,11 +170,27 @@ export const appProjectSchema = z.object({
   folder: z.string(),
   origin: appProjectOriginSchema,
   source: z.string().nullable(),
+  /** Default target when opening this app's preview; null keeps Studio's current target. */
+  previewTargetId: z.string().min(1).max(200).nullable(),
   createdAt: z.string(),
   /** Newest first. */
   conversations: z.array(conversationSummarySchema),
 })
 export type AppProject = z.infer<typeof appProjectSchema>
+
+export interface ProjectFileEntry {
+  name: string
+  /** A slash-separated path relative to the project's folder. */
+  path: string
+  kind: 'directory' | 'file' | 'symlink'
+}
+
+export interface ProjectTextFile {
+  path: string
+  content: string
+  /** SHA-256 of the bytes opened, required when saving. */
+  revision: string
+}
 
 export const changedFileSchema = z.object({
   path: z.string(),
@@ -214,7 +239,9 @@ export const conversationEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('build'), state: z.enum(['running', 'succeeded', 'failed']), log: z.string().nullable(), consentNeeded: z.boolean() }),
   /** Something Studio tells about the chat, such as a session that could not be resumed. */
   z.object({ type: z.literal('notice'), text: z.string() }),
-  z.object({ type: z.literal('state'), state: conversationStateSchema, model: agentSettingSchema.nullable(), permissionMode: permissionModeSchema.optional() }),
+  z.object({ type: z.literal('state'), state: conversationStateSchema, model: agentSettingSchema.nullable(), effort: agentSettingSchema.nullable().optional(), speed: agentSettingSchema.nullable().optional(), permissionMode: permissionModeSchema.optional() }),
+  /** How much of the model's context window the chat uses, in tokens, as the agent last reported it. */
+  z.object({ type: z.literal('usage'), used: z.number().nonnegative(), size: z.number().nonnegative() }),
   z.object({ type: z.literal('error'), message: z.string() }),
 ])
 export type ConversationEvent = z.infer<typeof conversationEventSchema>
@@ -277,6 +304,8 @@ const projectId = z.string().min(1).max(64)
 const prompt = z.string().trim().min(1).max(100_000)
 /** A model's value, as the agent offers it. */
 const model = z.string().min(1).max(200)
+/** A requirements or plan document of the planning chat, in Markdown. */
+const planningDocument = z.string().max(100_000)
 const commit = z.string().regex(/^[\da-f]{7,64}$/, 'must be a commit hash')
 
 /** A project's name: one line, and something that gives a folder name. */
@@ -286,21 +315,52 @@ export const appProjectNameSchema = z.string().trim().min(1).max(80).regex(/^\P{
 export const appBuilderOperationSchemas = {
   getStatus: z.object({ refresh: z.boolean().default(false) }),
   listProjects: z.object({}),
-  /** From the template, or as a copy of a bundled app (`source`: its folder in Studio's apps); the prompt starts the first chat. */
-  createProject: z.object({ name: appProjectNameSchema, agentId: agentIdSchema, model: model.optional(), prompt: prompt.optional(), source: z.string().regex(/^[a-z\d][a-z\d-]{0,63}$/).optional() }),
+  /**
+   * From the template, or as a copy of a bundled app (`source`: its folder in
+   * Studio's apps); the prompt starts the first chat. With `planning`, the
+   * requirements and plan of a planning chat go into the project's docs and
+   * the first chat builds the app from them (the prompt is the idea).
+   */
+  createProject: z.object({
+    name: appProjectNameSchema,
+    agentId: agentIdSchema,
+    model: model.optional(),
+    prompt: prompt.optional(),
+    source: z.string().regex(/^[a-z\d][a-z\d-]{0,63}$/).optional(),
+    previewTargetId: z.string().min(1).max(200).nullable().optional(),
+    planning: z.object({ requirements: planningDocument.min(1), plan: planningDocument.min(1), draftId: conversationId.optional() }).optional(),
+  }),
+  /** Starts the planning chat of a new app: the agent, read-only, in a folder with the app template. */
+  startDraft: z.object({ agentId: agentIdSchema, model: model.optional(), name: appProjectNameSchema.optional() }),
+  /** A turn of the planning chat; an empty message asks for the stage's first draft. */
+  draftTurn: z.object({
+    conversationId,
+    stage: z.enum(planningStages),
+    message: z.string().max(20_000),
+    name: z.string().max(80),
+    idea: z.string().max(20_000),
+    requirements: planningDocument,
+    plan: planningDocument,
+  }),
+  discardDraft: z.object({ conversationId }),
   /** An app's folder the user chose (an `app-project` grant), registered where it is (plan P5). */
-  addFolder: z.object({ folderHandle: z.string().min(1).max(200), agentId: agentIdSchema, model: model.optional(), name: appProjectNameSchema.optional() }),
+  addFolder: z.object({ folderHandle: z.string().min(1).max(200), agentId: agentIdSchema, model: model.optional(), name: appProjectNameSchema.optional(), previewTargetId: z.string().min(1).max(200).nullable().optional() }),
   listBundledApps: z.object({}),
   /** The models an agent offers, for a new chat; asks the agent once when no chat has shown them. */
   getAgentModels: z.object({ agentId: agentIdSchema }),
   removeProject: z.object({ projectId, deleteFolder: z.boolean().default(false) }),
   openFolder: z.object({ projectId }),
+  listProjectFiles: z.object({ projectId, path: z.string().max(4000).default('') }),
+  readProjectFile: z.object({ projectId, path: z.string().min(1).max(4000) }),
+  saveProjectFile: z.object({ projectId, path: z.string().min(1).max(4000), content: z.string().max(2 * 1024 * 1024), revision: z.string().regex(/^[\da-f]{64}$/) }),
   startConversation: z.object({ projectId, agentId: agentIdSchema, model: model.optional() }),
   deleteConversation: z.object({ conversationId }),
   sendPrompt: z.object({ conversationId, text: prompt }),
   cancelTurn: z.object({ conversationId }),
   answerApproval: z.object({ conversationId, approvalId: z.string().min(1).max(64), decision: approvalDecisionSchema }),
   setModel: z.object({ conversationId, value: model }),
+  /** The model, effort or speed of a chat's agent, from the values it offers. */
+  setSetting: z.object({ conversationId, setting: agentSettingKindSchema, value: model }),
   /** `unrestricted` only with `acknowledgeRisk`, after the page warned the user. */
   setPermissionMode: z.object({ conversationId, mode: permissionModeSchema, acknowledgeRisk: z.boolean().default(false) }),
   getChanges: z.object({ projectId, commit }),
@@ -332,14 +392,21 @@ export interface AppBuilderOperationResults {
   addFolder: { project: AppProject, conversation: ConversationSummary }
   listBundledApps: BundledAppSource[]
   getAgentModels: AgentSetting | null
+  startDraft: ConversationSummary
+  draftTurn: null
+  discardDraft: null
   removeProject: null
   openFolder: null
+  listProjectFiles: ProjectFileEntry[]
+  readProjectFile: ProjectTextFile
+  saveProjectFile: ProjectTextFile
   startConversation: ConversationSummary
   deleteConversation: null
   sendPrompt: null
   cancelTurn: null
   answerApproval: null
   setModel: ConversationSummary
+  setSetting: ConversationSummary
   setPermissionMode: ConversationSummary
   /** The commit as a patch, and its files. */
   getChanges: { patch: string, files: ChangedFile[] }

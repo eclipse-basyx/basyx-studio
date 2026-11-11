@@ -1,3 +1,4 @@
+import type { PreviewSelection, PreviewWindowRequest } from '#shared/app-preview-window'
 import type { FileGrant } from '#shared/contract'
 import type { FileGrantKind } from '#shared/file-grant-kinds'
 
@@ -8,6 +9,9 @@ export interface DesktopBridge {
   chooseSaveLocation: (suggestedName: string) => Promise<FileGrant | null>
   /** Files for local BaSyx instances (ADR 0033); empty when cancelled. Absent in older desktop builds. */
   chooseStackFiles?: (kind: FileGrantKind, suggestedName?: string) => Promise<FileGrant[]>
+  /** Opens or focuses an app's preview window. Absent in older desktop builds. */
+  openAppPreview?: (request: PreviewWindowRequest) => Promise<void>
+  getAppPreviewSelection?: () => Promise<PreviewSelection | null>
 }
 
 declare global {

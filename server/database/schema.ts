@@ -199,6 +199,8 @@ export const appProjects = pgTable('app_projects', {
   origin: text('origin').$type<AppProjectOrigin>().notNull(),
   /** The bundled app a copy started from. */
   source: text('source'),
+  /** The default target used by the App Builder preview. */
+  previewTargetId: text('preview_target_id'),
   ...timestamps,
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

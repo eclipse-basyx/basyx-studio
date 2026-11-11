@@ -37,8 +37,17 @@ type Handler<O extends AppBuilderOperation> = (params: Params<O>, agents: AgentM
 const handlers: { [O in AppBuilderOperation]: Handler<O> } = {
   getStatus: ({ refresh }, agents) => agents.status(refresh),
   listProjects: (_, agents) => agents.projects(),
-  createProject: ({ name, agentId, model, prompt, source }, agents) => agents.createProject(name, agentId, prompt ?? null, source ?? null, model ?? null),
-  addFolder: ({ folderHandle, agentId, model, name }, agents) => agents.addFolder(folderHandle, agentId, name ?? null, model ?? null),
+  createProject: ({ name, agentId, model, prompt, source, planning, previewTargetId }, agents) => agents.createProject(name, agentId, prompt ?? null, source ?? null, model ?? null, planning ? { ...planning, draftId: planning.draftId ?? null } : null, previewTargetId ?? null),
+  startDraft: ({ agentId, model, name }, agents) => agents.startDraft(agentId, model ?? null, name ?? null),
+  draftTurn: async ({ conversationId, ...turn }, agents) => {
+    await agents.draftTurn(conversationId, turn)
+    return null
+  },
+  discardDraft: async ({ conversationId }, agents) => {
+    await agents.discardDraft(conversationId)
+    return null
+  },
+  addFolder: ({ folderHandle, agentId, model, name, previewTargetId }, agents) => agents.addFolder(folderHandle, agentId, name ?? null, model ?? null, previewTargetId ?? null),
   listBundledApps: (_, agents) => agents.bundledApps(),
   getAgentModels: ({ agentId }, agents) => agents.agentModels(agentId),
   removeProject: async ({ projectId, deleteFolder }, agents) => {
@@ -49,6 +58,9 @@ const handlers: { [O in AppBuilderOperation]: Handler<O> } = {
     await agents.openFolder(projectId)
     return null
   },
+  listProjectFiles: ({ projectId, path }, agents) => agents.listProjectFiles(projectId, path),
+  readProjectFile: ({ projectId, path }, agents) => agents.readProjectFile(projectId, path),
+  saveProjectFile: ({ projectId, path, content, revision }, agents) => agents.saveProjectFile(projectId, path, content, revision),
   startConversation: ({ projectId, agentId, model }, agents) => agents.startConversation(projectId, agentId, model ?? null),
   deleteConversation: async ({ conversationId }, agents) => {
     await agents.deleteConversation(conversationId)
@@ -67,6 +79,7 @@ const handlers: { [O in AppBuilderOperation]: Handler<O> } = {
     return null
   },
   setModel: ({ conversationId, value }, agents) => agents.setModel(conversationId, value),
+  setSetting: ({ conversationId, setting, value }, agents) => agents.setSetting(conversationId, setting, value),
   setPermissionMode: ({ conversationId, mode, acknowledgeRisk }, agents) => agents.setPermissionMode(conversationId, mode, acknowledgeRisk),
   getChanges: ({ projectId, commit }, agents) => agents.changes(projectId, commit),
   undoTurn: async ({ conversationId, commit }, agents) => {

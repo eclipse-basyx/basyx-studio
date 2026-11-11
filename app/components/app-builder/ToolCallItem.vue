@@ -1,25 +1,26 @@
 <template>
   <v-expansion-panel :disabled="!hasDetails" :value="item.id">
     <v-expansion-panel-title>
-      <div class="d-flex align-center ga-3 flex-grow-1 overflow-hidden">
+      <div class="d-flex align-center ga-2 flex-grow-1 overflow-hidden">
         <v-progress-circular
           v-if="item.status === 'in_progress' || item.status === 'pending'"
           :aria-label="t('tool.running')"
           indeterminate
           role="img"
-          size="18"
+          size="12"
           width="2"
         />
 
         <v-icon
           v-else
           :aria-label="item.status === 'failed' ? t('tool.failed') : t('tool.completed')"
-          :color="item.status === 'failed' ? 'error' : 'success'"
-          :icon="item.status === 'failed' ? 'mdi-close-circle-outline' : 'mdi-check-circle-outline'"
+          :color="item.status === 'failed' ? 'error' : undefined"
+          :icon="item.status === 'failed' ? 'mdi-close-circle-outline' : 'mdi-check'"
           role="img"
+          size="x-small"
         />
 
-        <span class="text-body-medium text-truncate">
+        <span class="text-body-small text-truncate">
           <span class="text-medium-emphasis">{{ t(`tool.${item.toolKind}`) }}</span>
           <span v-if="label" class="ms-2">{{ label }}</span>
         </span>
@@ -57,24 +58,16 @@
   import type { TranscriptItem } from './transcript'
   import { computed } from 'vue'
   import { useI18n } from './i18n'
+  import { relativePath, toolLabel } from './tools'
 
-  // One row of a group of tool calls (in a v-expansion-panels of ChatView): what it did, its status, and on demand the
-  // changed lines and the output.
+  // One row of a group of tool calls (ToolGroup): what it did, its status,
+  // and on demand the changed lines and the output.
   const props = defineProps<{ item: Extract<TranscriptItem, { kind: 'tool' }>, folder: string }>()
   const { t } = useI18n()
 
   const hasDetails = computed(() => props.item.diffs.length > 0 || props.item.output.length > 0)
-
-  function relative (path: string): string {
-    return path.startsWith(`${props.folder}/`) ? path.slice(props.folder.length + 1) : path
-  }
-
-  const label = computed(() => {
-    const paths = props.item.locations.filter(path => path !== props.folder)
-    const title = props.item.title
-    // Agents title some calls with only the tool's name ("write"); the file says more.
-    return paths.length > 0 && (!title || /^\w+$/.test(title)) ? paths.map(path => relative(path)).join(', ') : title
-  })
+  const label = computed(() => toolLabel(props.item, props.folder))
+  const relative = (path: string) => relativePath(path, props.folder)
 
   const maxDiffLines = 400
 

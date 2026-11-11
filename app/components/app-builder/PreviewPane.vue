@@ -12,6 +12,16 @@
       />
 
       <v-btn
+        v-if="desktop?.openAppPreview && !detached"
+        v-tooltip="t('preview.popOut')"
+        :aria-label="t('preview.popOut')"
+        data-test="app-builder-preview-popout"
+        icon="mdi-open-in-new"
+        :loading="opening"
+        @click="popOut"
+      />
+
+      <v-btn
         v-tooltip="t('preview.rebuild')"
         :aria-label="t('preview.rebuild')"
         data-test="app-builder-rebuild"
@@ -21,8 +31,8 @@
       />
 
       <v-btn
-        v-tooltip="t('preview.close')"
-        :aria-label="t('preview.close')"
+        v-tooltip="detached ? t('preview.closeWindow') : t('preview.close')"
+        :aria-label="detached ? t('preview.closeWindow') : t('preview.close')"
         icon="mdi-close"
         @click="emit('close')"
       />
@@ -31,9 +41,9 @@
     <div class="d-flex flex-column ga-2 pa-2 flex-grow-1 overflow-y-auto bg-background">
       <ProblemAlert v-if="error" :error="error" />
 
-      <v-progress-linear v-if="!preview" />
+      <v-progress-linear v-if="!preview && !error" />
 
-      <template v-else>
+      <template v-else-if="preview">
         <v-card v-if="preview.consent" data-test="app-builder-preview-consent">
           <v-card-item prepend-icon="mdi-shield-check-outline" :subtitle="t('preview.consentText')" :title="preview.consent.first ? t('preview.consentFirst') : t('preview.consentChanged')" />
 
@@ -137,45 +147,63 @@
 </template>
 
 <script lang="ts" setup>
+  import type { PreviewSelection } from '#shared/app-preview-window'
   import type { AppContributionInfo, AppPreview, ShellSummary, SubmodelRef, Target } from '#shared/contract'
   import { useQuery } from '@pinia/colada'
-  import { computed, ref, watch } from 'vue'
+  import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
   import { useI18n } from './i18n'
 
   // The app as the last build made it (ADR 0054, plan B3): its preview
   // installation in a frame like any app's, on a target the user picks.
-  const props = defineProps<{ projectId: string, buildSeq: number }>()
+  const props = defineProps<{ projectId: string, buildSeq: number, defaultTargetId: string | null, initialSelection?: PreviewSelection | null, detached?: boolean }>()
   const emit = defineEmits<{ close: [] }>()
   const { t } = useI18n()
   const client = useAppBuilderClient()
   const api = useStudioApi()
   const navigation = useNavigationStore()
+  const desktop = useDesktopBridge()
   const label = useLocalizedLabel()
 
   const preview = ref<AppPreview | null>(null)
   const error = ref<unknown>(null)
   const building = ref(false)
   const approving = ref(false)
-  const selectedKey = ref<string | null>(null)
-  const targetId = ref<string | null>(navigation.currentTarget)
-  const shell = ref<ShellSummary | null>(null)
-  const submodelId = ref<string | null>(null)
-  const subPath = ref('')
+  const opening = ref(false)
+  const selectedKey = ref<string | null>(props.initialSelection?.entryKey ?? null)
+  const targetId = ref<string | null>(props.initialSelection ? props.initialSelection.targetId : props.defaultTargetId ?? navigation.currentTarget)
+  const shell = ref<PreviewSelection['shell']>(props.initialSelection?.shell ?? null)
+  const submodelId = ref<string | null>(props.initialSelection?.submodelId ?? null)
+  const subPath = ref(props.initialSelection?.subPath ?? '')
   const picking = ref(false)
 
   const buildColors = { none: undefined, running: undefined, succeeded: 'success', failed: 'error' } as const
   const buildIcons = { none: 'mdi-minus', running: 'mdi-progress-clock', succeeded: 'mdi-check', failed: 'mdi-alert-circle-outline' } as const
 
+  let refreshing = false
+  let loadVersion = 0
   async function load () {
+    if (refreshing || building.value || approving.value) {
+      return
+    }
+    refreshing = true
+    const version = ++loadVersion
     try {
-      preview.value = await client.call('getPreview', { projectId: props.projectId })
-      error.value = null
+      const loaded = await client.call('getPreview', { projectId: props.projectId })
+      if (version === loadVersion) {
+        preview.value = loaded
+        error.value = null
+      }
     } catch (error_) {
-      error.value = error_
+      if (version === loadVersion) {
+        error.value = error_
+      }
+    } finally {
+      refreshing = false
     }
   }
 
   async function rebuild () {
+    loadVersion++
     building.value = true
     try {
       preview.value = await client.call('buildPreview', { projectId: props.projectId })
@@ -187,6 +215,7 @@
   }
 
   async function approve () {
+    loadVersion++
     approving.value = true
     try {
       preview.value = await client.call('approvePreview', { projectId: props.projectId })
@@ -196,6 +225,41 @@
     }
     approving.value = false
   }
+
+  async function popOut () {
+    if (!desktop?.openAppPreview) {
+      return
+    }
+    opening.value = true
+    try {
+      await desktop.openAppPreview({
+        projectId: props.projectId,
+        selection: {
+          entryKey: selectedKey.value, targetId: targetId.value,
+          shell: shell.value ? { id: shell.value.id, idShort: shell.value.idShort, displayName: shell.value.displayName } : null,
+          submodelId: submodelId.value, subPath: subPath.value,
+        },
+      })
+      emit('close')
+    } catch (error_) {
+      error.value = error_
+    } finally {
+      opening.value = false
+    }
+  }
+
+  // A separate renderer has no chat transcript to trigger a refresh. Keep
+  // its preview current after builds, including builds from a new chat.
+  let refreshTimer: ReturnType<typeof setInterval> | undefined
+  onMounted(() => {
+    if (props.detached) {
+      refreshTimer = setInterval(() => void load(), 2000)
+    }
+  })
+  onBeforeUnmount(() => {
+    clearInterval(refreshTimer)
+    loadVersion++
+  })
 
   // Each build event of the chat may have changed the preview.
   watch(() => [props.projectId, props.buildSeq], load, { immediate: true })
@@ -208,7 +272,7 @@
     ]
   })
   watch(entries, list => {
-    if (!list.some(entry => entry.key === selectedKey.value)) {
+    if (preview.value && !list.some(entry => entry.key === selectedKey.value)) {
       selectedKey.value = list[0]?.key ?? null
     }
   }, { immediate: true })
@@ -253,7 +317,7 @@
     return (matching.length > 0 ? matching : available).map(item => ({ id: item.submodelId, title: item.idShort ?? item.submodelId, semanticId: item.semanticId }))
   })
   watch(submodels, list => {
-    if (!list.some(item => item.id === submodelId.value)) {
+    if (!refs.isPending.value && !list.some(item => item.id === submodelId.value)) {
       submodelId.value = list[0]?.id ?? null
     }
   })

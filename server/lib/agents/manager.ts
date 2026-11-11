@@ -1,18 +1,21 @@
-import type { AgentId, AgentSetting, AgentStatus, AppBuilderOperationResults, AppBuilderStatus, AppInstallation, AppPreview, AppProject, ApprovalDecision, ConversationEvent, ConversationEventEnvelope, ConversationSummary, PermissionMode, ReleaseInfo, ReleaseSigning, ToolStatus } from '#shared/contract'
+import type { AgentId, AgentSetting, AgentSettingKind, AgentStatus, AppBuilderOperationResults, AppBuilderStatus, AppInstallation, AppPreview, AppProject, ApprovalDecision, ConversationEvent, ConversationEventEnvelope, ConversationSummary, PermissionMode, ReleaseInfo, ReleaseSigning, ToolStatus } from '#shared/contract'
 import type { PreviewInstaller } from '../app-projects/previews'
 import type { PreparedRelease, ReleaseCaller, ReleaseInstaller, VersionBump } from '../app-projects/release'
 import type { ProjectRecord, ProjectStore } from '../app-projects/store'
 import type { TemplateFiles } from '../app-projects/template'
 import type { AgentDefinition } from './catalog'
 import type { RunCommand } from './environment'
+import type { PlanningTurn } from './planning'
 import type { OpenAgent } from './process'
 import { randomUUID } from 'node:crypto'
 import { existsSync, readdirSync } from 'node:fs'
-import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, realpath, rm, stat, writeFile } from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import semver from 'semver'
+import { planningFiles } from '#shared/app-builder-planning'
 import { buildProject } from '../app-projects/build'
+import { listProjectDirectory, readProjectFile, saveProjectFile } from '../app-projects/files'
 import { ProjectGit } from '../app-projects/git'
 import { ProjectPreviews } from '../app-projects/previews'
 import { bumpVersion, readIdentity, setVersion } from '../app-projects/release'
@@ -21,6 +24,7 @@ import { agentInstructions, bundledAppInfo, copyFiles, gitignore, localAppId, sc
 import { StudioProblem } from '../problem'
 import { Conversation } from './conversation'
 import { agentProcessEnv, findExecutable, loginShellPath, openInFileManager, runCommand, versionFromOutput } from './environment'
+import { buildFromPlanPrompt, planningPrompt } from './planning'
 import { openAgentProcess } from './process'
 
 // The App Builder on the desktop (ADR 0054): which agents are installed,
@@ -78,6 +82,32 @@ interface SavedConversation {
 const checkTimeoutMs = 15_000
 
 /** The default projects folder: in the user's documents, where they can find it (plan P1). */
+/** The requirements and plan worked out in a planning chat, written into the new project. */
+export interface ProjectPlanning {
+  requirements: string
+  plan: string
+  /** The planning chat, ended once the project exists. */
+  draftId: string | null
+}
+
+const draftPrefix = 'basyx-studio-draft-'
+
+/** Removes the folders of planning chats older than an hour: none is that old while it runs. */
+async function removeStaleDrafts (folder: string, now: number): Promise<void> {
+  try {
+    for (const name of await readdir(folder)) {
+      if (name.startsWith(draftPrefix)) {
+        const path = join(folder, name)
+        if (now - (await stat(path)).mtimeMs > 60 * 60_000) {
+          await rm(path, { recursive: true, force: true })
+        }
+      }
+    }
+  } catch {
+    // Best effort: the system cleans its temporary folder too.
+  }
+}
+
 export function defaultProjectsDir (home = homedir()): string {
   return join(home, 'Documents', 'BaSyx Studio', 'Apps')
 }
@@ -98,6 +128,12 @@ export class AgentManager {
   readonly #models = new Map<AgentId, AgentSetting | null>()
   /** Agents asked for their models with a session of their own, so each is asked once. */
   readonly #probes = new Map<AgentId, Promise<AgentSetting | null>>()
+  /** The effort and fast mode each agent reported last, for saved chats that have not shown them yet. */
+  readonly #extras = new Map<AgentId, { effort: AgentSetting | null, speed: AgentSetting | null }>()
+  /** Agents asked for their effort and fast mode with a session of their own, once each. */
+  readonly #extraProbes = new Map<AgentId, Promise<unknown>>()
+  /** Planning chats of apps not created yet, with their temporary folders. */
+  readonly #drafts = new Map<string, string>()
 
   constructor (options: AgentManagerOptions) {
     this.#options = options
@@ -106,6 +142,8 @@ export class AgentManager {
     this.#previews = options.previews
       ? new ProjectPreviews({ installer: options.previews, build: folder => this.#buildFolder(folder), now: options.now })
       : null
+    // Planning chats of an earlier run (Studio quit or reloaded meanwhile) left their folders.
+    void removeStaleDrafts(tmpdir(), this.#now().getTime())
     const idleStopMs = options.idleStopMs ?? 15 * 60_000
     if (idleStopMs > 0) {
       this.#sweeper = setInterval(() => this.#stopIdle(idleStopMs), Math.min(idleStopMs, 60_000))
@@ -135,6 +173,8 @@ export class AgentManager {
           folder: project.folder,
           state: 'inactive',
           model: null,
+          effort: null,
+          speed: null,
           permissionMode: 'ask',
           createdAt: record.createdAt.toISOString(),
           lastSeq: record.lastSeq,
@@ -179,8 +219,11 @@ export class AgentManager {
    * (`source`), commits it, and starts a chat in it; a prompt starts its
    * first turn.
    */
-  async createProject (name: string, agentId: AgentId, prompt: string | null, source: string | null = null, model: string | null = null): Promise<AppBuilderOperationResults['createProject']> {
+  async createProject (name: string, agentId: AgentId, prompt: string | null, source: string | null = null, model: string | null = null, planning: ProjectPlanning | null = null, previewTargetId: string | null = null): Promise<AppBuilderOperationResults['createProject']> {
     const discovery = await this.#ready(agentId)
+    if (planning?.draftId && !this.#drafts.has(planning.draftId)) {
+      throw new StudioProblem('not_found', 'The planning chat has ended. Start the new app again.')
+    }
     const slug = await this.#freeSlug(slugOf(name))
     const folder = join(this.#options.projectsDir, slug)
     const appId = localAppId(slug)
@@ -198,15 +241,90 @@ export class AgentManager {
     } else {
       files = scaffoldFiles(template, { name, slug, appId, studioVersion: this.#options.studioVersion })
     }
+    if (planning) {
+      files.set(planningFiles.requirements, `${planning.requirements.trim()}\n`)
+      files.set(planningFiles.plan, `${planning.plan.trim()}\n`)
+    }
     await mkdir(folder, { recursive: true })
     for (const [path, content] of files) {
       await mkdir(dirname(join(folder, path)), { recursive: true })
       await writeFile(join(folder, path), content)
     }
     await this.#git(folder, discovery).init(from ? `Copy ${from} as ${name}` : `Create ${name} from the BaSyx Studio template`)
-    const project: ProjectRecord = { id: randomUUID(), name, appId, folder, origin: source ? 'copy' : 'new', source: from, createdAt: this.#now() }
+    const project: ProjectRecord = { id: randomUUID(), name, appId, folder, origin: source ? 'copy' : 'new', source: from, previewTargetId, createdAt: this.#now() }
     await this.#store.insertProject(project)
-    return await this.#startWith(project, agentId, prompt, model)
+    if (planning?.draftId) {
+      await this.discardDraft(planning.draftId)
+    }
+    return await this.#startWith(project, agentId, planning ? buildFromPlanPrompt(prompt ?? '') : prompt, model)
+  }
+
+  /**
+   * Starts the planning chat of a new app (ADR 0054): the agent runs
+   * read-only in a temporary folder with the app template, so it can read how
+   * apps are built. Not saved; the app's documents are what it leaves.
+   */
+  async startDraft (agentId: AgentId, model: string | null = null, name: string | null = null): Promise<ConversationSummary> {
+    const discovery = await this.#ready(agentId)
+    const definition = this.#options.agents.find(agent => agent.id === agentId)!
+    const folder = await mkdtemp(join(tmpdir(), draftPrefix))
+    // The name and ID the app would get now; the planning documents leave the ID to Studio.
+    const title = name?.trim() || 'New app'
+    const slug = await this.#freeSlug(slugOf(title))
+    const files = scaffoldFiles(await this.#options.template(), { name: title, slug, appId: localAppId(slug), studioVersion: this.#options.studioVersion })
+    for (const [path, content] of files) {
+      await mkdir(dirname(join(folder, path)), { recursive: true })
+      await writeFile(join(folder, path), content)
+    }
+    const open = this.#options.open ?? openAgentProcess
+    const conversation = new Conversation({
+      projectId: '',
+      definition,
+      folder,
+      model,
+      readOnly: true,
+      now: this.#options.now,
+      open: () => {
+        const current = this.#lastDiscovery ?? discovery
+        return open({ definition, cliPath: current.cliPaths[agentId]!, nodePath: this.#options.nodePath, folder, env: agentProcessEnv(this.#options.env ?? process.env, current.path) })
+      },
+      hooks: {
+        onEvent: envelope => {
+          if (envelope.event.type === 'state') {
+            this.#learn(agentId, envelope.event)
+          }
+        },
+      },
+    })
+    this.#conversations.set(conversation.id, conversation)
+    this.#drafts.set(conversation.id, folder)
+    // A failed start shows in the chat's events; the next turn tries again.
+    conversation.start().catch(() => {})
+    return conversation.summary()
+  }
+
+  /** One turn of a planning chat: the user's message, or the first draft of a stage. */
+  async draftTurn (conversationId: string, turn: PlanningTurn): Promise<void> {
+    if (!this.#drafts.has(conversationId)) {
+      throw new StudioProblem('not_found', 'The planning chat has ended. Start the new app again.')
+    }
+    const conversation = await this.conversation(conversationId)
+    if (conversation.state === 'starting') {
+      await conversation.start()
+    }
+    await this.prompt(conversationId, planningPrompt(turn), turn.message.trim())
+  }
+
+  /** Ends a planning chat and removes its folder. */
+  async discardDraft (conversationId: string): Promise<void> {
+    const folder = this.#drafts.get(conversationId)
+    if (!folder) {
+      return
+    }
+    this.#drafts.delete(conversationId)
+    this.#conversations.get(conversationId)?.close()
+    this.#conversations.delete(conversationId)
+    await rm(folder, { recursive: true, force: true })
   }
 
   /**
@@ -215,7 +333,7 @@ export class AgentManager {
    * folder must have no uncommitted changes, so the first turn's commit holds
    * only what the agent did.
    */
-  async addFolder (handle: string, agentId: AgentId, name: string | null, model: string | null = null): Promise<AppBuilderOperationResults['addFolder']> {
+  async addFolder (handle: string, agentId: AgentId, name: string | null, model: string | null = null, previewTargetId: string | null = null): Promise<AppBuilderOperationResults['addFolder']> {
     const discovery = await this.#ready(agentId)
     const folder = await realpath(this.#options.takeFolder(handle))
     let manifest: { id?: unknown, title?: { en?: unknown } }
@@ -242,7 +360,7 @@ export class AgentManager {
       }
       await git.init(`Add ${title} to the BaSyx Studio App Builder`)
     }
-    const project: ProjectRecord = { id: randomUUID(), name: title, appId: manifest.id, folder, origin: 'folder', source: null, createdAt: this.#now() }
+    const project: ProjectRecord = { id: randomUUID(), name: title, appId: manifest.id, folder, origin: 'folder', source: null, previewTargetId, createdAt: this.#now() }
     await this.#store.insertProject(project)
     return await this.#startWith(project, agentId, null, model)
   }
@@ -318,12 +436,12 @@ export class AgentManager {
     return await loading
   }
 
-  async prompt (conversationId: string, text: string): Promise<void> {
+  async prompt (conversationId: string, text: string, shown = text): Promise<void> {
     const conversation = await this.conversation(conversationId)
     if (conversation.state === 'inactive' || conversation.state === 'failed') {
       await this.#ready(conversation.definition.id)
     }
-    await conversation.prompt(text)
+    await conversation.prompt(text, shown)
   }
 
   async cancel (conversationId: string): Promise<void> {
@@ -335,8 +453,12 @@ export class AgentManager {
   }
 
   async setModel (conversationId: string, value: string): Promise<ConversationSummary> {
+    return await this.setSetting(conversationId, 'model', value)
+  }
+
+  async setSetting (conversationId: string, setting: AgentSettingKind, value: string): Promise<ConversationSummary> {
     const conversation = await this.conversation(conversationId)
-    await conversation.setModel(value)
+    await conversation.setSetting(setting, value)
     return conversation.summary()
   }
 
@@ -354,6 +476,22 @@ export class AgentManager {
   async changes (projectId: string, commit: string): Promise<AppBuilderOperationResults['getChanges']> {
     const project = await this.#project(projectId)
     return await this.#git(project.folder, await this.#discover(false)).show(commit)
+  }
+
+  async listProjectFiles (projectId: string, path: string): Promise<AppBuilderOperationResults['listProjectFiles']> {
+    return listProjectDirectory((await this.#project(projectId)).folder, path)
+  }
+
+  async readProjectFile (projectId: string, path: string): Promise<AppBuilderOperationResults['readProjectFile']> {
+    return readProjectFile((await this.#project(projectId)).folder, path)
+  }
+
+  async saveProjectFile (projectId: string, path: string, content: string, revision: string): Promise<AppBuilderOperationResults['saveProjectFile']> {
+    const project = await this.#project(projectId)
+    if ([...this.#conversations.values()].some(conversation => conversation.projectId === projectId && ['working', 'starting'].includes(conversation.state))) {
+      throw new StudioProblem('agent_busy', 'Wait until the agent has finished its turn before saving a file.')
+    }
+    return saveProjectFile(project.folder, path, content, revision)
   }
 
   /** The project's last build and its preview installation (plan B3). */
@@ -471,6 +609,9 @@ export class AgentManager {
     if (this.#sweeper) {
       clearInterval(this.#sweeper)
     }
+    for (const id of this.#drafts.keys()) {
+      await this.discardDraft(id)
+    }
     for (const conversation of this.#conversations.values()) {
       conversation.stop()
     }
@@ -508,7 +649,48 @@ export class AgentManager {
       history,
     })
     this.#conversations.set(conversationId, conversation)
+    // A chat saved before Studio knew them shows the effort and fast mode too.
+    void this.#fillSettings(conversation).catch(() => {})
     return conversation
+  }
+
+  /** Takes the settings an agent reports in a chat, for its next chats. */
+  #learn (agentId: AgentId, event: Extract<ConversationEvent, { type: 'state' }>): void {
+    if (event.model) {
+      this.#models.set(agentId, event.model)
+    }
+    if (event.effort !== undefined || event.speed !== undefined) {
+      const known = this.#extras.get(agentId)
+      this.#extras.set(agentId, { effort: event.effort ?? known?.effort ?? null, speed: event.speed ?? known?.speed ?? null })
+    }
+  }
+
+  /**
+   * Gives a saved chat without an effort or fast mode those its agent
+   * reported last, asking the agent once with a session of its own (no
+   * prompt) when no chat has shown them since Studio started. The agent's own
+   * values replace them when it starts.
+   */
+  async #fillSettings (conversation: Conversation): Promise<void> {
+    const agentId = conversation.definition.id
+    const summary = conversation.summary()
+    if (summary.effort || summary.speed) {
+      return
+    }
+    if (!this.#extras.has(agentId)) {
+      let probe = this.#extraProbes.get(agentId)
+      if (!probe) {
+        probe = this.#probeModels(agentId)
+        this.#extraProbes.set(agentId, probe)
+        // A failed start (not signed in, say) may work next time.
+        probe.catch(() => this.#extraProbes.delete(agentId))
+      }
+      await probe
+    }
+    const known = this.#extras.get(agentId)
+    if (known) {
+      conversation.adoptSettings(known)
+    }
   }
 
   #create (project: ProjectRecord, agentId: AgentId, discovery: Discovery | null, saved: SavedConversation): Conversation {
@@ -531,8 +713,8 @@ export class AgentManager {
       },
       hooks: {
         onEvent: envelope => {
-          if (envelope.event.type === 'state' && envelope.event.model) {
-            this.#models.set(agentId, envelope.event.model)
+          if (envelope.event.type === 'state') {
+            this.#learn(agentId, envelope.event)
           }
           this.#writer.add(saved.id, envelope)
         },
@@ -564,10 +746,11 @@ export class AgentManager {
     })
     try {
       await session.start()
-      const model = session.summary().model
+      const { model, effort, speed } = session.summary()
       if (model) {
         this.#models.set(agentId, model)
       }
+      this.#extras.set(agentId, { effort, speed })
       return model
     } finally {
       session.close()
@@ -755,7 +938,7 @@ export class AgentManager {
 }
 
 function describeProject (project: ProjectRecord): Omit<AppProject, 'conversations'> {
-  return { id: project.id, name: project.name, appId: project.appId, folder: project.folder, origin: project.origin, source: project.source, createdAt: project.createdAt.toISOString() }
+  return { id: project.id, name: project.name, appId: project.appId, folder: project.folder, origin: project.origin, source: project.source, previewTargetId: project.previewTargetId, createdAt: project.createdAt.toISOString() }
 }
 
 /**

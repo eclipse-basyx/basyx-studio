@@ -23,6 +23,7 @@
     "noneReady": "Ningún agente de programación está listo. Instala Claude Code, Codex u opencode, inicia sesión y vuelve a comprobar."
   },
   "chat": {
+    "contextUnavailable": "Uso del contexto no disponible",
     "placeholder": "Describe la aplicación o el cambio que quieres…",
     "send": "Enviar",
     "stop": "Detener",
@@ -35,7 +36,13 @@
     "emptyText": "Describe qué debe hacer la aplicación o el cambio que quieres.",
     "thinking": "Pensando",
     "inactive": "El agente se inicia con tu próximo mensaje.",
-    "finished": "{agent} ha terminado."
+    "finished": "{agent} ha terminado.",
+    "modelMenu": "Modelo, esfuerzo y velocidad",
+    "effort": "Esfuerzo",
+    "fastMode": "Modo rápido",
+    "fastModeHint": "Respuestas más rápidas; consume más de tu plan",
+    "context": "Contexto: {used} de {size} tokens usados ({percent} %)",
+    "moreModels": "Más modelos"
   },
   "mode": {
     "label": "Permisos",
@@ -75,6 +82,22 @@
     "running": "En curso",
     "completed": "Hecho"
   },
+  "toolGroup": {
+    "read": "{count} archivos leídos",
+    "readOne": "1 archivo leído",
+    "edit": "{count} archivos editados",
+    "editOne": "1 archivo editado",
+    "search": "{count} búsquedas",
+    "searchOne": "1 búsqueda",
+    "execute": "{count} comandos ejecutados",
+    "executeOne": "1 comando ejecutado",
+    "fetch": "{count} páginas obtenidas",
+    "fetchOne": "1 página obtenida",
+    "other": "{count} herramientas usadas",
+    "otherOne": "1 herramienta usada",
+    "failed": "{count} con error",
+    "separator": ", "
+  },
   "plan": {
     "title": "Plan"
   },
@@ -100,6 +123,22 @@
     "refusal": "El agente lo rechazó.",
     "error": "El turno terminó con un error."
   },
+  "files": {
+    "closeFile": "Cerrar archivo",
+    "browse": "Explorar archivos",
+    "heading": "Archivos",
+    "refresh": "Actualizar carpetas",
+    "choose": "Elige un archivo para abrirlo en Monaco.",
+    "save": "Guardar",
+    "unsaved": "Cambios sin guardar",
+    "reload": "Volver a cargar el archivo del disco",
+    "close": "Cerrar archivos",
+    "agentWorking": "El agente está trabajando en esta app. Puedes explorar y editar; guarda cuando termine su turno.",
+    "discardTitle": "¿Descartar los cambios sin guardar?",
+    "discardText": "Si continúas, se descartarán los cambios de archivo sin guardar.",
+    "cancel": "Cancelar",
+    "discard": "Descartar cambios"
+  },
   "projects": {
     "heading": "Aplicaciones",
     "new": "Aplicación nueva",
@@ -116,6 +155,8 @@
     "keepsFolder": "La carpeta {folder} se queda como está."
   },
   "newApp": {
+    "previewTarget": "Destino predeterminado de la vista previa",
+    "previewTargetHint": "Se usa al abrir la vista previa de esta app. Déjalo vacío para usar el destino actual de Studio.",
     "title": "Aplicación nueva",
     "name": "Nombre",
     "agent": "Agente",
@@ -163,6 +204,10 @@
     "waitsForConsent": "Compilada. La vista previa espera tu aprobación en el panel de vista previa."
   },
   "preview": {
+    "popOut": "Abrir la vista previa en otra ventana",
+    "closeWindow": "Cerrar la ventana de vista previa",
+    "projectMissing": "Esta app ya no está en App Builder.",
+    "desktopOnly": "Las ventanas de vista previa están disponibles en la aplicación de escritorio.",
     "title": "Vista previa",
     "toggle": "Mostrar u ocultar la vista previa",
     "rebuild": "Compilar de nuevo",
@@ -225,5 +270,28 @@
     "signed": "Firmada",
     "managed": "Instalada por el despliegue",
     "unsigned": "Sin firmar (modo desarrollador)"
+  },
+  "planning": {
+    "title": "Planificar {name}",
+    "stepIdea": "Idea",
+    "stepRequirements": "Requisitos",
+    "stepPlan": "Plan",
+    "start": "Planificar con {agent}",
+    "skip": "Crear sin planificar",
+    "next": "Continuar al plan",
+    "back": "Volver a la idea",
+    "create": "Crear app",
+    "edit": "Editar",
+    "preview": "Vista previa",
+    "requirementsTitle": "Requisitos",
+    "planTitle": "Plan",
+    "placeholder": "Pregunta a {agent} o di qué cambiar…",
+    "drafting": "{agent} escribe el primer borrador…",
+    "starting": "Iniciando {agent}…",
+    "working": "{agent} está escribiendo…",
+    "updatedRequirements": "Requisitos actualizados",
+    "updatedPlan": "Plan actualizado",
+    "hint": "Edita el documento tú mismo o dile a {agent} qué cambiar. Aquí {agent} solo planifica: lee la plantilla de apps de Studio y no cambia ningún archivo.",
+    "files": "Studio guarda ambos en la carpeta docs de la app (requirements.md, plan.md) y {agent} construye la app a partir de ellos."
   }
 }

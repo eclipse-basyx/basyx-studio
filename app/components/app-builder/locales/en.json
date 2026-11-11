@@ -23,6 +23,7 @@
     "noneReady": "No coding agent is ready. Install Claude Code, Codex or opencode, sign in, and check again."
   },
   "chat": {
+    "contextUnavailable": "Context usage unavailable",
     "placeholder": "Describe the app, or the change you want…",
     "send": "Send",
     "stop": "Stop",
@@ -35,7 +36,13 @@
     "emptyText": "Describe what the app should do, or the change you want.",
     "thinking": "Thinking",
     "inactive": "The agent starts with your next message.",
-    "finished": "{agent} has finished."
+    "finished": "{agent} has finished.",
+    "modelMenu": "Model, effort and speed",
+    "effort": "Effort",
+    "fastMode": "Fast mode",
+    "fastModeHint": "Faster answers; uses more of your plan",
+    "context": "Context: {used} of {size} tokens used ({percent} %)",
+    "moreModels": "More models"
   },
   "mode": {
     "label": "Permissions",
@@ -75,6 +82,22 @@
     "running": "Running",
     "completed": "Done"
   },
+  "toolGroup": {
+    "read": "read {count} files",
+    "readOne": "read 1 file",
+    "edit": "edited {count} files",
+    "editOne": "edited 1 file",
+    "search": "searched {count} times",
+    "searchOne": "searched once",
+    "execute": "ran {count} commands",
+    "executeOne": "ran 1 command",
+    "fetch": "fetched {count} pages",
+    "fetchOne": "fetched 1 page",
+    "other": "used {count} tools",
+    "otherOne": "used 1 tool",
+    "failed": "{count} failed",
+    "separator": ", "
+  },
   "plan": {
     "title": "Plan"
   },
@@ -100,9 +123,25 @@
     "refusal": "The agent declined.",
     "error": "The turn ended with an error."
   },
+  "files": {
+    "closeFile": "Close file",
+    "browse": "Browse files",
+    "heading": "Files",
+    "refresh": "Refresh folders",
+    "choose": "Choose a file to open in Monaco.",
+    "save": "Save",
+    "unsaved": "Unsaved changes",
+    "reload": "Reload file from disk",
+    "close": "Close files",
+    "agentWorking": "The agent is working on this app. You can browse and edit; save when its turn finishes.",
+    "discardTitle": "Discard unsaved changes?",
+    "discardText": "The unsaved file changes will be discarded if you continue.",
+    "cancel": "Cancel",
+    "discard": "Discard changes"
+  },
   "projects": {
     "heading": "Apps",
-    "new": "New app",
+    "new": "New App",
     "empty": "No apps yet.",
     "newChat": "New chat with {agent}",
     "openFolder": "Open folder",
@@ -116,6 +155,8 @@
     "keepsFolder": "The folder {folder} stays as it is."
   },
   "newApp": {
+    "previewTarget": "Default preview target",
+    "previewTargetHint": "Used when opening this app’s preview. Leave empty to use Studio’s current target.",
     "title": "New app",
     "name": "Name",
     "agent": "Agent",
@@ -163,6 +204,10 @@
     "waitsForConsent": "Built. The preview waits for your OK in the preview pane."
   },
   "preview": {
+    "popOut": "Open preview in a separate window",
+    "closeWindow": "Close preview window",
+    "projectMissing": "This app is no longer in the App Builder.",
+    "desktopOnly": "Preview windows are available in the desktop app.",
     "title": "Preview",
     "toggle": "Show or hide the preview",
     "rebuild": "Build again",
@@ -225,5 +270,28 @@
     "signed": "Signed",
     "managed": "Installed by the deployment",
     "unsigned": "Unsigned (developer mode)"
+  },
+  "planning": {
+    "title": "Plan {name}",
+    "stepIdea": "Idea",
+    "stepRequirements": "Requirements",
+    "stepPlan": "Plan",
+    "start": "Plan with {agent}",
+    "skip": "Create without planning",
+    "next": "Continue to plan",
+    "back": "Back to the idea",
+    "create": "Create app",
+    "edit": "Edit",
+    "preview": "Preview",
+    "requirementsTitle": "Requirements",
+    "planTitle": "Plan",
+    "placeholder": "Ask {agent} or say what to change…",
+    "drafting": "{agent} writes the first draft…",
+    "starting": "Starting {agent}…",
+    "working": "{agent} is writing…",
+    "updatedRequirements": "Requirements updated",
+    "updatedPlan": "Plan updated",
+    "hint": "Edit the document yourself, or tell {agent} what to change. {agent} only plans here: it reads Studio's app template and changes no files.",
+    "files": "Studio saves both in the app's docs folder (requirements.md, plan.md), and {agent} builds the app from them."
   }
 }

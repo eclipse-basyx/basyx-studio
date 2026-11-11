@@ -1,6 +1,6 @@
 <template>
   <div class="d-flex flex-column h-100">
-    <v-toolbar class="flex-shrink-0">
+    <v-toolbar v-if="!hideToolbar" class="flex-shrink-0">
       <v-toolbar-title class="text-body-medium text-medium-emphasis">{{ label }}</v-toolbar-title>
 
       <template #append>
@@ -40,7 +40,7 @@
       </template>
     </v-toolbar>
 
-    <v-divider />
+    <v-divider v-if="!hideToolbar" />
 
     <v-progress-linear v-if="!ready && !loadError" class="flex-shrink-0" />
 
@@ -60,6 +60,7 @@
 </template>
 
 <script lang="ts" setup>
+  import type { TextLanguage } from '@basyx/file-viewer'
   import type { editor } from 'monaco-editor'
   import type * as Monaco from '~/utils/monaco'
   import type { CodeSchema } from '~/utils/monaco'
@@ -70,8 +71,9 @@
   // is checked against `schemas`.
   const props = defineProps<{
     label: string
-    language: 'json' | 'xml' | 'yaml' | 'plaintext'
+    language: TextLanguage
     editable?: boolean
+    hideToolbar?: boolean
     fileName?: string
     /** A fixed height; without it, the view fills its flex parent. */
     height?: number | string

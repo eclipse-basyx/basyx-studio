@@ -21,13 +21,17 @@ export interface Transcript {
   items: TranscriptItem[]
   state: ConversationState
   model: AgentSetting | null
+  effort: AgentSetting | null
+  speed: AgentSetting | null
+  /** The context window in tokens, as the agent last reported it. */
+  usage: { used: number, size: number } | null
   permissionMode: PermissionMode
   /** The last event folded in. */
   seq: number
 }
 
 export function emptyTranscript (): Transcript {
-  return { items: [], state: 'starting', model: null, permissionMode: 'ask', seq: 0 }
+  return { items: [], state: 'starting', model: null, effort: null, speed: null, usage: null, permissionMode: 'ask', seq: 0 }
 }
 
 /** Stop reasons that the chat explains; `end_turn` needs no note. */
@@ -107,7 +111,13 @@ export function applyEvent (transcript: Transcript, { seq, event }: Conversation
     case 'state': {
       transcript.state = event.state
       transcript.model = event.model ?? transcript.model
+      transcript.effort = event.effort ?? transcript.effort
+      transcript.speed = event.speed ?? transcript.speed
       transcript.permissionMode = event.permissionMode ?? transcript.permissionMode
+      break
+    }
+    case 'usage': {
+      transcript.usage = { used: event.used, size: event.size }
       break
     }
     case 'error': {

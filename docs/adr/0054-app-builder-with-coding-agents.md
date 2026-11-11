@@ -109,6 +109,22 @@ adapters can run an installed CLI in place of the one they depend on.
   the agent's `allow_always`, which can store rules beyond the chat. Codex runs
   commands inside its sandbox without asking, so for Codex only leaving the
   sandbox reaches Studio.
+- **Planning before building.** A new app from the template can be planned
+  first: the new app dialog takes the idea, and a full-screen dialog laid
+  out as a chat (the chat, and the document as a pane beside it) takes the
+  requirements, then a plan, each drafted by the chosen agent and discussed
+  and edited by the user. The planning chat
+  is a conversation of its own (`startDraft`, `draftTurn`) that is not saved:
+  the agent runs read-only (Claude in its `default` mode, Codex in
+  `read-only`) in a temporary folder with the app template, so it can read
+  how apps are built, and Studio allows reading and searching there and
+  denies every other request. Each turn's prompt carries the idea and both
+  documents as the user edited them, and the agent returns the stage's whole
+  document in a fenced block that the page puts into its editor; the chat
+  shows only the user's words and the agent's reply. Creating the app writes
+  the documents to `docs/requirements.md` and `docs/plan.md` in its first
+  commit, and its first turn builds the app from them. The documents stay in
+  the project, so later chats and the user can read what was agreed.
 - **Permission modes per chat.** The rule above is the chat's *Ask* mode,
   the default. *Auto* also allows commands that run in the folder, name no
   path outside it (absolute, `~` or `..`), use no variables or command

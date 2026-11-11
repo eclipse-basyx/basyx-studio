@@ -149,5 +149,13 @@
     "check": "Bauen und kieken",
     "done": "{name} {version} is druff, wa.",
     "action": "In Studio installieren"
+  },
+  "planning": {
+    "start": "Mit {agent} planen",
+    "skip": "Ohne Plan machen",
+    "next": "Weita zum Plan",
+    "create": "App machen",
+    "drafting": "{agent} schreibt den ersten Entwurf, wa …",
+    "working": "{agent} schreibt grad …"
   }
 }

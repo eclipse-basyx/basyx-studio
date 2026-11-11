@@ -25,7 +25,8 @@ interface AppBuilderI18n {
   locale: Ref<string>
 }
 
-const key: InjectionKey<AppBuilderI18n> = Symbol('app-builder-i18n')
+// Locale catalogue updates must keep the same provider key during hot reload.
+const key: InjectionKey<AppBuilderI18n> = Symbol.for('studio.app-builder.i18n')
 
 function lookup (catalog: PartialCatalog<Catalog>, path: string): string | undefined {
   const [section, name] = path.split('.', 2) as [string, string]

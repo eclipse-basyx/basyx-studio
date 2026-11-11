@@ -23,6 +23,7 @@
     "noneReady": "Er is geen codeeragent klaar. Installeer Claude Code, Codex of opencode, meld je aan en controleer opnieuw."
   },
   "chat": {
+    "contextUnavailable": "Contextgebruik niet beschikbaar",
     "placeholder": "Beschrijf de app of de wijziging die je wilt…",
     "send": "Versturen",
     "stop": "Stoppen",
@@ -35,7 +36,13 @@
     "emptyText": "Beschrijf wat de app moet doen, of de wijziging die je wilt.",
     "thinking": "Denkt na",
     "inactive": "De agent start met je volgende bericht.",
-    "finished": "{agent} is klaar."
+    "finished": "{agent} is klaar.",
+    "modelMenu": "Model, inspanning en snelheid",
+    "effort": "Inspanning",
+    "fastMode": "Snelle modus",
+    "fastModeHint": "Snellere antwoorden; gebruikt meer van je abonnement",
+    "context": "Context: {used} van {size} tokens gebruikt ({percent} %)",
+    "moreModels": "Meer modellen"
   },
   "mode": {
     "label": "Rechten",
@@ -75,6 +82,22 @@
     "running": "Bezig",
     "completed": "Klaar"
   },
+  "toolGroup": {
+    "read": "{count} bestanden gelezen",
+    "readOne": "1 bestand gelezen",
+    "edit": "{count} bestanden bewerkt",
+    "editOne": "1 bestand bewerkt",
+    "search": "{count} keer gezocht",
+    "searchOne": "1 keer gezocht",
+    "execute": "{count} opdrachten uitgevoerd",
+    "executeOne": "1 opdracht uitgevoerd",
+    "fetch": "{count} pagina's opgehaald",
+    "fetchOne": "1 pagina opgehaald",
+    "other": "{count} tools gebruikt",
+    "otherOne": "1 tool gebruikt",
+    "failed": "{count} mislukt",
+    "separator": ", "
+  },
   "plan": {
     "title": "Plan"
   },
@@ -100,6 +123,22 @@
     "refusal": "De agent weigerde.",
     "error": "De beurt eindigde met een fout."
   },
+  "files": {
+    "closeFile": "Bestand sluiten",
+    "browse": "Bestanden verkennen",
+    "heading": "Bestanden",
+    "refresh": "Mappen vernieuwen",
+    "choose": "Kies een bestand om in Monaco te openen.",
+    "save": "Opslaan",
+    "unsaved": "Niet-opgeslagen wijzigingen",
+    "reload": "Bestand opnieuw laden van schijf",
+    "close": "Bestanden sluiten",
+    "agentWorking": "De agent werkt aan deze app. Je kunt bestanden bekijken en bewerken; sla op zodra de beurt klaar is.",
+    "discardTitle": "Niet-opgeslagen wijzigingen weggooien?",
+    "discardText": "Als je doorgaat, worden de niet-opgeslagen bestandswijzigingen weggegooid.",
+    "cancel": "Annuleren",
+    "discard": "Wijzigingen weggooien"
+  },
   "projects": {
     "heading": "Apps",
     "new": "Nieuwe app",
@@ -116,6 +155,8 @@
     "keepsFolder": "De map {folder} blijft zoals hij is."
   },
   "newApp": {
+    "previewTarget": "Standaarddoel voor het voorbeeld",
+    "previewTargetHint": "Wordt gebruikt bij het openen van het voorbeeld van deze app. Laat leeg om het huidige doel van Studio te gebruiken.",
     "title": "Nieuwe app",
     "name": "Naam",
     "agent": "Agent",
@@ -163,6 +204,10 @@
     "waitsForConsent": "Gebouwd. De voorbeeldweergave wacht op je akkoord in het voorbeeldpaneel."
   },
   "preview": {
+    "popOut": "Voorbeeld in een apart venster openen",
+    "closeWindow": "Voorbeeldvenster sluiten",
+    "projectMissing": "Deze app staat niet meer in App Builder.",
+    "desktopOnly": "Voorbeeldvensters zijn beschikbaar in de desktopapp.",
     "title": "Voorbeeld",
     "toggle": "Voorbeeld tonen of verbergen",
     "rebuild": "Opnieuw bouwen",
@@ -225,5 +270,28 @@
     "signed": "Ondertekend",
     "managed": "Geïnstalleerd door de deployment",
     "unsigned": "Niet ondertekend (ontwikkelaarsmodus)"
+  },
+  "planning": {
+    "title": "{name} plannen",
+    "stepIdea": "Idee",
+    "stepRequirements": "Eisen",
+    "stepPlan": "Plan",
+    "start": "Plannen met {agent}",
+    "skip": "Maken zonder plannen",
+    "next": "Verder naar het plan",
+    "back": "Terug naar het idee",
+    "create": "App maken",
+    "edit": "Bewerken",
+    "preview": "Voorbeeld",
+    "requirementsTitle": "Eisen",
+    "planTitle": "Plan",
+    "placeholder": "Vraag {agent} iets of zeg wat er moet veranderen…",
+    "drafting": "{agent} schrijft de eerste versie…",
+    "starting": "{agent} start…",
+    "working": "{agent} schrijft…",
+    "updatedRequirements": "Eisen bijgewerkt",
+    "updatedPlan": "Plan bijgewerkt",
+    "hint": "Bewerk het document zelf of zeg {agent} wat er moet veranderen. {agent} plant hier alleen: het leest het app-sjabloon van Studio en wijzigt geen bestanden.",
+    "files": "Studio bewaart beide in de map docs van de app (requirements.md, plan.md), en {agent} bouwt de app daarmee."
   }
 }

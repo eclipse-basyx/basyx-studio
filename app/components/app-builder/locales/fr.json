@@ -23,6 +23,7 @@
     "noneReady": "Aucun agent de programmation n'est prêt. Installez Claude Code, Codex ou opencode, connectez-vous et vérifiez à nouveau."
   },
   "chat": {
+    "contextUnavailable": "Utilisation du contexte indisponible",
     "placeholder": "Décrivez l'application ou la modification souhaitée…",
     "send": "Envoyer",
     "stop": "Arrêter",
@@ -35,7 +36,13 @@
     "emptyText": "Décrivez ce que l'application doit faire, ou la modification souhaitée.",
     "thinking": "Réflexion",
     "inactive": "L'agent démarre avec votre prochain message.",
-    "finished": "{agent} a terminé."
+    "finished": "{agent} a terminé.",
+    "modelMenu": "Modèle, effort et vitesse",
+    "effort": "Effort",
+    "fastMode": "Mode rapide",
+    "fastModeHint": "Réponses plus rapides ; consomme davantage de votre forfait",
+    "context": "Contexte : {used} sur {size} jetons utilisés ({percent} %)",
+    "moreModels": "Autres modèles"
   },
   "mode": {
     "label": "Autorisations",
@@ -75,6 +82,22 @@
     "running": "En cours",
     "completed": "Terminé"
   },
+  "toolGroup": {
+    "read": "{count} fichiers lus",
+    "readOne": "1 fichier lu",
+    "edit": "{count} fichiers modifiés",
+    "editOne": "1 fichier modifié",
+    "search": "{count} recherches",
+    "searchOne": "1 recherche",
+    "execute": "{count} commandes exécutées",
+    "executeOne": "1 commande exécutée",
+    "fetch": "{count} pages récupérées",
+    "fetchOne": "1 page récupérée",
+    "other": "{count} outils utilisés",
+    "otherOne": "1 outil utilisé",
+    "failed": "{count} en échec",
+    "separator": ", "
+  },
   "plan": {
     "title": "Plan"
   },
@@ -100,6 +123,22 @@
     "refusal": "L'agent a refusé.",
     "error": "Le tour s'est terminé par une erreur."
   },
+  "files": {
+    "closeFile": "Fermer le fichier",
+    "browse": "Parcourir les fichiers",
+    "heading": "Fichiers",
+    "refresh": "Actualiser les dossiers",
+    "choose": "Choisissez un fichier à ouvrir dans Monaco.",
+    "save": "Enregistrer",
+    "unsaved": "Modifications non enregistrées",
+    "reload": "Recharger le fichier depuis le disque",
+    "close": "Fermer les fichiers",
+    "agentWorking": "L’agent travaille sur cette application. Vous pouvez parcourir et modifier les fichiers ; enregistrez à la fin de son tour.",
+    "discardTitle": "Abandonner les modifications non enregistrées ?",
+    "discardText": "Si vous continuez, les modifications de fichiers non enregistrées seront abandonnées.",
+    "cancel": "Annuler",
+    "discard": "Abandonner les modifications"
+  },
   "projects": {
     "heading": "Applications",
     "new": "Nouvelle application",
@@ -116,6 +155,8 @@
     "keepsFolder": "Le dossier {folder} reste tel quel."
   },
   "newApp": {
+    "previewTarget": "Cible par défaut de l’aperçu",
+    "previewTargetHint": "Utilisée à l’ouverture de l’aperçu de cette application. Laissez vide pour utiliser la cible actuelle de Studio.",
     "title": "Nouvelle application",
     "name": "Nom",
     "agent": "Agent",
@@ -163,6 +204,10 @@
     "waitsForConsent": "Compilée. L'aperçu attend votre accord dans le panneau d'aperçu."
   },
   "preview": {
+    "popOut": "Ouvrir l’aperçu dans une fenêtre séparée",
+    "closeWindow": "Fermer la fenêtre d’aperçu",
+    "projectMissing": "Cette application n’est plus dans App Builder.",
+    "desktopOnly": "Les fenêtres d’aperçu sont disponibles dans l’application de bureau.",
     "title": "Aperçu",
     "toggle": "Afficher ou masquer l'aperçu",
     "rebuild": "Recompiler",
@@ -225,5 +270,28 @@
     "signed": "Signée",
     "managed": "Installée par le déploiement",
     "unsigned": "Non signée (mode développeur)"
+  },
+  "planning": {
+    "title": "Planifier {name}",
+    "stepIdea": "Idée",
+    "stepRequirements": "Exigences",
+    "stepPlan": "Plan",
+    "start": "Planifier avec {agent}",
+    "skip": "Créer sans planifier",
+    "next": "Passer au plan",
+    "back": "Retour à l'idée",
+    "create": "Créer l'app",
+    "edit": "Modifier",
+    "preview": "Aperçu",
+    "requirementsTitle": "Exigences",
+    "planTitle": "Plan",
+    "placeholder": "Demandez à {agent} ou dites ce qu'il faut changer…",
+    "drafting": "{agent} rédige le premier jet…",
+    "starting": "Démarrage de {agent}…",
+    "working": "{agent} écrit…",
+    "updatedRequirements": "Exigences mises à jour",
+    "updatedPlan": "Plan mis à jour",
+    "hint": "Modifiez le document vous-même ou dites à {agent} quoi changer. Ici, {agent} ne fait que planifier : il lit le modèle d'app de Studio et ne modifie aucun fichier.",
+    "files": "Studio enregistre les deux dans le dossier docs de l'app (requirements.md, plan.md), et {agent} construit l'app à partir d'eux."
   }
 }

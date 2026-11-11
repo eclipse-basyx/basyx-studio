@@ -106,6 +106,8 @@ export default defineVuetifyConfiguration({
     // A small icon action in a compact header, e.g. of an Overview widget or
     // a value tile: comfortable density keeps the header one line high.
     VBtnWidgetIcon: 'VBtn',
+    // Text-sized settings under the App Builder's prompt box.
+    VBtnChatSetting: 'VBtn',
     // Pane container of a full-height page area: fixed height, scrolling body.
     VCardPane: 'VCard',
     // The card of a full-screen dialog: edge to edge, without radius or border.
@@ -144,6 +146,7 @@ export default defineVuetifyConfiguration({
     // VBtnToggle, VBtnGroup and VBtnToggleIcon, shared with the bundled apps.
     ...buttonGroupDefaults,
     VBtnWidgetIcon: { variant: 'text', rounded: 'lg', density: 'comfortable', size: 'small' },
+    VBtnChatSetting: { variant: 'text', rounded: 'lg', density: 'compact', size: 'small', minWidth: 0, class: 'text-none px-2' },
     VCard: { flat: true, border: true, rounded: 'lg' },
     // Full-screen surfaces, as in the apps: no border, no radius.
     ...fullscreenDefaults,
@@ -207,12 +210,15 @@ export default defineVuetifyConfiguration({
     },
     VSheetComposer: {
       color: 'surface',
-      rounded: 'xl',
+      rounded: 'lg',
       border: true,
       elevation: 2,
-      class: 'px-3 pt-2 pb-1',
-      VTextarea: { variant: 'plain', rows: 2, autoGrow: true, maxRows: 10, density: 'compact' },
-      VSelect: { variant: 'plain', density: 'compact', hideDetails: true, singleLine: true, width: 260, class: 'text-medium-emphasis' },
+      // One line that grows with the text, the send button beside it at the bottom.
+      class: 'd-flex align-end ga-1 pe-2',
+      // Solo, flat and transparent instead of plain: it pads above and below the text alike, so the text is centred.
+      VTextarea: { variant: 'solo', flat: true, bgColor: 'transparent', rows: 1, autoGrow: true, maxRows: 10, density: 'compact', class: 'flex-grow-1' },
+      // Send and stop: an icon in the accent colour, without a background of its own.
+      VBtn: { color: 'primary', density: 'compact', class: 'mb-1' },
     },
     VFormFields: {
       color: 'transparent',

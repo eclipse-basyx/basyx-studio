@@ -30,6 +30,15 @@
       </div>
 
       <v-btn
+        v-tooltip="t('files.browse')"
+        :active="filesOpen"
+        :aria-label="t('files.browse')"
+        data-test="app-builder-open-files"
+        icon="mdi-file-tree-outline"
+        @click="emit('show-files')"
+      />
+
+      <v-btn
         border
         data-test="app-builder-install-open"
         :disabled="busy"
@@ -57,13 +66,12 @@
 
           <MarkdownText v-else-if="item.kind === 'agent'" :text="item.text" />
 
-          <ThoughtItem v-else-if="item.kind === 'thought'" :text="item.text" />
-
-          <v-card v-else-if="item.kind === 'tools'">
-            <v-expansion-panels multiple>
-              <ToolCallItem v-for="tool in item.calls" :key="tool.id" :folder="conversation.folder" :item="tool" />
-            </v-expansion-panels>
-          </v-card>
+          <ToolGroup
+            v-else-if="item.kind === 'activity'"
+            :active="busy && item === blocks.at(-1)"
+            :entries="item.entries"
+            :folder="conversation.folder"
+          />
 
           <v-card v-else-if="item.kind === 'plan'">
             <v-card-header prepend-icon="mdi-format-list-checks" :title="t('plan.title')" />
@@ -150,55 +158,62 @@
           @keydown.enter.exact.prevent="send"
         />
 
-        <div class="d-flex align-center ga-2">
-          <PermissionModeMenu
-            :agent="agentName"
-            :mode="transcript.permissionMode"
-            @set="(mode, acknowledgeRisk) => emit('set-permission-mode', mode, acknowledgeRisk)"
-          />
+        <v-btn
+          v-if="transcript.state === 'working'"
+          v-tooltip="t('chat.stop')"
+          :aria-label="t('chat.stop')"
+          data-test="app-builder-stop"
+          icon="mdi-stop"
+          @click="emit('stop')"
+        />
 
-          <v-select
-            v-if="transcript.model && transcript.model.options.length > 1"
-            :aria-label="t('chat.model')"
-            data-test="app-builder-model"
-            :disabled="transcript.state !== 'idle' && transcript.state !== 'inactive'"
-            item-title="name"
-            item-value="value"
-            :items="transcript.model.options"
-            :model-value="transcript.model.current"
-            @update:model-value="value => emit('set-model', value)"
-          />
-
-          <v-spacer />
-
-          <v-btn-primary
-            v-if="transcript.state === 'working'"
-            v-tooltip="t('chat.stop')"
-            :aria-label="t('chat.stop')"
-            data-test="app-builder-stop"
-            icon="mdi-stop"
-            size="small"
-            @click="emit('stop')"
-          />
-
-          <v-btn-primary
-            v-else
-            v-tooltip="t('chat.send')"
-            :aria-label="t('chat.send')"
-            data-test="app-builder-send"
-            :disabled="!canSend"
-            icon="mdi-arrow-up"
-            size="small"
-            @click="send"
-          />
-        </div>
+        <v-btn
+          v-else
+          v-tooltip="t('chat.send')"
+          :aria-label="t('chat.send')"
+          data-test="app-builder-send"
+          :disabled="!canSend"
+          icon="mdi-arrow-up"
+          @click="send"
+        />
       </v-sheet-composer>
+
+      <!-- Under the prompt box, as in the coding agents' apps: the model, how freely the agent works, and its context. -->
+      <div class="d-flex align-center justify-end mt-2 pe-4">
+        <ModelMenu
+          v-if="transcript.model"
+          :disabled="transcript.state !== 'idle' && transcript.state !== 'inactive'"
+          :effort="transcript.effort"
+          :model="transcript.model"
+          :speed="transcript.speed"
+          @set="(setting, value) => emit('set-setting', setting, value)"
+        />
+
+        <PermissionModeMenu
+          :agent="agentName"
+          :mode="transcript.permissionMode"
+          @set="(mode, acknowledgeRisk) => emit('set-permission-mode', mode, acknowledgeRisk)"
+        />
+
+        <v-progress-circular
+          v-tooltip="context?.label ?? t('chat.contextUnavailable')"
+          :aria-label="context?.label ?? t('chat.contextUnavailable')"
+          class="ms-2"
+          :color="(context?.percent ?? 0) >= 80 ? 'warning' : 'primary'"
+          data-test="app-builder-context"
+          :model-value="context?.percent ?? 0"
+          role="img"
+          size="14"
+          width="2"
+        />
+      </div>
     </v-container>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import type { ApprovalDecision, ConversationSummary, PermissionMode } from '#shared/contract'
+  import type { AgentSettingKind, ApprovalDecision, ConversationSummary, PermissionMode } from '#shared/contract'
+  import type { ActivityEntry } from './ToolGroup.vue'
   import type { Transcript, TranscriptItem } from './transcript'
   import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
   import ApprovalCard from './ApprovalCard.vue'
@@ -206,9 +221,9 @@
   import CheckpointItem from './CheckpointItem.vue'
   import { useI18n } from './i18n'
   import MarkdownText from './MarkdownText.vue'
+  import ModelMenu from './ModelMenu.vue'
   import PermissionModeMenu from './PermissionModeMenu.vue'
-  import ThoughtItem from './ThoughtItem.vue'
-  import ToolCallItem from './ToolCallItem.vue'
+  import ToolGroup from './ToolGroup.vue'
 
   // One chat: the transcript, the agent's state, and the prompt box.
   const props = defineProps<{
@@ -216,6 +231,7 @@
     projectName: string
     transcript: Transcript
     previewOpen: boolean
+    filesOpen: boolean
     agentName: string
     connected: boolean
     answering: Set<string>
@@ -224,30 +240,49 @@
     'send': [text: string]
     'stop': []
     'answer': [approvalId: string, decision: ApprovalDecision]
-    'set-model': [value: string]
+    'set-setting': [setting: AgentSettingKind, value: string]
     'set-permission-mode': [mode: PermissionMode, acknowledgeRisk: boolean]
     'show-changes': [commit: string]
     'undo': [commit: string]
     'delete': []
     'toggle-preview': []
     'install': []
+    'show-files': []
   }>()
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
 
-  type ToolItem = Extract<TranscriptItem, { kind: 'tool' }>
-  /** The transcript's items, with each run of tool calls folded into one group. */
-  const blocks = computed<Array<Exclude<TranscriptItem, { kind: 'tool' }> | { kind: 'tools', id: string, calls: ToolItem[] }>>(() => {
-    const result: Array<Exclude<TranscriptItem, { kind: 'tool' }> | { kind: 'tools', id: string, calls: ToolItem[] }> = []
+  /** How full the model's context window is, as the agent last reported it. */
+  const context = computed(() => {
+    const usage = props.transcript.usage
+    if (!usage || usage.size <= 0) {
+      return null
+    }
+    const percent = Math.min(100, Math.round(usage.used / usage.size * 100))
+    const format = new Intl.NumberFormat(locale.value, { notation: 'compact', maximumFractionDigits: 1 })
+    return { percent, label: t('chat.context', { used: format.format(usage.used), size: format.format(usage.size), percent }) }
+  })
+
+  type Block = Exclude<TranscriptItem, { kind: 'tool' | 'thought' }> | { kind: 'activity', id: string, entries: ActivityEntry[] }
+  /**
+   * The transcript's items, with each stretch of the agent's thinking and
+   * tool calls folded into one quiet line, and without Studio's own approvals,
+   * which are the tool calls themselves.
+   */
+  const blocks = computed<Block[]>(() => {
+    const result: Block[] = []
     for (const item of props.transcript.items) {
-      if (item.kind !== 'tool') {
+      if (item.kind === 'approval' && item.state === 'autoAllowed') {
+        continue
+      }
+      if (item.kind !== 'tool' && item.kind !== 'thought') {
         result.push(item)
         continue
       }
       const last = result.at(-1)
-      if (last?.kind === 'tools') {
-        last.calls.push(item)
+      if (last?.kind === 'activity') {
+        last.entries.push(item)
       } else {
-        result.push({ kind: 'tools', id: item.id, calls: [item] })
+        result.push({ kind: 'activity', id: item.id, entries: [item] })
       }
     }
     return result
