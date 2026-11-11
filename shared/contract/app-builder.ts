@@ -19,6 +19,22 @@ export type AgentId = z.infer<typeof agentIdSchema>
 export const agentStateSchema = z.enum(['ready', 'missing', 'signedOut', 'error'])
 export type AgentState = z.infer<typeof agentStateSchema>
 
+/** A choice the agent offers for a session setting (model, mode, effort). */
+export const agentOptionSchema = z.object({
+  value: z.string(),
+  name: z.string(),
+  description: z.string().nullable(),
+})
+export type AgentOption = z.infer<typeof agentOptionSchema>
+
+export const agentSettingSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  current: z.string(),
+  options: z.array(agentOptionSchema),
+})
+export type AgentSetting = z.infer<typeof agentSettingSchema>
+
 export const agentStatusSchema = z.object({
   id: agentIdSchema,
   name: z.string(),
@@ -32,6 +48,11 @@ export const agentStatusSchema = z.object({
   /** Where to get the CLI. */
   installUrl: z.string(),
   detail: z.string().nullable(),
+  /**
+   * The models the agent offered in its last chat, so a new chat can start
+   * with one; null until the agent has run once in the App Builder.
+   */
+  model: agentSettingSchema.nullable(),
 })
 export type AgentStatus = z.infer<typeof agentStatusSchema>
 
@@ -49,22 +70,6 @@ export const appBuilderStatusSchema = z.object({
 })
 export type AppBuilderStatus = z.infer<typeof appBuilderStatusSchema>
 
-/** A choice the agent offers for a session setting (model, mode, effort). */
-export const agentOptionSchema = z.object({
-  value: z.string(),
-  name: z.string(),
-  description: z.string().nullable(),
-})
-export type AgentOption = z.infer<typeof agentOptionSchema>
-
-export const agentSettingSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  current: z.string(),
-  options: z.array(agentOptionSchema),
-})
-export type AgentSetting = z.infer<typeof agentSettingSchema>
-
 /**
  * `inactive`: saved, without a running agent; the next prompt starts it.
  * `starting`: the agent process and session are being set up; `idle`:
@@ -73,6 +78,19 @@ export type AgentSetting = z.infer<typeof agentSettingSchema>
  */
 export const conversationStateSchema = z.enum(['inactive', 'starting', 'idle', 'working', 'closed', 'failed'])
 export type ConversationState = z.infer<typeof conversationStateSchema>
+
+/**
+ * How freely the agent works in a chat (ADR 0054). `ask`: Studio allows edits
+ * in the app's folder and a few build and git commands, and asks for the
+ * rest. `auto`: Studio also allows commands that run in the folder and name
+ * no path outside it, and asks only for what leaves the folder. `unrestricted`:
+ * Studio allows every request and switches the agent to its own mode without
+ * checks, where it has one; only for this chat, after the user acknowledged
+ * the risk, and not kept when Studio restarts.
+ */
+export const permissionModes = ['ask', 'auto', 'unrestricted'] as const
+export const permissionModeSchema = z.enum(permissionModes)
+export type PermissionMode = z.infer<typeof permissionModeSchema>
 
 export const conversationSummarySchema = z.object({
   id: z.string(),
@@ -83,6 +101,7 @@ export const conversationSummarySchema = z.object({
   state: conversationStateSchema,
   /** The model the agent offers to switch between, when it offers one. */
   model: agentSettingSchema.nullable(),
+  permissionMode: permissionModeSchema,
   createdAt: z.string(),
   /** The number of the last event, for resuming the event stream. */
   lastSeq: z.number().int().nonnegative(),
@@ -181,6 +200,8 @@ export const conversationEventSchema = z.discriminatedUnion('type', [
     command: z.string().nullable(),
     paths: z.array(z.string()),
     state: approvalStateSchema,
+    /** Why Studio allowed it without asking, for `autoAllowed`. */
+    reason: z.enum(['folder', 'chat', 'auto', 'unrestricted']).optional(),
     /** Whether the agent stops its turn when this is denied (opencode). */
     denyEndsTurn: z.boolean(),
   }),
@@ -193,7 +214,7 @@ export const conversationEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('build'), state: z.enum(['running', 'succeeded', 'failed']), log: z.string().nullable(), consentNeeded: z.boolean() }),
   /** Something Studio tells about the chat, such as a session that could not be resumed. */
   z.object({ type: z.literal('notice'), text: z.string() }),
-  z.object({ type: z.literal('state'), state: conversationStateSchema, model: agentSettingSchema.nullable() }),
+  z.object({ type: z.literal('state'), state: conversationStateSchema, model: agentSettingSchema.nullable(), permissionMode: permissionModeSchema.optional() }),
   z.object({ type: z.literal('error'), message: z.string() }),
 ])
 export type ConversationEvent = z.infer<typeof conversationEventSchema>
@@ -254,6 +275,8 @@ export type ReleaseInfo = z.infer<typeof releaseInfoSchema>
 
 const projectId = z.string().min(1).max(64)
 const prompt = z.string().trim().min(1).max(100_000)
+/** A model's value, as the agent offers it. */
+const model = z.string().min(1).max(200)
 const commit = z.string().regex(/^[\da-f]{7,64}$/, 'must be a commit hash')
 
 /** A project's name: one line, and something that gives a folder name. */
@@ -264,18 +287,22 @@ export const appBuilderOperationSchemas = {
   getStatus: z.object({ refresh: z.boolean().default(false) }),
   listProjects: z.object({}),
   /** From the template, or as a copy of a bundled app (`source`: its folder in Studio's apps); the prompt starts the first chat. */
-  createProject: z.object({ name: appProjectNameSchema, agentId: agentIdSchema, prompt: prompt.optional(), source: z.string().regex(/^[a-z\d][a-z\d-]{0,63}$/).optional() }),
+  createProject: z.object({ name: appProjectNameSchema, agentId: agentIdSchema, model: model.optional(), prompt: prompt.optional(), source: z.string().regex(/^[a-z\d][a-z\d-]{0,63}$/).optional() }),
   /** An app's folder the user chose (an `app-project` grant), registered where it is (plan P5). */
-  addFolder: z.object({ folderHandle: z.string().min(1).max(200), agentId: agentIdSchema, name: appProjectNameSchema.optional() }),
+  addFolder: z.object({ folderHandle: z.string().min(1).max(200), agentId: agentIdSchema, model: model.optional(), name: appProjectNameSchema.optional() }),
   listBundledApps: z.object({}),
+  /** The models an agent offers, for a new chat; asks the agent once when no chat has shown them. */
+  getAgentModels: z.object({ agentId: agentIdSchema }),
   removeProject: z.object({ projectId, deleteFolder: z.boolean().default(false) }),
   openFolder: z.object({ projectId }),
-  startConversation: z.object({ projectId, agentId: agentIdSchema }),
+  startConversation: z.object({ projectId, agentId: agentIdSchema, model: model.optional() }),
   deleteConversation: z.object({ conversationId }),
   sendPrompt: z.object({ conversationId, text: prompt }),
   cancelTurn: z.object({ conversationId }),
   answerApproval: z.object({ conversationId, approvalId: z.string().min(1).max(64), decision: approvalDecisionSchema }),
-  setModel: z.object({ conversationId, value: z.string().min(1).max(200) }),
+  setModel: z.object({ conversationId, value: model }),
+  /** `unrestricted` only with `acknowledgeRisk`, after the page warned the user. */
+  setPermissionMode: z.object({ conversationId, mode: permissionModeSchema, acknowledgeRisk: z.boolean().default(false) }),
   getChanges: z.object({ projectId, commit }),
   getPreview: z.object({ projectId }),
   buildPreview: z.object({ projectId }),
@@ -304,6 +331,7 @@ export interface AppBuilderOperationResults {
   createProject: { project: AppProject, conversation: ConversationSummary }
   addFolder: { project: AppProject, conversation: ConversationSummary }
   listBundledApps: BundledAppSource[]
+  getAgentModels: AgentSetting | null
   removeProject: null
   openFolder: null
   startConversation: ConversationSummary
@@ -312,6 +340,7 @@ export interface AppBuilderOperationResults {
   cancelTurn: null
   answerApproval: null
   setModel: ConversationSummary
+  setPermissionMode: ConversationSummary
   /** The commit as a patch, and its files. */
   getChanges: { patch: string, files: ChangedFile[] }
   undoTurn: null

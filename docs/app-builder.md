@@ -41,6 +41,19 @@ is a git repository.
   `build`, `test`, `typecheck` and `package` there without asking. For
   anything else, it asks: *Allow once*, *Allow in this chat* or *Deny*. With
   opencode, *Deny* also ends its turn.
+- The permissions menu beside the model sets how freely the agent works in
+  this chat:
+  - **Ask** (the default): as above.
+  - **Auto**: the agent also runs other commands in the app's folder, as long
+    as they name no path outside it and neither use `sudo` nor download with
+    `curl` or `wget`. It still asks before it touches anything outside the
+    folder.
+  - **Unrestricted**: the agent no longer asks, and Studio allows everything:
+    files anywhere on this computer, any command, the network. Studio warns
+    first and turns it on only when you confirm that you understand the risk.
+    A red bar above the prompt box and a mark in the chat list show it; *Back
+    to Ask* turns it off. It applies to this chat only, and after Studio
+    restarts the chat asks again.
 - *Stop* ends the agent's turn. The model menu switches the agent's model.
 - After each turn that changed files, Studio commits them. The card shows
   the files; *Show changes* shows what changed, and *Undo from here* puts the

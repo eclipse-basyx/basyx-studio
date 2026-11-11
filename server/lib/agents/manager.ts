@@ -1,4 +1,4 @@
-import type { AgentId, AgentStatus, AppBuilderOperationResults, AppBuilderStatus, AppInstallation, AppPreview, AppProject, ApprovalDecision, ConversationEvent, ConversationEventEnvelope, ConversationSummary, ReleaseInfo, ReleaseSigning, ToolStatus } from '#shared/contract'
+import type { AgentId, AgentSetting, AgentStatus, AppBuilderOperationResults, AppBuilderStatus, AppInstallation, AppPreview, AppProject, ApprovalDecision, ConversationEvent, ConversationEventEnvelope, ConversationSummary, PermissionMode, ReleaseInfo, ReleaseSigning, ToolStatus } from '#shared/contract'
 import type { PreviewInstaller } from '../app-projects/previews'
 import type { PreparedRelease, ReleaseCaller, ReleaseInstaller, VersionBump } from '../app-projects/release'
 import type { ProjectRecord, ProjectStore } from '../app-projects/store'
@@ -8,8 +8,8 @@ import type { RunCommand } from './environment'
 import type { OpenAgent } from './process'
 import { randomUUID } from 'node:crypto'
 import { existsSync, readdirSync } from 'node:fs'
-import { mkdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
-import { homedir } from 'node:os'
+import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
+import { homedir, tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import semver from 'semver'
 import { buildProject } from '../app-projects/build'
@@ -94,6 +94,10 @@ export class AgentManager {
   readonly #previews: ProjectPreviews | null
   /** Built packages waiting for the install dialog's consent, by project. */
   readonly #prepared = new Map<string, PreparedRelease>()
+  /** The models each agent offered in its last chat; null when its chats offered none. */
+  readonly #models = new Map<AgentId, AgentSetting | null>()
+  /** Agents asked for their models with a session of their own, so each is asked once. */
+  readonly #probes = new Map<AgentId, Promise<AgentSetting | null>>()
 
   constructor (options: AgentManagerOptions) {
     this.#options = options
@@ -111,7 +115,8 @@ export class AgentManager {
 
   /** Which agents and tools are installed; checked once, or again on `refresh`. */
   async status (refresh = false): Promise<AppBuilderStatus> {
-    return (await this.#discover(refresh)).status
+    const { status } = await this.#discover(refresh)
+    return { ...status, agents: await Promise.all(status.agents.map(async agent => ({ ...agent, model: await this.#knownModel(agent.id) }))) }
   }
 
   /** The projects, newest first, each with its chats, newest first. */
@@ -130,6 +135,7 @@ export class AgentManager {
           folder: project.folder,
           state: 'inactive',
           model: null,
+          permissionMode: 'ask',
           createdAt: record.createdAt.toISOString(),
           lastSeq: record.lastSeq,
         }),
@@ -144,11 +150,36 @@ export class AgentManager {
   }
 
   /**
+   * The models an agent offers, for a new chat: those of its last chat, else
+   * asked once from a session of its own. Agents name their models only in a
+   * session; that session gets no prompt, so it costs nothing, and runs in an
+   * empty folder that is removed afterwards.
+   */
+  async agentModels (agentId: AgentId): Promise<AgentSetting | null> {
+    const known = await this.#knownModel(agentId)
+    if (known) {
+      return known
+    }
+    let probe = this.#probes.get(agentId)
+    if (!probe) {
+      probe = this.#probeModels(agentId)
+      this.#probes.set(agentId, probe)
+      // A failed start (not signed in, say) may work next time.
+      probe.then(model => {
+        if (!model) {
+          this.#probes.delete(agentId)
+        }
+      }, () => this.#probes.delete(agentId))
+    }
+    return await probe
+  }
+
+  /**
    * Creates a project from the template, or as a copy of a bundled app
    * (`source`), commits it, and starts a chat in it; a prompt starts its
    * first turn.
    */
-  async createProject (name: string, agentId: AgentId, prompt: string | null, source: string | null = null): Promise<AppBuilderOperationResults['createProject']> {
+  async createProject (name: string, agentId: AgentId, prompt: string | null, source: string | null = null, model: string | null = null): Promise<AppBuilderOperationResults['createProject']> {
     const discovery = await this.#ready(agentId)
     const slug = await this.#freeSlug(slugOf(name))
     const folder = join(this.#options.projectsDir, slug)
@@ -175,7 +206,7 @@ export class AgentManager {
     await this.#git(folder, discovery).init(from ? `Copy ${from} as ${name}` : `Create ${name} from the BaSyx Studio template`)
     const project: ProjectRecord = { id: randomUUID(), name, appId, folder, origin: source ? 'copy' : 'new', source: from, createdAt: this.#now() }
     await this.#store.insertProject(project)
-    return await this.#startWith(project, agentId, prompt)
+    return await this.#startWith(project, agentId, prompt, model)
   }
 
   /**
@@ -184,7 +215,7 @@ export class AgentManager {
    * folder must have no uncommitted changes, so the first turn's commit holds
    * only what the agent did.
    */
-  async addFolder (handle: string, agentId: AgentId, name: string | null): Promise<AppBuilderOperationResults['addFolder']> {
+  async addFolder (handle: string, agentId: AgentId, name: string | null, model: string | null = null): Promise<AppBuilderOperationResults['addFolder']> {
     const discovery = await this.#ready(agentId)
     const folder = await realpath(this.#options.takeFolder(handle))
     let manifest: { id?: unknown, title?: { en?: unknown } }
@@ -213,7 +244,7 @@ export class AgentManager {
     }
     const project: ProjectRecord = { id: randomUUID(), name: title, appId: manifest.id, folder, origin: 'folder', source: null, createdAt: this.#now() }
     await this.#store.insertProject(project)
-    return await this.#startWith(project, agentId, null)
+    return await this.#startWith(project, agentId, null, model)
   }
 
   /** Removes a project from Studio, with its preview; its folder only when asked (plan P6). */
@@ -241,14 +272,14 @@ export class AgentManager {
     await (this.#options.openFolder ?? (folder => openInFileManager(folder, this.#options.platform ?? process.platform)))(project.folder)
   }
 
-  /** A new chat in a project's folder; its agent starts now. */
-  async startConversation (projectId: string, agentId: AgentId): Promise<ConversationSummary> {
+  /** A new chat in a project's folder; its agent starts now, with `model` when the agent offers it. */
+  async startConversation (projectId: string, agentId: AgentId, model: string | null = null): Promise<ConversationSummary> {
     const project = await this.#project(projectId)
     const discovery = await this.#ready(agentId)
     const id = randomUUID()
     const createdAt = this.#now()
-    await this.#store.insertConversation({ id, projectId, agentId, title: '', sessionId: null, model: null, createdAt })
-    const conversation = this.#create(project, agentId, discovery, { id, createdAt })
+    await this.#store.insertConversation({ id, projectId, agentId, title: '', sessionId: null, model, createdAt })
+    const conversation = this.#create(project, agentId, discovery, { id, createdAt, model })
     this.#conversations.set(id, conversation)
     if (project.origin === 'folder') {
       // A folder keeps its own files: Studio's rules come with the first prompt (plan P5).
@@ -306,6 +337,16 @@ export class AgentManager {
   async setModel (conversationId: string, value: string): Promise<ConversationSummary> {
     const conversation = await this.conversation(conversationId)
     await conversation.setModel(value)
+    return conversation.summary()
+  }
+
+  /** Switches a chat's permission mode; `unrestricted` only when the user acknowledged the risk. */
+  async setPermissionMode (conversationId: string, mode: PermissionMode, acknowledgeRisk: boolean): Promise<ConversationSummary> {
+    if (mode === 'unrestricted' && !acknowledgeRisk) {
+      throw new StudioProblem('invalid_request', 'The unrestricted mode needs the user to acknowledge the risk first.')
+    }
+    const conversation = await this.conversation(conversationId)
+    await conversation.setPermissionMode(mode)
     return conversation.summary()
   }
 
@@ -442,8 +483,8 @@ export class AgentManager {
     await this.#writer.flush()
   }
 
-  async #startWith (project: ProjectRecord, agentId: AgentId, prompt: string | null): Promise<{ project: AppProject, conversation: ConversationSummary }> {
-    const started = await this.startConversation(project.id, agentId)
+  async #startWith (project: ProjectRecord, agentId: AgentId, prompt: string | null, model: string | null): Promise<{ project: AppProject, conversation: ConversationSummary }> {
+    const started = await this.startConversation(project.id, agentId, model)
     if (prompt) {
       await this.prompt(started.id, prompt)
     }
@@ -489,7 +530,12 @@ export class AgentManager {
         return open({ definition, cliPath, nodePath: this.#options.nodePath, folder: project.folder, env: agentProcessEnv(this.#options.env ?? process.env, current.path) })
       },
       hooks: {
-        onEvent: envelope => this.#writer.add(saved.id, envelope),
+        onEvent: envelope => {
+          if (envelope.event.type === 'state' && envelope.event.model) {
+            this.#models.set(agentId, envelope.event.model)
+          }
+          this.#writer.add(saved.id, envelope)
+        },
         onSession: values => void this.#store.updateConversation(saved.id, values).catch(() => {}),
         afterTurn: async prompt => {
           const events = await this.#commitTurn(project, definition, prompt)
@@ -502,6 +548,60 @@ export class AgentManager {
       },
     })
     return conversation
+  }
+
+  async #probeModels (agentId: AgentId): Promise<AgentSetting | null> {
+    const discovery = await this.#ready(agentId)
+    const definition = this.#options.agents.find(agent => agent.id === agentId)!
+    const folder = await mkdtemp(join(tmpdir(), 'basyx-studio-models-'))
+    const open = this.#options.open ?? openAgentProcess
+    const session = new Conversation({
+      projectId: '',
+      definition,
+      folder,
+      now: this.#options.now,
+      open: () => open({ definition, cliPath: discovery.cliPaths[agentId]!, nodePath: this.#options.nodePath, folder, env: agentProcessEnv(this.#options.env ?? process.env, discovery.path) }),
+    })
+    try {
+      await session.start()
+      const model = session.summary().model
+      if (model) {
+        this.#models.set(agentId, model)
+      }
+      return model
+    } finally {
+      session.close()
+      await rm(folder, { recursive: true, force: true })
+    }
+  }
+
+  /**
+   * The models an agent offered in its last chat: from a chat in memory, else
+   * from the saved events of its newest chat. An agent tells its models only
+   * in a session, so before its first chat there are none.
+   */
+  async #knownModel (agentId: AgentId): Promise<AgentSetting | null> {
+    if (this.#models.has(agentId)) {
+      return this.#models.get(agentId)!
+    }
+    let model: AgentSetting | null = null
+    const newest = (await this.#store.listConversations()).filter(record => record.agentId === agentId).toSorted((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]
+    if (newest) {
+      model = this.#conversations.get(newest.id)?.summary().model ?? null
+      if (!model) {
+        for (const { event } of (await this.#store.loadEvents(newest.id)).toReversed()) {
+          if (event.type === 'state' && event.model) {
+            model = event.model
+            break
+          }
+        }
+      }
+    }
+    // A chat that reports models meanwhile has set them.
+    if (!this.#models.has(agentId)) {
+      this.#models.set(agentId, model)
+    }
+    return this.#models.get(agentId)!
   }
 
   #requireReleases (): ReleaseInstaller {
@@ -625,7 +725,7 @@ export class AgentManager {
 
     const cliPaths: Partial<Record<AgentId, string>> = {}
     const agents = await Promise.all(this.#options.agents.map(async (definition): Promise<AgentStatus> => {
-      const base = { id: definition.id, name: definition.name, signInCommand: definition.signInCommand, installUrl: definition.installUrl }
+      const base = { id: definition.id, name: definition.name, signInCommand: definition.signInCommand, installUrl: definition.installUrl, model: null }
       const file = find(definition.cli) ?? (definition.id === 'opencode' ? opencodeDesktopCli(platform, sourceEnv) : null)
       if (!file) {
         return { ...base, state: 'missing', version: null, path: null, detail: null }

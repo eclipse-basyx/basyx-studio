@@ -1,185 +1,232 @@
 <template>
-  <v-sheet-full-page>
-    <div class="d-flex flex-grow-1 overflow-hidden">
-      <v-sheet class="d-flex flex-column flex-shrink-0 border-e" width="320">
-        <div class="pa-3">
-          <v-btn-primary
-            block
-            data-test="app-builder-new"
-            :disabled="readyAgents.length === 0"
-            prepend-icon="mdi-plus"
-            :text="t('projects.new')"
-            @click="newApp = true"
-          />
-        </div>
+  <!-- The App Builder's own themes (vuetify.config.ts), in the mode Studio is in. -->
+  <v-theme-provider :theme="builderTheme" with-background>
+    <v-sheet-app-builder>
+      <div class="d-flex flex-grow-1 overflow-hidden">
+        <v-sheet class="d-flex flex-column flex-shrink-0" color="sidebar" width="280">
+          <div class="d-flex align-center ga-2 ps-3 pe-2 pt-2 pb-1">
+            <v-icon color="primary" icon="mdi-creation" size="small" />
+            <span class="text-title-medium flex-grow-1">{{ t('app.title') }}</span>
 
-        <div class="flex-grow-1 overflow-y-auto">
-          <div class="text-label-large text-medium-emphasis px-4">{{ t('projects.heading') }}</div>
+            <v-btn
+              v-tooltip="t('projects.new')"
+              :aria-label="t('projects.new')"
+              color="primary"
+              data-test="app-builder-new"
+              :disabled="readyAgents.length === 0"
+              icon="mdi-plus-circle"
+              @click="newApp = true"
+            />
+          </div>
 
-          <v-list v-if="projects.length > 0" v-model:opened="opened">
-            <v-list-group v-for="project in projects" :key="project.id" :value="project.id">
-              <template #activator="{ props: activator }">
+          <div class="flex-grow-1 overflow-y-auto">
+            <div class="text-label-medium text-medium-emphasis px-3 pt-1">{{ t('projects.heading') }}</div>
+
+            <v-list v-if="projects.length > 0" v-model:opened="opened" color="on-surface" slim>
+              <v-list-group v-for="project in projects" :key="project.id" :value="project.id">
+                <template #activator="{ props: activator, isOpen }">
+                  <v-list-item
+                    v-tooltip="project.appId"
+                    v-bind="activator"
+                    :data-test="`app-builder-project-${project.id}`"
+                    :title="project.name"
+                  >
+                    <template #prepend>
+                      <v-icon color="medium-emphasis" :icon="isOpen ? 'mdi-chevron-down' : 'mdi-chevron-right'" />
+                    </template>
+
+                    <template #append>
+                      <v-menu>
+                        <template #activator="{ props: menu }">
+                          <v-btn
+                            v-bind="menu"
+                            :aria-label="t('projects.actions', { name: project.name })"
+                            icon="mdi-dots-vertical"
+                            size="small"
+                            @click.stop
+                          />
+                        </template>
+
+                        <v-list>
+                          <v-list-item
+                            v-for="agent in readyAgents"
+                            :key="agent.id"
+                            :data-test="`app-builder-new-chat-${agent.id}`"
+                            prepend-icon="mdi-chat-plus-outline"
+                            :title="t('projects.newChat', { agent: agent.name })"
+                            @click="startChat(project, agent.id)"
+                          />
+
+                          <v-list-item prepend-icon="mdi-folder-open-outline" :title="t('projects.openFolder')" @click="openFolder(project)" />
+                          <v-list-item prepend-icon="mdi-content-copy" :title="t('projects.copyPath')" @click="copyPath(project.folder)" />
+                          <v-list-item prepend-icon="mdi-delete-outline" :title="t('projects.remove')" @click="removing = { project, deleteFolder: false }" />
+                        </v-list>
+                      </v-menu>
+                    </template>
+                  </v-list-item>
+                </template>
+
                 <v-list-item
-                  v-bind="activator"
-                  :data-test="`app-builder-project-${project.id}`"
-                  prepend-icon="mdi-application-outline"
-                  :subtitle="project.appId"
-                  :title="project.name"
+                  v-for="conversation in project.conversations"
+                  :key="conversation.id"
+                  :active="conversation.id === activeId"
+                  class="ps-10"
+                  :data-test="`app-builder-chat-${conversation.id}`"
+                  :title="conversation.title || t('chats.untitled')"
+                  @click="select(conversation.id)"
                 >
-                  <template #append="{ isActive }">
-                    <v-menu>
-                      <template #activator="{ props: menu }">
-                        <v-btn
-                          v-bind="menu"
-                          :aria-label="t('projects.actions', { name: project.name })"
-                          icon="mdi-dots-vertical"
-                          size="small"
-                          @click.stop
-                        />
-                      </template>
+                  <template #append>
+                    <v-progress-circular
+                      v-if="chatMark(conversation) === 'working'"
+                      :aria-label="t('chat.working', { agent: agentName(conversation.agentId) })"
+                      indeterminate
+                      role="img"
+                      size="14"
+                      width="2"
+                    />
 
-                      <v-list>
-                        <v-list-item
-                          v-for="agent in readyAgents"
-                          :key="agent.id"
-                          :data-test="`app-builder-new-chat-${agent.id}`"
-                          prepend-icon="mdi-chat-plus-outline"
-                          :title="t('projects.newChat', { agent: agent.name })"
-                          @click="startChat(project, agent.id)"
-                        />
+                    <v-icon
+                      v-else-if="chatMark(conversation) === 'approval'"
+                      :aria-label="t('approval.title', { agent: agentName(conversation.agentId) })"
+                      color="warning"
+                      icon="mdi-hand-back-left-outline"
+                      role="img"
+                      size="small"
+                    />
 
-                        <v-list-item prepend-icon="mdi-folder-open-outline" :title="t('projects.openFolder')" @click="openFolder(project)" />
-                        <v-list-item prepend-icon="mdi-content-copy" :title="t('projects.copyPath')" @click="copyPath(project.folder)" />
-                        <v-list-item prepend-icon="mdi-delete-outline" :title="t('projects.remove')" @click="removing = { project, deleteFolder: false }" />
-                      </v-list>
-                    </v-menu>
+                    <v-icon
+                      v-else-if="chatMark(conversation) === 'unrestricted'"
+                      :aria-label="t('mode.unrestricted')"
+                      color="error"
+                      icon="mdi-alert-octagon-outline"
+                      role="img"
+                      size="small"
+                    />
 
-                    <v-icon :icon="isActive ? 'mdi-chevron-up' : 'mdi-chevron-down'" />
+                    <v-icon
+                      v-else-if="chatMark(conversation) === 'failed'"
+                      :aria-label="t('chat.failed')"
+                      color="error"
+                      icon="mdi-alert-circle-outline"
+                      role="img"
+                      size="small"
+                    />
                   </template>
                 </v-list-item>
-              </template>
+              </v-list-group>
+            </v-list>
 
-              <v-list-item
-                v-for="conversation in project.conversations"
-                :key="conversation.id"
-                :active="conversation.id === activeId"
-                :data-test="`app-builder-chat-${conversation.id}`"
-                :prepend-icon="chatIcon(conversation)"
-                :subtitle="agentName(conversation.agentId)"
-                :title="conversation.title || t('chats.untitled')"
-                @click="select(conversation.id)"
-              />
-            </v-list-group>
-          </v-list>
+            <div v-else class="px-4 py-2 text-body-small text-medium-emphasis">{{ t('projects.empty') }}</div>
+          </div>
 
-          <div v-else class="px-4 py-2 text-body-small text-medium-emphasis">{{ t('projects.empty') }}</div>
+          <v-divider />
+          <AgentStatusList v-if="status" :checking="checking" :status="status" @recheck="loadStatus(true)" />
+          <v-progress-linear v-else />
+        </v-sheet>
+
+        <div class="d-flex flex-column flex-grow-1 overflow-hidden">
+          <ProblemAlert v-if="error" class="ma-3" :error="error" />
+
+          <ChatView
+            v-if="active && activeTranscript"
+            :key="active.conversation.id"
+            :agent-name="agentName(active.conversation.agentId)"
+            :answering="answering"
+            :connected="connected.get(active.conversation.id) ?? true"
+            :conversation="active.conversation"
+            :preview-open="previewOpen"
+            :project-name="active.project.name"
+            :transcript="activeTranscript"
+            @answer="(approvalId, decision) => answer(active!.conversation.id, approvalId, decision)"
+            @delete="deleting = active!.conversation.id"
+            @install="installing = active!.project"
+            @send="text => send(active!.conversation.id, text)"
+            @set-model="value => setModel(active!.conversation.id, value)"
+            @set-permission-mode="(mode, acknowledgeRisk) => setPermissionMode(active!.conversation.id, mode, acknowledgeRisk)"
+            @show-changes="commit => showChanges(active!.project.id, commit)"
+            @stop="stop(active!.conversation.id)"
+            @toggle-preview="previewOpen = !previewOpen"
+            @undo="commit => undoing = { conversationId: active!.conversation.id, commit }"
+          />
+
+          <div v-else class="d-flex flex-column align-center justify-center flex-grow-1 pa-6 text-center" data-test="app-builder-welcome">
+            <v-icon color="primary" icon="mdi-creation" size="48" />
+            <div class="text-headline-medium mt-3">{{ t('app.title') }}</div>
+            <div class="text-body-medium text-medium-emphasis mt-1 mb-4">{{ t('app.subtitle') }}</div>
+            <v-btn-primary v-if="readyAgents.length > 0" prepend-icon="mdi-plus" :text="t('projects.new')" @click="newApp = true" />
+            <div v-else-if="status" class="text-body-medium text-medium-emphasis">{{ t('agents.noneReady') }}</div>
+          </div>
         </div>
 
-        <v-divider />
-        <AgentStatusList v-if="status" :checking="checking" :status="status" @recheck="loadStatus(true)" />
-        <v-progress-linear v-else />
-      </v-sheet>
-
-      <div class="d-flex flex-column flex-grow-1 overflow-hidden">
-        <ProblemAlert v-if="error" class="ma-3" :error="error" />
-
-        <ChatView
-          v-if="active && activeTranscript"
-          :key="active.conversation.id"
-          :agent-name="agentName(active.conversation.agentId)"
-          :answering="answering"
-          :connected="connected.get(active.conversation.id) ?? true"
-          :conversation="active.conversation"
-          :preview-open="previewOpen"
-          :project-name="active.project.name"
-          :transcript="activeTranscript"
-          @answer="(approvalId, decision) => answer(active!.conversation.id, approvalId, decision)"
-          @delete="deleting = active!.conversation.id"
-          @install="installing = active!.project"
-          @send="text => send(active!.conversation.id, text)"
-          @set-model="value => setModel(active!.conversation.id, value)"
-          @show-changes="commit => showChanges(active!.project.id, commit)"
-          @stop="stop(active!.conversation.id)"
-          @toggle-preview="previewOpen = !previewOpen"
-          @undo="commit => undoing = { conversationId: active!.conversation.id, commit }"
-        />
-
-        <div v-else class="d-flex flex-column align-center justify-center flex-grow-1 pa-6 text-center" data-test="app-builder-welcome">
-          <v-icon color="medium-emphasis" icon="mdi-creation-outline" size="48" />
-          <div class="text-headline-small mt-3">{{ t('app.title') }}</div>
-          <div class="text-body-medium text-medium-emphasis mt-1 mb-4">{{ t('app.subtitle') }}</div>
-          <v-btn-primary v-if="readyAgents.length > 0" prepend-icon="mdi-plus" :text="t('projects.new')" @click="newApp = true" />
-          <div v-else-if="status" class="text-body-medium text-medium-emphasis">{{ t('agents.noneReady') }}</div>
-        </div>
+        <v-sheet v-if="previewOpen && active" class="flex-shrink-0 border-s" width="42%">
+          <PreviewPane :build-seq="buildSeq" :project-id="active.project.id" @close="previewOpen = false" />
+        </v-sheet>
       </div>
 
-      <v-sheet v-if="previewOpen && active" class="flex-shrink-0 border-s" width="45%">
-        <PreviewPane :build-seq="buildSeq" :project-id="active.project.id" @close="previewOpen = false" />
-      </v-sheet>
-    </div>
+      <NewAppDialog
+        v-model="newApp"
+        :agents="readyAgents"
+        :bundled="bundled"
+        :busy="creating"
+        :preset-app-id="presetAppId"
+        @create="createApp"
+      />
 
-    <NewAppDialog
-      v-model="newApp"
-      :agents="readyAgents"
-      :bundled="bundled"
-      :busy="creating"
-      :preset-app-id="presetAppId"
-      @create="createApp"
-    />
+      <ChangesDialog :patch="patch" @close="patch = null" />
 
-    <ChangesDialog :patch="patch" @close="patch = null" />
+      <InstallDialog :project="installing" @close="installing = null" @installed="onInstalled" />
 
-    <InstallDialog :project="installing" @close="installing = null" @installed="onInstalled" />
+      <v-dialog max-width="480" :model-value="deleting !== null" @update:model-value="open => { if (!open) deleting = null }">
+        <v-card :text="t('chats.deleteText')" :title="t('chats.deleteTitle')">
+          <template #actions>
+            <v-btn-secondary :text="t('chats.cancel')" @click="deleting = null" />
+            <v-btn-primary data-test="app-builder-delete-confirm" :text="t('chats.delete')" @click="deleteChat" />
+          </template>
+        </v-card>
+      </v-dialog>
 
-    <v-dialog max-width="480" :model-value="deleting !== null" @update:model-value="open => { if (!open) deleting = null }">
-      <v-card :text="t('chats.deleteText')" :title="t('chats.deleteTitle')">
-        <template #actions>
-          <v-btn-secondary :text="t('chats.cancel')" @click="deleting = null" />
-          <v-btn-primary data-test="app-builder-delete-confirm" :text="t('chats.delete')" @click="deleteChat" />
-        </template>
-      </v-card>
-    </v-dialog>
+      <v-dialog max-width="520" :model-value="undoing !== null" @update:model-value="open => { if (!open) undoing = null }">
+        <v-card :text="t('checkpoint.undoText')" :title="t('checkpoint.undoTitle')">
+          <template #actions>
+            <v-btn-secondary :text="t('chats.cancel')" @click="undoing = null" />
+            <v-btn-primary data-test="app-builder-undo-confirm" :text="t('checkpoint.undoConfirm')" @click="undo" />
+          </template>
+        </v-card>
+      </v-dialog>
 
-    <v-dialog max-width="520" :model-value="undoing !== null" @update:model-value="open => { if (!open) undoing = null }">
-      <v-card :text="t('checkpoint.undoText')" :title="t('checkpoint.undoTitle')">
-        <template #actions>
-          <v-btn-secondary :text="t('chats.cancel')" @click="undoing = null" />
-          <v-btn-primary data-test="app-builder-undo-confirm" :text="t('checkpoint.undoConfirm')" @click="undo" />
-        </template>
-      </v-card>
-    </v-dialog>
+      <v-dialog max-width="560" :model-value="removing !== null" @update:model-value="open => { if (!open) removing = null }">
+        <v-card v-if="removing" :title="t('projects.removeTitle', { name: removing.project.name })">
+          <v-card-text>
+            <div class="text-body-medium">{{ t('projects.removeText') }}</div>
 
-    <v-dialog max-width="560" :model-value="removing !== null" @update:model-value="open => { if (!open) removing = null }">
-      <v-card v-if="removing" :title="t('projects.removeTitle', { name: removing.project.name })">
-        <v-card-text>
-          <div class="text-body-medium">{{ t('projects.removeText') }}</div>
+            <div v-if="removing.project.origin === 'folder'" class="text-body-medium mt-2">{{ t('projects.keepsFolder', { folder: removing.project.folder }) }}</div>
 
-          <div v-if="removing.project.origin === 'folder'" class="text-body-medium mt-2">{{ t('projects.keepsFolder', { folder: removing.project.folder }) }}</div>
+            <v-checkbox
+              v-else
+              v-model="removing.deleteFolder"
+              class="mt-2"
+              data-test="app-builder-remove-folder"
+              hide-details
+              :label="t('projects.deleteFolder', { folder: removing.project.folder })"
+            />
+          </v-card-text>
 
-          <v-checkbox
-            v-else
-            v-model="removing.deleteFolder"
-            class="mt-2"
-            data-test="app-builder-remove-folder"
-            hide-details
-            :label="t('projects.deleteFolder', { folder: removing.project.folder })"
-          />
-        </v-card-text>
-
-        <template #actions>
-          <v-btn-secondary :text="t('chats.cancel')" @click="removing = null" />
-          <v-btn-primary data-test="app-builder-remove-confirm" :text="t('projects.removeConfirm')" @click="removeProject" />
-        </template>
-      </v-card>
-    </v-dialog>
-  </v-sheet-full-page>
+          <template #actions>
+            <v-btn-secondary :text="t('chats.cancel')" @click="removing = null" />
+            <v-btn-primary data-test="app-builder-remove-confirm" :text="t('projects.removeConfirm')" @click="removeProject" />
+          </template>
+        </v-card>
+      </v-dialog>
+    </v-sheet-app-builder>
+  </v-theme-provider>
 </template>
 
 <script lang="ts" setup>
-  import type { AgentId, AppBuilderStatus, AppProject, ApprovalDecision, BundledAppSource, ConversationSummary } from '#shared/contract'
+  import type { AgentId, AppBuilderStatus, AppProject, ApprovalDecision, BundledAppSource, ConversationSummary, PermissionMode } from '#shared/contract'
   import type { NewAppRequest } from './NewAppDialog.vue'
   import type { Transcript } from './transcript'
-  import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowReactive } from 'vue'
+  import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowReactive, watch, watchEffect } from 'vue'
+  import { useTheme } from 'vuetify'
   import { StudioApiError } from '~/composables/useStudioApi'
   import AgentStatusList from './AgentStatusList.vue'
   import ChangesDialog from './ChangesDialog.vue'
@@ -196,6 +243,17 @@
   const { t } = provideI18n()
   const client = useAppBuilderClient()
   const notifications = useNotificationsStore()
+
+  const studioTheme = useTheme()
+  const builderTheme = computed(() => studioTheme.current.value.dark ? 'claude-dark' : 'claude-light')
+  // The accent is the user's (Settings, app.vue): copied from Studio's own
+  // themes into the App Builder's, so it follows a change at once.
+  watchEffect(() => {
+    for (const mode of ['light', 'dark'] as const) {
+      const { primary, 'on-primary': onPrimary } = studioTheme.themes.value[mode]!.colors
+      Object.assign(studioTheme.themes.value[`claude-${mode}`]!.colors, { primary, 'on-primary': onPrimary })
+    }
+  })
 
   const status = ref<AppBuilderStatus | null>(null)
   const checking = ref(false)
@@ -238,13 +296,17 @@
     return status.value?.agents.find(agent => agent.id === id)?.name ?? id
   }
 
-  function chatIcon (conversation: ConversationSummary): string {
+  /** What a chat in the list shows beside its title: nothing, unless the agent works, waits for an answer, failed or runs unrestricted. */
+  function chatMark (conversation: ConversationSummary): 'working' | 'approval' | 'failed' | 'unrestricted' | null {
     const transcript = transcripts.get(conversation.id)
     const state = transcript?.state ?? conversation.state
     if (state === 'working') {
-      return transcript?.items.some(item => item.kind === 'approval' && item.state === 'pending') ? 'mdi-hand-back-left-outline' : 'mdi-dots-horizontal-circle-outline'
+      return transcript?.items.some(item => item.kind === 'approval' && item.state === 'pending') ? 'approval' : 'working'
     }
-    return state === 'failed' ? 'mdi-alert-circle-outline' : 'mdi-chat-outline'
+    if (state === 'failed') {
+      return 'failed'
+    }
+    return (transcript?.permissionMode ?? conversation.permissionMode) === 'unrestricted' ? 'unrestricted' : null
   }
 
   async function run<T> (action: () => Promise<T>): Promise<T | undefined> {
@@ -320,13 +382,13 @@
     const created = await run(() => {
       switch (request.kind) {
         case 'new': {
-          return client.call('createProject', { name: request.name, agentId: request.agentId, prompt: request.prompt })
+          return client.call('createProject', { name: request.name, agentId: request.agentId, ...(request.model ? { model: request.model } : {}), prompt: request.prompt })
         }
         case 'copy': {
-          return client.call('createProject', { name: request.name, agentId: request.agentId, source: request.source, ...(request.prompt ? { prompt: request.prompt } : {}) })
+          return client.call('createProject', { name: request.name, agentId: request.agentId, ...(request.model ? { model: request.model } : {}), source: request.source, ...(request.prompt ? { prompt: request.prompt } : {}) })
         }
         default: {
-          return client.call('addFolder', { folderHandle: request.folderHandle, agentId: request.agentId, ...(request.name ? { name: request.name } : {}) })
+          return client.call('addFolder', { folderHandle: request.folderHandle, agentId: request.agentId, ...(request.model ? { model: request.model } : {}), ...(request.name ? { name: request.name } : {}) })
         }
       }
     })
@@ -339,7 +401,9 @@
   }
 
   async function startChat (project: AppProject, agentId: AgentId) {
-    const conversation = await run(() => client.call('startConversation', { projectId: project.id, agentId }))
+    // A new chat starts with the model the agent ran last.
+    const model = status.value?.agents.find(agent => agent.id === agentId)?.model?.current
+    const conversation = await run(() => client.call('startConversation', { projectId: project.id, agentId, ...(model ? { model } : {}) }))
     if (conversation) {
       project.conversations.unshift(conversation)
       select(conversation.id)
@@ -372,6 +436,10 @@
 
   async function setModel (conversationId: string, value: string) {
     await run(() => client.call('setModel', { conversationId, value }))
+  }
+
+  async function setPermissionMode (conversationId: string, mode: PermissionMode, acknowledgeRisk: boolean) {
+    await run(() => client.call('setPermissionMode', { conversationId, mode, acknowledgeRisk }))
   }
 
   async function showChanges (projectId: string, commit: string) {
@@ -434,6 +502,13 @@
     await navigator.clipboard.writeText(folder)
     notifications.notify({ text: folder, color: 'success' })
   }
+
+  // The status carries the models the agents offered in their last chats; read it again for the dialog.
+  watch(newApp, open => {
+    if (open) {
+      void loadStatus()
+    }
+  })
 
   onMounted(async () => {
     if (presetAppId.value) {

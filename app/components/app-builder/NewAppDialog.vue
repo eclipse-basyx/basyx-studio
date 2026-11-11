@@ -2,15 +2,15 @@
   <v-dialog v-model="open" max-width="640">
     <v-card data-test="app-builder-new-dialog" :title="t('newApp.title')">
       <v-card-text>
-        <div class="text-label-large mb-2">{{ t('newApp.startFrom') }}</div>
+        <div class="text-label-medium mb-1">{{ t('newApp.startFrom') }}</div>
 
-        <v-btn-toggle v-model="kind" class="mb-4" data-test="app-builder-new-kind" mandatory>
+        <v-btn-toggle v-model="kind" class="mb-3" data-test="app-builder-new-kind" mandatory>
           <v-btn :text="t('newApp.empty')" value="new" />
           <v-btn :text="t('newApp.copy')" value="copy" />
           <v-btn :text="t('newApp.folder')" value="folder" />
         </v-btn-toggle>
 
-        <v-form-fields class="d-flex flex-column ga-4">
+        <div class="d-flex flex-column ga-3">
           <v-select
             v-if="kind === 'copy'"
             v-model="source"
@@ -48,6 +48,24 @@
             :label="t('newApp.agent')"
           />
 
+          <v-select
+            v-if="loadingModels || models.length > 1"
+            v-model="model"
+            data-test="app-builder-new-model"
+            :disabled="loadingModels"
+            item-title="name"
+            item-value="value"
+            :items="models"
+            :label="t('newApp.model')"
+            :loading="loadingModels"
+          >
+            <template #item="{ props: item, item: entry }">
+              <v-list-item v-bind="item" :subtitle="entry.description ?? undefined" />
+            </template>
+          </v-select>
+
+          <div v-else-if="selectedAgent && agentId! in asked && !setting" class="text-body-small text-medium-emphasis mt-n1">{{ t('newApp.modelLater', { agent: selectedAgent.name }) }}</div>
+
           <v-textarea
             v-if="kind !== 'folder'"
             v-model="prompt"
@@ -56,11 +74,11 @@
             :hint="kind === 'new' ? t('newApp.promptHint') : t('newApp.promptOptional')"
             :label="t('newApp.prompt')"
             persistent-hint
-            rows="4"
+            rows="3"
           />
-        </v-form-fields>
+        </div>
 
-        <div class="text-body-small text-medium-emphasis mt-4">{{ kind === 'folder' ? t('newApp.whereFolder') : t('newApp.where') }}</div>
+        <div class="text-body-small text-medium-emphasis mt-3">{{ kind === 'folder' ? t('newApp.whereFolder') : t('newApp.where') }}</div>
       </v-card-text>
 
       <template #actions>
@@ -79,14 +97,14 @@
 </template>
 
 <script lang="ts" setup>
-  import type { AgentId, AgentStatus, BundledAppSource } from '#shared/contract'
+  import type { AgentId, AgentSetting, AgentStatus, BundledAppSource } from '#shared/contract'
   import { computed, ref, watch } from 'vue'
   import { useI18n } from './i18n'
 
   export type NewAppRequest
-    = | { kind: 'new', name: string, agentId: AgentId, prompt: string }
-      | { kind: 'copy', name: string, agentId: AgentId, prompt: string | null, source: string }
-      | { kind: 'folder', name: string | null, agentId: AgentId, folderHandle: string }
+    = | { kind: 'new', name: string, agentId: AgentId, model: string | null, prompt: string }
+      | { kind: 'copy', name: string, agentId: AgentId, model: string | null, prompt: string | null, source: string }
+      | { kind: 'folder', name: string | null, agentId: AgentId, model: string | null, folderHandle: string }
 
   // A new app (plan P2, P4, P5): from Studio's template, as a copy of a
   // bundled app, or from a folder with an app's sources.
@@ -102,6 +120,28 @@
   const agentId = ref<AgentId | null>(null)
   const source = ref<string | null>(null)
   const folder = ref<{ handle: string, fileName: string } | null>(null)
+  const model = ref<string | null>(null)
+
+  // The agent's models: those of its last chat (in the status), else asked
+  // from the agent once (getAgentModels); its current one is preselected.
+  const client = useAppBuilderClient()
+  const asked = ref<Partial<Record<AgentId, AgentSetting | null>>>({})
+  const loadingModels = ref(false)
+  const selectedAgent = computed(() => props.agents.find(agent => agent.id === agentId.value) ?? null)
+  const setting = computed(() => selectedAgent.value?.model ?? (agentId.value ? asked.value[agentId.value] : null) ?? null)
+  const models = computed(() => setting.value?.options ?? [])
+  watch(setting, value => {
+    model.value = value?.current ?? null
+  }, { immediate: true })
+  watch([open, agentId], async ([isOpen, id]) => {
+    if (!isOpen || !id || selectedAgent.value?.model || id in asked.value) {
+      return
+    }
+    loadingModels.value = true
+    const found = await client.call('getAgentModels', { agentId: id }).catch(() => null)
+    asked.value = { ...asked.value, [id]: found }
+    loadingModels.value = false
+  }, { immediate: true })
 
   function titleOf (entry: string | null): string {
     return props.bundled.find(app => app.source === entry)?.title ?? ''
@@ -177,11 +217,11 @@
     }
     const text = prompt.value.trim()
     if (kind.value === 'new') {
-      emit('create', { kind: 'new', name: name.value.trim(), agentId: agentId.value!, prompt: text })
+      emit('create', { kind: 'new', name: name.value.trim(), agentId: agentId.value!, model: model.value, prompt: text })
     } else if (kind.value === 'copy') {
-      emit('create', { kind: 'copy', name: name.value.trim(), agentId: agentId.value!, prompt: text || null, source: source.value! })
+      emit('create', { kind: 'copy', name: name.value.trim(), agentId: agentId.value!, model: model.value, prompt: text || null, source: source.value! })
     } else {
-      emit('create', { kind: 'folder', name: name.value.trim() || null, agentId: agentId.value!, folderHandle: folder.value!.handle })
+      emit('create', { kind: 'folder', name: name.value.trim() || null, agentId: agentId.value!, model: model.value, folderHandle: folder.value!.handle })
     }
   }
 </script>

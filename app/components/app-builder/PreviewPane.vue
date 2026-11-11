@@ -1,7 +1,7 @@
 <template>
   <div class="d-flex flex-column fill-height overflow-hidden" data-test="app-builder-preview">
-    <div class="d-flex align-center ga-2 px-4 py-2 border-b">
-      <div class="text-title-medium flex-grow-1">{{ t('preview.title') }}</div>
+    <div class="d-flex align-center ga-2 ps-4 pe-2 py-1 border-b">
+      <div class="text-title-small flex-grow-1">{{ t('preview.title') }}</div>
 
       <v-chip
         v-if="preview"
@@ -15,7 +15,7 @@
         v-tooltip="t('preview.rebuild')"
         :aria-label="t('preview.rebuild')"
         data-test="app-builder-rebuild"
-        icon="mdi-hammer-wrench"
+        icon="mdi-refresh"
         :loading="building || preview?.build.state === 'running'"
         @click="rebuild"
       />
@@ -23,12 +23,12 @@
       <v-btn
         v-tooltip="t('preview.close')"
         :aria-label="t('preview.close')"
-        icon="mdi-dock-right"
+        icon="mdi-close"
         @click="emit('close')"
       />
     </div>
 
-    <div class="d-flex flex-column ga-3 pa-3 flex-grow-1 overflow-y-auto">
+    <div class="d-flex flex-column ga-2 pa-2 flex-grow-1 overflow-y-auto bg-background">
       <ProblemAlert v-if="error" :error="error" />
 
       <v-progress-linear v-if="!preview" />

@@ -319,15 +319,17 @@ answers `unsupported_operation`.
 
 | Operation | Purpose |
 | --- | --- |
-| `getStatus` | Which agent CLIs are installed and signed in, and where node, pnpm and git are (`refresh: true` checks again) |
+| `getStatus` | Which agent CLIs are installed and signed in, the models each agent offered in its last chat (`model`, null before its first), and where node, pnpm and git are (`refresh: true` checks again) |
 | `listProjects` | The projects (an app's sources in a git folder on this computer), each with its chats |
-| `createProject` | Creates a project under the projects folder from the template, or as a copy of a bundled app (`source`), commits it, and starts a chat; a prompt starts its first turn |
+| `createProject` | Creates a project under the projects folder from the template, or as a copy of a bundled app (`source`), commits it, and starts a chat, with `model` when the agent offers it; a prompt starts its first turn |
 | `addFolder`, `listBundledApps` | Registers an app's folder (an `app-project` grant) where it is; the bundled apps a project can copy |
+| `getAgentModels` | The models an agent offers for a new chat: those of its last chat, else asked once from a session without a prompt in an empty temporary folder |
 | `removeProject`, `openFolder` | Removes a project from Studio, with `deleteFolder: true` also its folder; opens the folder in the file manager |
-| `startConversation`, `deleteConversation` | A new chat in a project's folder with one agent; deletes a chat and its history (the files stay) |
+| `startConversation`, `deleteConversation` | A new chat in a project's folder with one agent (and `model`, as `createProject`); deletes a chat and its history (the files stay) |
 | `sendPrompt`, `cancelTurn` | Starts a turn (and a saved chat's agent, resuming its session), or stops it; the turn's progress arrives as events |
 | `answerApproval` | `allowOnce`, `allowInChat` or `deny` for a permission request that Studio's policy did not answer |
 | `setModel` | Switches the agent's model, where it offers a choice |
+| `setPermissionMode` | `ask`, `auto` or `unrestricted` for a chat; `unrestricted` needs `acknowledgeRisk: true` and is not kept when Studio restarts |
 | `getChanges`, `undoTurn` | A turn's commit as a patch; undoes a turn and the ones after it in a new commit |
 | `getPreview`, `buildPreview`, `approvePreview` | A project's last build and its preview installation (`<appId>.preview`, shown only in the App Builder); builds it now; installs a build that waited for the user's OK on new permissions |
 | `getReleaseInfo`, `getMachineKey` | The app's version and the installed one, with the versions it could take; this computer's signing key (created on first use) |

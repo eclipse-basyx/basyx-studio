@@ -392,6 +392,7 @@
   "nav": {
     "targets": "AAS-Ziele",
     "targetsShort": "Ziele",
+    "appBuilderDesktopOnly": "Der App Builder lässt Coding-Agenten uff deim Rechner loofen und jeht nur in de BaSyx-Studio-Desktop-App, wa.",
     "dashboard": "Zuhause",
     "dashboardShort": "Kiez",
     "shells": "Verwaltungsschalen",

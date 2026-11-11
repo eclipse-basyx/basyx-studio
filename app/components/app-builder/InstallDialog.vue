@@ -4,7 +4,7 @@
       <v-card-text>
         <v-progress-linear v-if="!info && !error" />
 
-        <ProblemAlert v-if="error" class="mb-4" :error="error" />
+        <ProblemAlert v-if="error" class="mb-3" :error="error" />
 
         <template v-if="info">
           <v-list>
@@ -27,7 +27,7 @@
 
           <div v-if="!info.newVersion" class="text-body-small text-medium-emphasis">{{ t('install.mustRaise', { version: info.installed?.version ?? '' }) }}</div>
 
-          <div class="text-label-large mt-4">{{ t('install.signingHeading') }}</div>
+          <div class="text-label-medium mt-3">{{ t('install.signingHeading') }}</div>
 
           <v-radio-group v-model="signing" data-test="app-builder-install-signing" hide-details>
             <v-radio :disabled="!info.machineKeyApplies" :label="t('install.machine')" value="machine" />

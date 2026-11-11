@@ -1,7 +1,7 @@
 <template>
   <!-- Sanitized (@basyx/file-viewer/markdown): no raw HTML, scripts, frames or remote images. -->
   <!-- eslint-disable-next-line vue/no-v-html -->
-  <div v-if="html !== null" class="text-break" v-html="html" />
+  <div v-if="html !== null" class="text-body-medium text-break" v-html="html" />
   <div v-else class="text-body-medium text-pre-wrap text-break">{{ text }}</div>
 </template>
 

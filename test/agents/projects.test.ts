@@ -101,14 +101,25 @@ describe('App Builder project template (ADR 0054, plan P2)', () => {
 })
 
 // A fake opencode on the PATH (for the status check) and an in-process
-// agent that writes a file in the project on every prompt.
-interface Fake { prompts: string[], loaded: string[] }
+// agent that writes a file in the project on every prompt and offers two models.
+interface Fake { prompts: string[], loaded: string[], sessions: string[], models: string[] }
+
+function modelOptions (current: string) {
+  return [{ id: 'model', name: 'Model', category: 'model' as const, type: 'select' as const, currentValue: current, options: [{ value: 'small', name: 'Small' }, { value: 'large', name: 'Large' }] }]
+}
 
 function fakeAgent (folder: string, fake: Fake) {
   let turn = 0
   return agent({ name: 'fake' })
     .onRequest(methods.agent.initialize, () => ({ protocolVersion: 1, agentCapabilities: { loadSession: true } }))
-    .onRequest(methods.agent.session.new, () => ({ sessionId: 'session-1' }))
+    .onRequest(methods.agent.session.new, ({ params }) => {
+      fake.sessions.push(params.cwd)
+      return { sessionId: 'session-1', configOptions: modelOptions('small') }
+    })
+    .onRequest(methods.agent.session.setConfigOption, ({ params }) => {
+      fake.models.push(String(params.value))
+      return { configOptions: modelOptions(String(params.value)) }
+    })
     .onRequest(methods.agent.session.load, ({ params }) => {
       fake.loaded.push(params.sessionId)
       return {}
@@ -138,7 +149,7 @@ function setup () {
   writeFileSync(join(bin, 'opencode'), '#!/bin/sh\necho "opencode v9.9.9"\n')
   chmodSync(join(bin, 'opencode'), 0o755)
   const store = new MemoryProjectStore()
-  const fake: Fake = { prompts: [], loaded: [] }
+  const fake: Fake = { prompts: [], loaded: [], sessions: [], models: [] }
   const manager = () => new AgentManager({
     projectsDir: join(root, 'Apps'),
     agents: agentCatalog(specifier => specifier),
@@ -225,6 +236,34 @@ describe.skipIf(process.platform === 'win32')('App Builder projects (ADR 0054, p
     expect(existsSync(project.folder)).toBe(false)
     expect(await second.projects()).toEqual([])
     await second.dispose()
+  })
+
+  it('asks an agent for its models before its first chat, and starts a new app with the chosen one', async () => {
+    const { root, fake, manager } = setup()
+    const instance = manager()
+    // No chat yet: a session of its own, without a prompt, in a folder that is removed again.
+    expect(await instance.agentModels('opencode')).toMatchObject({ current: 'small', options: [{ value: 'small' }, { value: 'large' }] })
+    expect(fake.prompts).toEqual([])
+    expect(fake.sessions).toHaveLength(1)
+    expect(existsSync(fake.sessions[0]!)).toBe(false)
+    // Asked once; the status has them too.
+    await instance.agentModels('opencode')
+    expect(fake.sessions).toHaveLength(1)
+    expect((await instance.status()).agents.find(agent => agent.id === 'opencode')?.model?.current).toBe('small')
+
+    const { project, conversation } = await instance.createProject('Shell List', 'opencode', null, null, 'large')
+    expect(fake.sessions.at(-1)).toBe(join(root, 'Apps', 'shell-list'))
+    expect(fake.models).toEqual(['large'])
+    expect(conversation.model?.current).toBe('large')
+    // The chat keeps it: a second chat in the project starts with the model the agent ran last.
+    expect((await instance.status()).agents.find(agent => agent.id === 'opencode')?.model?.current).toBe('large')
+    expect(project.conversations).toHaveLength(1)
+
+    // Unrestricted only after the user acknowledged the risk.
+    await expect(instance.setPermissionMode(conversation.id, 'unrestricted', false)).rejects.toMatchObject({ code: 'invalid_request' })
+    expect((await instance.setPermissionMode(conversation.id, 'unrestricted', true)).permissionMode).toBe('unrestricted')
+    expect((await instance.setPermissionMode(conversation.id, 'auto', false)).permissionMode).toBe('auto')
+    await instance.dispose()
   })
 
   it('gives a second project with the same name its own folder', async () => {

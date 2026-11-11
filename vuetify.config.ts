@@ -23,6 +23,39 @@ const modeThemes = Object.fromEntries([false, true].map(dark => [dark ? 'dark' :
   colors: { ...themeColors('basyx', 'neutral', dark), ...withOnColors(status[dark ? 'dark' : 'light']) },
 }]))
 
+// The App Builder's own look (ADR 0054), after the apps of the coding agents it
+// drives: a warm ivory page, a darker sidebar and white raised surfaces. The
+// accent is Studio's: the page wraps itself in these themes
+// (<v-theme-provider>) and copies the primary colour that the user chose in
+// Settings into them (app-builder/App.vue); the BaSyx accent is the fallback.
+const claudeColors = {
+  light: {
+    'background': '#FAF9F5',
+    'surface': '#FFFFFF',
+    'surface-light': '#F0EEE6',
+    'card-header': '#F5F4ED',
+    'sidebar': '#F0EEE6',
+    'secondary': '#6B6A63',
+  },
+  dark: {
+    'background': '#262624',
+    'surface': '#30302E',
+    'surface-light': '#3A3A37',
+    'card-header': '#30302E',
+    'sidebar': '#1F1E1D',
+    'secondary': '#B0AEA5',
+  },
+} as const
+const claudeThemes = Object.fromEntries([false, true].map(dark => [dark ? 'claude-dark' : 'claude-light', {
+  dark,
+  colors: {
+    ...modeThemes[dark ? 'dark' : 'light']!.colors,
+    ...withOnColors(claudeColors[dark ? 'dark' : 'light']),
+    'on-background': dark ? '#FAF9F5' : '#141413',
+    'on-surface': dark ? '#FAF9F5' : '#141413',
+  },
+}]))
+
 export default defineVuetifyConfiguration({
   theme: {
     // An explicit theme, so server rendering and hydration agree: the module
@@ -33,6 +66,7 @@ export default defineVuetifyConfiguration({
     defaultTheme: 'light',
     themes: {
       ...modeThemes,
+      ...claudeThemes,
       // Easter egg: the Konami code (default layout) applies it to the app for
       // the session, scoped through <v-app :theme>, so the color-scheme cookie
       // and the stored theme stay as they are.
@@ -90,6 +124,11 @@ export default defineVuetifyConfiguration({
     // The whole of v-main, below the app bar and beside the rail, for a page
     // that is one frame: a full-page app module (ADR 0045).
     VSheetFullPage: 'VSheet',
+    // The App Builder's prompt box: a large rounded surface that holds the
+    // text, the model and the send button, with no field outline of its own.
+    VSheetComposer: 'VSheet',
+    // The App Builder's page (ADR 0054): a full page with dense defaults.
+    VSheetAppBuilder: 'VSheet',
   },
 
   defaults: {
@@ -138,6 +177,42 @@ export default defineVuetifyConfiguration({
       // v-main sets the layout variables: the app bar above, the phone navigation below.
       height: 'calc(100dvh - var(--v-layout-top) - var(--v-layout-bottom))',
       class: 'd-flex flex-column',
+    },
+    // The App Builder's page: a full page as VSheetFullPage, dense throughout
+    // like the coding agents' own apps (small buttons, 32 px rows, compact
+    // cards, fields and tool-call rows).
+    VSheetAppBuilder: {
+      color: 'transparent',
+      rounded: 0,
+      height: 'calc(100dvh - var(--v-layout-top) - var(--v-layout-bottom))',
+      class: 'd-flex flex-column',
+      VBtn: { density: 'compact' },
+      VListItem: { minHeight: 32 },
+      VCardItem: { density: 'compact' },
+      VCardActions: { class: 'py-1 px-3' },
+      VCardText: { class: 'pt-0 pb-2 px-3' },
+      VExpansionPanelTitle: { minHeight: 36, static: true, class: 'py-1 px-3' },
+      // Alerts read like the chat's text: 14 px instead of the body's 16 px,
+      // a 20 px icon instead of 28 px, and their own height (flex: 0 0 auto
+      // instead of Vuetify's flex: 1 1, which in the preview's column
+      // stretched a hint over the whole pane).
+      VAlert: { density: 'compact', iconSize: 20, class: 'text-body-medium flex-0-0' },
+      VChip: { size: 'x-small' },
+      VTextField: { density: 'compact' },
+      VSelect: { density: 'compact' },
+      VAutocomplete: { density: 'compact' },
+      VTextarea: { density: 'compact' },
+      VRadioGroup: { density: 'compact' },
+      VRadio: { density: 'compact' },
+    },
+    VSheetComposer: {
+      color: 'surface',
+      rounded: 'xl',
+      border: true,
+      elevation: 2,
+      class: 'px-3 pt-2 pb-1',
+      VTextarea: { variant: 'plain', rows: 2, autoGrow: true, maxRows: 10, density: 'compact' },
+      VSelect: { variant: 'plain', density: 'compact', hideDetails: true, singleLine: true, width: 260, class: 'text-medium-emphasis' },
     },
     VFormFields: {
       color: 'transparent',

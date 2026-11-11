@@ -1,27 +1,36 @@
 <template>
   <div class="d-flex flex-column flex-grow-1 overflow-hidden">
-    <div class="d-flex align-center ga-2 px-4 py-2 border-b">
-      <div class="flex-grow-1 overflow-hidden">
-        <div class="text-title-medium text-truncate">{{ conversation.title || t('chats.untitled') }}</div>
+    <div class="d-flex align-center ga-2 ps-4 pe-2 py-1">
+      <div class="d-flex align-center ga-2 flex-grow-1 overflow-hidden">
+        <span class="text-title-small text-truncate">{{ conversation.title || t('chats.untitled') }}</span>
 
-        <div class="text-body-small text-medium-emphasis text-truncate">{{ projectName }} · {{ agentName }}</div>
+        <span class="text-body-small text-medium-emphasis text-truncate">{{ projectName }} · {{ agentName }}</span>
+
+        <v-menu>
+          <template #activator="{ props: menu }">
+            <v-btn
+              v-bind="menu"
+              :aria-label="t('projects.actions', { name: conversation.title || t('chats.untitled') })"
+              data-test="app-builder-chat-menu"
+              icon="mdi-chevron-down"
+              size="small"
+            />
+          </template>
+
+          <v-list>
+            <v-list-item
+              data-test="app-builder-delete-chat"
+              :disabled="busy"
+              prepend-icon="mdi-delete-outline"
+              :title="t('chats.delete')"
+              @click="emit('delete')"
+            />
+          </v-list>
+        </v-menu>
       </div>
 
-      <v-select
-        v-if="transcript.model && transcript.model.options.length > 1"
-        data-test="app-builder-model"
-        :disabled="transcript.state !== 'idle' && transcript.state !== 'inactive'"
-        hide-details
-        item-title="name"
-        item-value="value"
-        :items="transcript.model.options"
-        :label="t('chat.model')"
-        max-width="260"
-        :model-value="transcript.model.current"
-        @update:model-value="value => emit('set-model', value)"
-      />
-
-      <v-btn-secondary
+      <v-btn
+        border
         data-test="app-builder-install-open"
         :disabled="busy"
         prepend-icon="mdi-package-variant-closed-plus"
@@ -34,43 +43,27 @@
         :active="previewOpen"
         :aria-label="t('preview.toggle')"
         data-test="app-builder-toggle-preview"
-        icon="mdi-application-outline"
+        icon="mdi-dock-right"
         @click="emit('toggle-preview')"
-      />
-
-      <v-btn
-        v-tooltip="t('chats.delete')"
-        :aria-label="t('chats.delete')"
-        data-test="app-builder-delete-chat"
-        :disabled="busy"
-        icon="mdi-delete-outline"
-        @click="emit('delete')"
       />
     </div>
 
     <div ref="scroller" class="flex-grow-1 overflow-y-auto">
-      <div class="d-flex flex-column ga-3 pa-4 mx-auto" data-test="app-builder-transcript">
-        <template v-for="item in transcript.items" :key="`${item.kind}:${item.id}`">
+      <v-container class="d-flex flex-column ga-3 px-4 py-3" data-test="app-builder-transcript" max-width="760">
+        <template v-for="item in blocks" :key="`${item.kind}:${item.id}`">
           <div v-if="item.kind === 'user'" class="d-flex justify-end">
-            <v-sheet class="px-4 py-2 text-body-medium text-pre-wrap text-break" color="surface-light" max-width="85%" rounded="lg">{{ item.text }}</v-sheet>
+            <v-sheet class="px-3 py-2 text-body-medium text-pre-wrap text-break" color="surface-light" max-width="85%" rounded="lg">{{ item.text }}</v-sheet>
           </div>
 
           <MarkdownText v-else-if="item.kind === 'agent'" :text="item.text" />
 
-          <v-expansion-panels v-else-if="item.kind === 'thought'">
-            <v-expansion-panel>
-              <v-expansion-panel-title>
-                <v-icon class="me-3" color="medium-emphasis" icon="mdi-thought-bubble-outline" />
-                <span class="text-body-medium text-medium-emphasis">{{ t('chat.thinking') }}</span>
-              </v-expansion-panel-title>
+          <ThoughtItem v-else-if="item.kind === 'thought'" :text="item.text" />
 
-              <v-expansion-panel-text>
-                <div class="text-body-small text-medium-emphasis text-pre-wrap text-break">{{ item.text }}</div>
-              </v-expansion-panel-text>
-            </v-expansion-panel>
-          </v-expansion-panels>
-
-          <ToolCallItem v-else-if="item.kind === 'tool'" :folder="conversation.folder" :item="item" />
+          <v-card v-else-if="item.kind === 'tools'">
+            <v-expansion-panels multiple>
+              <ToolCallItem v-for="tool in item.calls" :key="tool.id" :folder="conversation.folder" :item="tool" />
+            </v-expansion-panels>
+          </v-card>
 
           <v-card v-else-if="item.kind === 'plan'">
             <v-card-header prepend-icon="mdi-format-list-checks" :title="t('plan.title')" />
@@ -110,79 +103,111 @@
             @fix="emit('send', fixPrompt(item.log))"
           />
 
-          <v-alert v-else-if="item.kind === 'info'" density="compact" :text="item.text" type="info" />
+          <v-alert v-else-if="item.kind === 'info'" :text="item.text" type="info" />
 
           <v-alert
             v-else-if="item.kind === 'error'"
             class="text-pre-wrap"
-            density="compact"
             :text="item.message"
             type="error"
           />
         </template>
 
         <div v-if="transcript.items.length === 0 && transcript.state !== 'starting'" class="text-center text-medium-emphasis py-12">
-          <v-icon icon="mdi-creation-outline" size="40" />
-          <div class="text-title-medium mt-2">{{ t('chat.emptyTitle') }}</div>
+          <v-icon color="primary" icon="mdi-creation" size="40" />
+          <div class="text-headline-small mt-2">{{ t('chat.emptyTitle') }}</div>
           <div class="text-body-medium mt-1">{{ t('chat.emptyText') }}</div>
         </div>
-      </div>
+      </v-container>
     </div>
 
-    <div class="px-4 pb-4 pt-2">
+    <v-container class="px-4 pt-0 pb-3" max-width="760">
       <!-- Read out as it changes; the transcript itself is not, so streamed text does not flood a screen reader. -->
-      <div aria-live="polite" class="d-flex align-center ga-2 text-body-small text-medium-emphasis mb-2" role="status">
+      <div aria-live="polite" class="d-flex align-center ga-2 text-body-small text-medium-emphasis mb-1 px-2" role="status">
         <v-progress-circular v-if="status && (transcript.state === 'working' || transcript.state === 'starting' || !connected)" indeterminate size="14" width="2" />
         <span v-if="status">{{ status }}</span>
         <span v-else class="d-sr-only">{{ announcement }}</span>
       </div>
 
-      <v-textarea
-        v-model="draft"
-        :aria-label="t('chat.placeholder')"
-        auto-grow
-        data-test="app-builder-prompt"
-        :disabled="transcript.state === 'closed'"
-        hide-details
-        max-rows="10"
-        :placeholder="t('chat.placeholder')"
-        rows="2"
-        @keydown.enter.exact.prevent="send"
+      <v-alert
+        v-if="transcript.permissionMode === 'unrestricted'"
+        class="mb-2"
+        data-test="app-builder-unrestricted-banner"
+        icon="mdi-alert-octagon-outline"
+        :text="t('mode.active', { agent: agentName })"
+        type="error"
       >
-        <template #append-inner>
-          <v-btn
+        <v-btn class="mt-1 ms-n2" data-test="app-builder-unrestricted-off" :text="t('mode.back')" @click="emit('set-permission-mode', 'ask', false)" />
+      </v-alert>
+
+      <v-sheet-composer>
+        <v-textarea
+          v-model="draft"
+          :aria-label="t('chat.placeholder')"
+          data-test="app-builder-prompt"
+          :disabled="transcript.state === 'closed'"
+          :placeholder="t('chat.placeholder')"
+          @keydown.enter.exact.prevent="send"
+        />
+
+        <div class="d-flex align-center ga-2">
+          <PermissionModeMenu
+            :agent="agentName"
+            :mode="transcript.permissionMode"
+            @set="(mode, acknowledgeRisk) => emit('set-permission-mode', mode, acknowledgeRisk)"
+          />
+
+          <v-select
+            v-if="transcript.model && transcript.model.options.length > 1"
+            :aria-label="t('chat.model')"
+            data-test="app-builder-model"
+            :disabled="transcript.state !== 'idle' && transcript.state !== 'inactive'"
+            item-title="name"
+            item-value="value"
+            :items="transcript.model.options"
+            :model-value="transcript.model.current"
+            @update:model-value="value => emit('set-model', value)"
+          />
+
+          <v-spacer />
+
+          <v-btn-primary
             v-if="transcript.state === 'working'"
             v-tooltip="t('chat.stop')"
             :aria-label="t('chat.stop')"
             data-test="app-builder-stop"
             icon="mdi-stop"
+            size="small"
             @click="emit('stop')"
           />
 
-          <v-btn
+          <v-btn-primary
             v-else
             v-tooltip="t('chat.send')"
             :aria-label="t('chat.send')"
             data-test="app-builder-send"
             :disabled="!canSend"
             icon="mdi-arrow-up"
+            size="small"
             @click="send"
           />
-        </template>
-      </v-textarea>
-    </div>
+        </div>
+      </v-sheet-composer>
+    </v-container>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import type { ApprovalDecision, ConversationSummary } from '#shared/contract'
-  import type { Transcript } from './transcript'
+  import type { ApprovalDecision, ConversationSummary, PermissionMode } from '#shared/contract'
+  import type { Transcript, TranscriptItem } from './transcript'
   import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
   import ApprovalCard from './ApprovalCard.vue'
   import BuildItem from './BuildItem.vue'
   import CheckpointItem from './CheckpointItem.vue'
   import { useI18n } from './i18n'
   import MarkdownText from './MarkdownText.vue'
+  import PermissionModeMenu from './PermissionModeMenu.vue'
+  import ThoughtItem from './ThoughtItem.vue'
   import ToolCallItem from './ToolCallItem.vue'
 
   // One chat: the transcript, the agent's state, and the prompt box.
@@ -200,6 +225,7 @@
     'stop': []
     'answer': [approvalId: string, decision: ApprovalDecision]
     'set-model': [value: string]
+    'set-permission-mode': [mode: PermissionMode, acknowledgeRisk: boolean]
     'show-changes': [commit: string]
     'undo': [commit: string]
     'delete': []
@@ -207,6 +233,25 @@
     'install': []
   }>()
   const { t } = useI18n()
+
+  type ToolItem = Extract<TranscriptItem, { kind: 'tool' }>
+  /** The transcript's items, with each run of tool calls folded into one group. */
+  const blocks = computed<Array<Exclude<TranscriptItem, { kind: 'tool' }> | { kind: 'tools', id: string, calls: ToolItem[] }>>(() => {
+    const result: Array<Exclude<TranscriptItem, { kind: 'tool' }> | { kind: 'tools', id: string, calls: ToolItem[] }> = []
+    for (const item of props.transcript.items) {
+      if (item.kind !== 'tool') {
+        result.push(item)
+        continue
+      }
+      const last = result.at(-1)
+      if (last?.kind === 'tools') {
+        last.calls.push(item)
+      } else {
+        result.push({ kind: 'tools', id: item.id, calls: [item] })
+      }
+    }
+    return result
+  })
 
   const draft = ref('')
   /** While the agent starts or works, the chat's files and history change. */

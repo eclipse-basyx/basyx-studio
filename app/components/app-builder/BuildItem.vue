@@ -31,10 +31,13 @@
     </div>
   </v-alert>
 
-  <div v-else class="d-flex align-center ga-2 text-body-small text-medium-emphasis" data-test="app-builder-build-succeeded">
-    <v-icon :color="item.consentNeeded ? 'warning' : 'success'" :icon="item.consentNeeded ? 'mdi-shield-alert-outline' : 'mdi-check-circle-outline'" size="small" />
-    <span>{{ item.consentNeeded ? t('build.waitsForConsent') : t('build.succeeded') }}</span>
-  </div>
+  <v-card v-else data-test="app-builder-build-succeeded">
+    <v-card-item :title="item.consentNeeded ? t('build.waitsForConsent') : t('build.succeeded')">
+      <template #prepend>
+        <v-icon :color="item.consentNeeded ? 'warning' : 'success'" :icon="item.consentNeeded ? 'mdi-shield-alert-outline' : 'mdi-check-circle-outline'" />
+      </template>
+    </v-card-item>
+  </v-card>
 </template>
 
 <script lang="ts" setup>

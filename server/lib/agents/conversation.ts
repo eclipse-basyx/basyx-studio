@@ -1,5 +1,6 @@
-import type { AgentSetting, ApprovalDecision, ConversationEvent, ConversationEventEnvelope, ConversationState, ConversationSummary } from '#shared/contract'
+import type { AgentSetting, ApprovalDecision, ConversationEvent, ConversationEventEnvelope, ConversationState, ConversationSummary, PermissionMode } from '#shared/contract'
 import type { AgentDefinition } from './catalog'
+import type { PermissionSubject } from './policy'
 import type { AgentProcess } from './process'
 import type { ClientConnection, RequestPermissionRequest, RequestPermissionResponse, SessionConfigOption } from '@agentclientprotocol/sdk'
 import { randomUUID } from 'node:crypto'
@@ -19,6 +20,7 @@ const maxEvents = 20_000
 
 interface PendingApproval {
   ruleKey: string
+  subject: PermissionSubject
   options: RequestPermissionRequest['options']
   event: Extract<ConversationEvent, { type: 'approval' }>
   resolve: (response: RequestPermissionResponse) => void
@@ -47,6 +49,8 @@ export interface ConversationOptions {
   history?: ConversationEventEnvelope[]
   sessionId?: string | null
   model?: string | null
+  /** The permission mode a new chat starts in; a saved chat takes it from its history. */
+  permissionMode?: PermissionMode
   hooks?: ConversationHooks
 }
 
@@ -60,6 +64,9 @@ export class Conversation {
   #state: ConversationState
   #model: AgentSetting | null = null
   #preferredModel: string | null
+  #permissionMode: PermissionMode
+  /** The session modes the running agent offers. */
+  #agentModes: string[] = []
   #sessionId: string | null
   #connection: ClientConnection | null = null
   #process: AgentProcess | null = null
@@ -94,14 +101,24 @@ export class Conversation {
     this.#preferredModel = options.model ?? null
     this.#state = options.history ? 'inactive' : 'starting'
     this.#lastActive = this.#now().getTime()
-    // The model list of a saved chat, as it was last shown.
+    // The model list and permission mode of a saved chat, as it was last shown.
+    let savedMode: PermissionMode = 'ask'
     for (const { event } of this.#events) {
       if (event.type === 'state' && event.model) {
         this.#model = event.model
       }
+      if (event.type === 'state' && event.permissionMode) {
+        savedMode = event.permissionMode
+      }
     }
+    // Unrestricted is not kept when Studio restarts: the chat asks again.
+    this.#permissionMode = options.permissionMode ?? (savedMode === 'unrestricted' ? 'ask' : savedMode)
     if (options.history) {
       this.#settleInterruptedTurn()
+      if (savedMode === 'unrestricted') {
+        this.#emit({ type: 'notice', text: `Studio restarted, so ${this.definition.name} asks again: the unrestricted mode is not kept.` })
+        this.#emit({ type: 'state', state: this.#state, model: this.#model, permissionMode: this.#permissionMode })
+      }
     }
   }
 
@@ -123,6 +140,7 @@ export class Conversation {
       folder: this.folder,
       state: this.#state,
       model: this.#model,
+      permissionMode: this.#permissionMode,
       createdAt: this.createdAt.toISOString(),
       lastSeq: this.#seq,
     }
@@ -200,13 +218,44 @@ export class Conversation {
       // Applied when the agent starts.
       this.#model = { ...this.#model, current: value }
       this.#saveSession()
-      this.#emit({ type: 'state', state: this.#state, model: this.#model })
+      this.#emit({ type: 'state', state: this.#state, model: this.#model, permissionMode: this.#permissionMode })
       return
     }
     const { connection, sessionId } = this.#ready()
     const result = await connection.agent.request(methods.agent.session.setConfigOption, { sessionId, configId: this.#model.id, value })
     this.#setModel(modelSetting(result.configOptions as SessionConfigOption[]) ?? { ...this.#model, current: value })
     this.#saveSession()
+  }
+
+  /**
+   * Switches the chat's permission mode. A running agent switches its own
+   * session mode with it; requests waiting for the user are decided again.
+   * The manager checks that `unrestricted` was acknowledged.
+   */
+  async setPermissionMode (mode: PermissionMode): Promise<void> {
+    if (this.#state === 'closed') {
+      throw new StudioProblem('agent_unavailable', 'This chat was deleted.')
+    }
+    this.#permissionMode = mode
+    this.#emit({ type: 'state', state: this.#state, model: this.#model, permissionMode: mode })
+    if (this.#connection && this.#sessionId && this.#state !== 'starting') {
+      const agentMode = this.#agentMode()
+      if (agentMode) {
+        await this.#connection.agent.request(methods.agent.session.setMode, { sessionId: this.#sessionId, modeId: agentMode })
+      }
+    }
+    if (mode === 'unrestricted' && this.definition.unrestrictedMode && this.#agentModes.length > 0 && !this.#agentModes.includes(this.definition.unrestrictedMode)) {
+      this.#emit({ type: 'notice', text: `${this.definition.name} does not offer its mode without checks here (its settings may turn it off), so it keeps its own checks. Studio allows everything it is asked.` })
+    }
+    for (const [id, pending] of this.#approvals) {
+      const decision = decidePermission(pending.subject, this.folder, this.#allowedInChat, mode)
+      const optionId = decision.answer === 'allow' ? pickOption(pending.options, true) : null
+      if (decision.answer === 'allow' && optionId) {
+        this.#approvals.delete(id)
+        this.#emit({ ...pending.event, state: 'autoAllowed', reason: decision.reason })
+        pending.resolve({ outcome: { outcome: 'selected', optionId } })
+      }
+    }
   }
 
   /** Adds an event that Studio itself reports, such as an undone turn. */
@@ -293,9 +342,10 @@ export class Conversation {
         clientInfo: { name: 'basyx-studio', title: 'BaSyx Studio', version: '1' },
       })
       const session = await this.#openSession(connection, init.agentCapabilities?.loadSession === true)
-      const editMode = this.definition.editMode
-      if (editMode && session.modes?.availableModes.some(mode => mode.id === editMode)) {
-        await connection.agent.request(methods.agent.session.setMode, { sessionId: session.sessionId, modeId: editMode })
+      this.#agentModes = session.modes?.availableModes.map(mode => mode.id) ?? []
+      const agentMode = this.#agentMode()
+      if (agentMode) {
+        await connection.agent.request(methods.agent.session.setMode, { sessionId: session.sessionId, modeId: agentMode })
       }
       this.#model = modelSetting(session.configOptions) ?? this.#model
       // The agent starts with the model of the user's own configuration; the
@@ -362,8 +412,15 @@ export class Conversation {
     if (working) {
       this.#emit({ type: 'turnEnded', stopReason: 'cancelled' })
       this.#emit({ type: 'notice', text: `Studio restarted while ${this.definition.name} was working, so the turn stopped. Send a message to go on; the agent continues its session.` })
-      this.#emit({ type: 'state', state: 'inactive', model: this.#model })
+      this.#emit({ type: 'state', state: 'inactive', model: this.#model, permissionMode: this.#permissionMode })
     }
+  }
+
+  /** The agent's session mode for the chat's permission mode, where the agent offers it. */
+  #agentMode (): string | null {
+    const { editMode, unrestrictedMode } = this.definition
+    const wanted = this.#permissionMode === 'unrestricted' && unrestrictedMode && this.#agentModes.includes(unrestrictedMode) ? unrestrictedMode : editMode
+    return wanted && this.#agentModes.includes(wanted) ? wanted : null
   }
 
   #stopProcess (): void {
@@ -386,7 +443,7 @@ export class Conversation {
 
   #requestPermission (params: RequestPermissionRequest, signal: AbortSignal): Promise<RequestPermissionResponse> {
     const subject = permissionSubject(params.toolCall, this.folder)
-    const decision = decidePermission(subject, this.folder, this.#allowedInChat)
+    const decision = decidePermission(subject, this.folder, this.#allowedInChat, this.#permissionMode)
     const event: Extract<ConversationEvent, { type: 'approval' }> = {
       type: 'approval',
       approvalId: randomUUID(),
@@ -401,12 +458,12 @@ export class Conversation {
     if (decision.answer === 'allow') {
       const optionId = pickOption(params.options, true)
       if (optionId) {
-        this.#emit({ ...event, state: 'autoAllowed' })
+        this.#emit({ ...event, state: 'autoAllowed', reason: decision.reason })
         return Promise.resolve({ outcome: { outcome: 'selected', optionId } })
       }
     }
     return new Promise(resolve => {
-      this.#approvals.set(event.approvalId, { ruleKey: chatRuleKey(subject), options: params.options, event, resolve })
+      this.#approvals.set(event.approvalId, { ruleKey: chatRuleKey(subject), subject, options: params.options, event, resolve })
       this.#emit(event)
       signal.addEventListener('abort', () => {
         if (this.#approvals.delete(event.approvalId)) {
@@ -454,13 +511,13 @@ export class Conversation {
       return
     }
     this.#state = state
-    this.#emit({ type: 'state', state, model: this.#model })
+    this.#emit({ type: 'state', state, model: this.#model, permissionMode: this.#permissionMode })
   }
 
   #setModel (model: AgentSetting | null): void {
     if (model) {
       this.#model = model
-      this.#emit({ type: 'state', state: this.#state, model })
+      this.#emit({ type: 'state', state: this.#state, model, permissionMode: this.#permissionMode })
     }
   }
 

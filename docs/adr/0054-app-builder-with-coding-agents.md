@@ -109,6 +109,23 @@ adapters can run an installed CLI in place of the one they depend on.
   the agent's `allow_always`, which can store rules beyond the chat. Codex runs
   commands inside its sandbox without asking, so for Codex only leaving the
   sandbox reaches Studio.
+- **Permission modes per chat.** The rule above is the chat's *Ask* mode,
+  the default. *Auto* also allows commands that run in the folder, name no
+  path outside it (absolute, `~` or `..`), use no variables or command
+  substitution, and are none of `sudo`, `su`, `doas`, `osascript`,
+  `launchctl`, `crontab`, `curl` or `wget`; files outside the folder still ask.
+  The agents stay in their edit modes, so Codex's sandbox still holds; for
+  Claude and opencode, Studio's check is the only one. *Unrestricted* allows
+  every request and switches the agent to its own mode without checks where
+  it has one: Claude to `bypassPermissions` (when its settings allow it),
+  Codex to `agent-full-access` (no sandbox, no approvals); opencode asks
+  Studio for what its rules do not allow, and Studio allows it. The page
+  turns it on only after a warning that the user acknowledges each time, and
+  the service refuses it without that acknowledgement
+  (`setPermissionMode`, `acknowledgeRisk`). It applies to that chat only,
+  marks the chat in the list and above the prompt box, and is not kept when
+  Studio restarts: a saved chat comes back in *Ask*. Switching the mode
+  decides waiting requests again.
 - **Studio builds, not the agent.** After a turn, or on request, Studio
   itself runs `pnpm install` (when the manifest or lockfile changed),
   `pnpm build` and `studio-app pack` in the folder, with fixed arguments. If a
@@ -167,6 +184,10 @@ adapters can run an installed CLI in place of the one they depend on.
   own modes, sandboxes and permission requests. Studio is not a security
   boundary against a misbehaving agent. The apps an agent builds are: they
   install with the same checks, sandbox and consent as any other app.
+- *Auto* trades approval cards for a check of the command's text, which a
+  determined agent can get around (a script in the folder can do anything);
+  *Unrestricted* removes the checks. Both are the user's choice per chat,
+  as in the agents' own apps, and *Ask* stays the default.
 - Studio becomes an ACP client, so a fourth ACP agent (Gemini CLI, Goose and
   others) is a configuration entry, not new code.
 - Developer mode stays the iteration path. Signing with the machine key gives

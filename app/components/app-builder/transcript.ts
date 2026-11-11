@@ -1,4 +1,4 @@
-import type { AgentSetting, ApprovalState, ChangedFile, ConversationEventEnvelope, ConversationState, PlanEntry, ToolCallDiff, ToolCallKind, ToolCallStatus } from '#shared/contract'
+import type { AgentSetting, ApprovalState, ChangedFile, ConversationEvent, ConversationEventEnvelope, ConversationState, PermissionMode, PlanEntry, ToolCallDiff, ToolCallKind, ToolCallStatus } from '#shared/contract'
 
 // Folds a conversation's events (ADR 0054) into what the chat shows: the
 // streamed message chunks joined, each tool call updated in place, one plan
@@ -10,7 +10,7 @@ export type TranscriptItem
     | { kind: 'thought', id: string, text: string }
     | { kind: 'tool', id: string, title: string, toolKind: ToolCallKind, status: ToolCallStatus, locations: string[], diffs: ToolCallDiff[], output: string }
     | { kind: 'plan', id: string, entries: PlanEntry[] }
-    | { kind: 'approval', id: string, title: string, toolKind: ToolCallKind, command: string | null, paths: string[], state: ApprovalState, denyEndsTurn: boolean }
+    | { kind: 'approval', id: string, title: string, toolKind: ToolCallKind, command: string | null, paths: string[], state: ApprovalState, reason: Extract<ConversationEvent, { type: 'approval' }>['reason'], denyEndsTurn: boolean }
     | { kind: 'notice', id: string, stopReason: string }
     | { kind: 'info', id: string, text: string }
     | { kind: 'build', id: string, state: 'running' | 'succeeded' | 'failed', log: string | null, consentNeeded: boolean }
@@ -21,12 +21,13 @@ export interface Transcript {
   items: TranscriptItem[]
   state: ConversationState
   model: AgentSetting | null
+  permissionMode: PermissionMode
   /** The last event folded in. */
   seq: number
 }
 
 export function emptyTranscript (): Transcript {
-  return { items: [], state: 'starting', model: null, seq: 0 }
+  return { items: [], state: 'starting', model: null, permissionMode: 'ask', seq: 0 }
 }
 
 /** Stop reasons that the chat explains; `end_turn` needs no note. */
@@ -75,8 +76,9 @@ export function applyEvent (transcript: Transcript, { seq, event }: Conversation
       const existing = items.find((item): item is Extract<TranscriptItem, { kind: 'approval' }> => item.kind === 'approval' && item.id === event.approvalId)
       if (existing) {
         existing.state = event.state
+        existing.reason = event.reason
       } else {
-        items.push({ kind: 'approval', id: event.approvalId, title: event.title, toolKind: event.kind, command: event.command, paths: event.paths, state: event.state, denyEndsTurn: event.denyEndsTurn })
+        items.push({ kind: 'approval', id: event.approvalId, title: event.title, toolKind: event.kind, command: event.command, paths: event.paths, state: event.state, reason: event.reason, denyEndsTurn: event.denyEndsTurn })
       }
       break
     }
@@ -105,6 +107,7 @@ export function applyEvent (transcript: Transcript, { seq, event }: Conversation
     case 'state': {
       transcript.state = event.state
       transcript.model = event.model ?? transcript.model
+      transcript.permissionMode = event.permissionMode ?? transcript.permissionMode
       break
     }
     case 'error': {

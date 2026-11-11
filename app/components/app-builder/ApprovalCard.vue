@@ -31,7 +31,7 @@
 
   <div v-else class="d-flex align-center ga-2 text-body-small text-medium-emphasis">
     <v-icon :icon="stateIcons[item.state]" size="small" />
-    <span>{{ t(`approval.${item.state}`) }}:</span>
+    <span>{{ label }}:</span>
     <span class="text-truncate">{{ item.command ?? item.title }}</span>
   </div>
 </template>
@@ -39,13 +39,25 @@
 <script lang="ts" setup>
   import type { ApprovalDecision, ApprovalState } from '#shared/contract'
   import type { TranscriptItem } from './transcript'
+  import { computed } from 'vue'
   import { useI18n } from './i18n'
 
   // A permission request of the agent (ADR 0054): pending ones ask the user;
   // answered ones stay in the chat as one line.
-  defineProps<{ item: Extract<TranscriptItem, { kind: 'approval' }>, agent: string, busy: boolean }>()
+  const props = defineProps<{ item: Extract<TranscriptItem, { kind: 'approval' }>, agent: string, busy: boolean }>()
   const emit = defineEmits<{ answer: [decision: ApprovalDecision] }>()
   const { t } = useI18n()
+
+  /** An answered request; one Studio allowed by itself says which mode allowed it. */
+  const label = computed(() => {
+    if (props.item.state === 'autoAllowed' && props.item.reason === 'auto') {
+      return t('approval.autoAllowedAuto')
+    }
+    if (props.item.state === 'autoAllowed' && props.item.reason === 'unrestricted') {
+      return t('approval.autoAllowedUnrestricted')
+    }
+    return t(`approval.${props.item.state}`)
+  })
 
   const stateIcons: Record<ApprovalState, string> = {
     pending: 'mdi-help-circle-outline',

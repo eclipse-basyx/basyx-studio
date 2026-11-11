@@ -26,7 +26,7 @@ function fakeAgent (fake: Fake) {
     .onRequest(methods.agent.initialize, () => ({ protocolVersion: 1, agentCapabilities: { loadSession: true } }))
     .onRequest(methods.agent.session.new, () => ({
       sessionId: 's1',
-      modes: { currentModeId: 'default', availableModes: [{ id: 'default', name: 'Default' }, { id: 'acceptEdits', name: 'Accept edits' }] },
+      modes: { currentModeId: 'default', availableModes: [{ id: 'default', name: 'Default' }, { id: 'acceptEdits', name: 'Accept edits' }, { id: 'bypassPermissions', name: 'Bypass permissions' }] },
       configOptions: [{ id: 'model', name: 'Model', category: 'model', type: 'select', currentValue: 'small', options: [{ value: 'small', name: 'Small' }, { value: 'large', name: 'Large' }] }],
     }))
     .onRequest(methods.agent.session.setMode, ({ params }) => {
@@ -126,6 +126,36 @@ describe('App Builder conversation over ACP (ADR 0054)', () => {
     ])
     expect(events.map(envelope => envelope.seq)).toEqual(events.map((_, index) => index + 1))
     expect(events[6]?.event).toEqual({ type: 'toolCall', toolCallId: 't1', status: 'completed', diffs: [{ path: `${folder}/ui/App.vue`, oldText: null, newText: '<template />' }] })
+  })
+
+  it('switches the permission mode: the agent\'s own mode, waiting requests, and no unrestricted after a restart', async () => {
+    const fake: Fake = { modes: [], prompts: [], answers: [], cancelled: 0 }
+    const { conversation, events } = await started(fake)
+    expect(conversation.summary().permissionMode).toBe('ask')
+    await conversation.prompt('Build it')
+    await until(() => events.some(({ event }) => event.type === 'approval' && event.state === 'pending'))
+
+    // The waiting request is allowed at once, and the agent drops its own checks.
+    await conversation.setPermissionMode('unrestricted')
+    await until(() => conversation.state === 'idle')
+    expect(fake.answers).toEqual(['yes', 'yes'])
+    expect(fake.modes).toEqual(['acceptEdits', 'bypassPermissions'])
+    expect(events.map(({ event }) => event).findLast(event => event.type === 'approval')).toMatchObject({ command: 'curl https://example.com', state: 'autoAllowed', reason: 'unrestricted' })
+    expect(conversation.summary().permissionMode).toBe('unrestricted')
+
+    await conversation.setPermissionMode('auto')
+    expect(fake.modes.at(-1)).toBe('acceptEdits')
+    expect(events.at(-1)?.event).toMatchObject({ type: 'state', permissionMode: 'auto' })
+
+    // A saved chat keeps Auto, but not Unrestricted.
+    const reopen = (history: ConversationEventEnvelope[]) => new Conversation({ projectId: 'p1', definition: claude, folder, history, open: () => ({ target: fakeAgent(fake), stop: () => {}, exited: new Promise(() => {}) }) })
+    expect(reopen(events.slice()).summary().permissionMode).toBe('auto')
+    await conversation.setPermissionMode('unrestricted')
+    const saved = reopen(events.slice())
+    const restored: ConversationEventEnvelope[] = []
+    saved.subscribe(0, envelope => restored.push(envelope))
+    expect(saved.summary().permissionMode).toBe('ask')
+    expect(restored.map(({ event }) => event).slice(-2)).toMatchObject([{ type: 'notice' }, { type: 'state', permissionMode: 'ask' }])
   })
 
   it('replays events after a given number to a late subscriber', async () => {

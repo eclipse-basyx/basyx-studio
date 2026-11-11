@@ -49,6 +49,8 @@ export interface AgentDefinition {
   signInCommand: string
   /** The session mode in which edits in the folder run without asking. */
   editMode: string | null
+  /** The session mode without the agent's own checks, for `unrestricted`; `null` when Studio's answers are the only checks. */
+  unrestrictedMode: string | null
   /** Whether a denied permission request ends the agent's turn. */
   denyEndsTurn: boolean
   launch: AgentLaunch
@@ -72,6 +74,7 @@ export function agentCatalog (resolve: (specifier: string) => string): AgentDefi
       installUrl: 'https://docs.anthropic.com/en/docs/claude-code/setup',
       signInCommand: 'claude auth login',
       editMode: 'acceptEdits',
+      unrestrictedMode: 'bypassPermissions',
       denyEndsTurn: false,
       launch: {
         runner: 'adapter',
@@ -99,6 +102,8 @@ export function agentCatalog (resolve: (specifier: string) => string): AgentDefi
       installUrl: 'https://developers.openai.com/codex/cli',
       signInCommand: 'codex login',
       editMode: 'workspace-write',
+      // No sandbox and no approvals; network and files outside the folder too.
+      unrestrictedMode: 'agent-full-access',
       denyEndsTurn: false,
       launch: {
         runner: 'adapter',
@@ -118,6 +123,8 @@ export function agentCatalog (resolve: (specifier: string) => string): AgentDefi
       installUrl: 'https://opencode.ai/download',
       signInCommand: 'opencode auth login',
       editMode: null,
+      // opencode asks Studio for everything its rules do not allow, and Studio allows it.
+      unrestrictedMode: null,
       denyEndsTurn: true,
       launch: {
         runner: 'cli',

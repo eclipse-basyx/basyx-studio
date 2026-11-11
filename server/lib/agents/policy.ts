@@ -1,4 +1,4 @@
-import type { ToolCallKind } from '#shared/contract'
+import type { PermissionMode, ToolCallKind } from '#shared/contract'
 import { isAbsolute, relative, resolve, sep } from 'node:path'
 
 // Studio's answer to an agent's permission request (ADR 0054, plan A1): the
@@ -95,17 +95,52 @@ export function chatRuleKey (subject: PermissionSubject): string {
     : `${subject.kind}:${subject.paths.toSorted().join('\n')}`
 }
 
-export type PolicyDecision = { answer: 'allow', reason: 'folder' | 'chat' } | { answer: 'ask' }
+export type PolicyDecision = { answer: 'allow', reason: 'folder' | 'chat' | 'auto' | 'unrestricted' } | { answer: 'ask' }
 
-/** What Studio does with a permission request before the user sees it. */
-export function decidePermission (subject: PermissionSubject, folder: string, allowedInChat: ReadonlySet<string>): PolicyDecision {
+// Commands Auto never runs without asking: they act as another user, or
+// fetch code from the network and run it.
+const autoRefused = /(?:^|[\s;&|(])(?:sudo|su|doas|osascript|launchctl|crontab|chmod\s+[0-7]*s|curl|wget)(?=\s|$)/
+// Command substitution and variables can name any path.
+const hiddenPaths = /[`$]/
+
+/**
+ * Whether Auto runs a command without asking: it runs in the folder, names
+ * no path outside it (absolute, `~` or `..`), and is none of the commands
+ * above. Codex's sandbox holds as well; Claude and opencode have none, so
+ * this is what keeps Auto in the folder.
+ */
+export function isFolderCommand (command: string, folder: string): boolean {
+  const commands = commandsOf(command, folder)
+  if (commands === null || hiddenPaths.test(command) || autoRefused.test(command)) {
+    return false
+  }
+  for (const word of commands.join(' ').split(/[\s;&|<>()]+/)) {
+    const token = word.replace(/^['"]|['"]$/g, '').replace(/^-[\w-]+=/, '')
+    if (token.startsWith('~')) {
+      return false
+    }
+    if ((token.startsWith('/') || token.startsWith('.') || token.includes('/')) && !isInside(folder, token)) {
+      return false
+    }
+  }
+  return true
+}
+
+/** What Studio does with a permission request before the user sees it, in the chat's permission mode. */
+export function decidePermission (subject: PermissionSubject, folder: string, allowedInChat: ReadonlySet<string>, mode: PermissionMode = 'ask'): PolicyDecision {
+  if (mode === 'unrestricted') {
+    return { answer: 'allow', reason: 'unrestricted' }
+  }
   if (allowedInChat.has(chatRuleKey(subject))) {
     return { answer: 'allow', reason: 'chat' }
   }
   if (subject.kind === 'execute') {
     const inFolder = subject.cwd === null || isInside(folder, subject.cwd)
     const commands = subject.command === null ? null : commandsOf(subject.command, folder)
-    return inFolder && commands?.every(command => isAllowedCommand(command)) ? { answer: 'allow', reason: 'folder' } : { answer: 'ask' }
+    if (inFolder && commands?.every(command => isAllowedCommand(command))) {
+      return { answer: 'allow', reason: 'folder' }
+    }
+    return mode === 'auto' && inFolder && subject.command !== null && isFolderCommand(subject.command, folder) ? { answer: 'allow', reason: 'auto' } : { answer: 'ask' }
   }
   const local = subject.paths.length > 0 && subject.paths.every(path => isInside(folder, path))
   if (local && ['read', 'edit', 'delete', 'move', 'search'].includes(subject.kind)) {

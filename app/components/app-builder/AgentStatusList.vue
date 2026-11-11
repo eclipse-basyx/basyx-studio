@@ -1,7 +1,7 @@
 <template>
   <div>
-    <div class="d-flex align-center px-4 pt-3">
-      <div class="text-label-large text-medium-emphasis flex-grow-1">{{ t('agents.heading') }}</div>
+    <div class="d-flex align-center ps-3 pe-2 pt-1">
+      <div class="text-label-medium text-medium-emphasis flex-grow-1">{{ t('agents.heading') }}</div>
 
       <v-btn
         v-tooltip="t('agents.recheck')"
@@ -14,20 +14,23 @@
       />
     </div>
 
-    <v-list>
+    <v-list slim>
       <v-list-item
         v-for="agent in status.agents"
         :key="agent.id"
         :data-test="`app-builder-agent-${agent.id}`"
-        :subtitle="subtitle(agent)"
+        :subtitle="agent.state === 'signedOut' || agent.state === 'error' ? detail(agent) : undefined"
         :title="agent.name"
       >
         <template #prepend>
-          <v-icon :color="colors[agent.state]" :icon="icons[agent.state]" />
+          <v-icon :color="colors[agent.state]" icon="mdi-circle" size="x-small" />
         </template>
 
-        <template v-if="agent.state === 'missing'" #append>
+        <template #append>
+          <span class="text-body-small text-medium-emphasis ms-2">{{ summary(agent) }}</span>
+
           <v-btn
+            v-if="agent.state === 'missing'"
             v-tooltip="t('agents.install', { agent: agent.name })"
             :aria-label="t('agents.install', { agent: agent.name })"
             :href="agent.installUrl"
@@ -39,12 +42,8 @@
       </v-list-item>
     </v-list>
 
-    <div class="text-label-large text-medium-emphasis px-4">{{ t('agents.tools') }}</div>
-
-    <div class="px-4 pb-3 text-body-small text-medium-emphasis">
-      <div v-for="tool in status.tools" :key="tool.name">
-        {{ tool.name }} {{ tool.path ? tool.version ?? '' : t('agents.toolMissing') }}
-      </div>
+    <div class="px-3 pb-2 text-label-small text-medium-emphasis">
+      {{ t('agents.tools') }}: {{ status.tools.map(tool => `${tool.name} ${tool.path ? tool.version ?? '' : t('agents.toolMissing')}`.trim()).join(' · ') }}
     </div>
   </div>
 </template>
@@ -58,12 +57,6 @@
   const emit = defineEmits<{ recheck: [] }>()
   const { t } = useI18n()
 
-  const icons: Record<AgentState, string> = {
-    ready: 'mdi-check-circle-outline',
-    missing: 'mdi-download-outline',
-    signedOut: 'mdi-account-alert-outline',
-    error: 'mdi-alert-circle-outline',
-  }
   const colors: Record<AgentState, string> = {
     ready: 'success',
     missing: 'medium-emphasis',
@@ -71,20 +64,24 @@
     error: 'error',
   }
 
-  function subtitle (agent: AgentStatus): string {
+  /** The agent's state in a word or two, beside its name. */
+  function summary (agent: AgentStatus): string {
     switch (agent.state) {
       case 'ready': {
         return agent.version ? `${t('agents.ready')} · ${agent.version}` : t('agents.ready')
       }
-      case 'signedOut': {
-        return t('agents.signIn', { command: agent.signInCommand })
-      }
+      case 'signedOut':
       case 'error': {
-        return agent.detail ?? t('agents.error')
+        return ''
       }
       default: {
         return t('agents.missing')
       }
     }
+  }
+
+  /** What to do about an agent that cannot run, under its name. */
+  function detail (agent: AgentStatus): string {
+    return agent.state === 'signedOut' ? t('agents.signIn', { command: agent.signInCommand }) : (agent.state === 'error' ? agent.detail ?? t('agents.error') : '')
   }
 </script>

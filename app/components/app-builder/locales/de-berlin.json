@@ -1,0 +1,153 @@
+{
+  "app": {
+    "subtitle": "Sach ma, wat für ne App de willst, und n Coding-Agent baut se dir uff deim Rechner."
+  },
+  "chats": {
+    "untitled": "Neuer Chat",
+    "cancel": "Lass ma",
+    "delete": "Chat wegmachen",
+    "deleteTitle": "Den Chat wegmachen, wa?",
+    "deleteText": "Der Chat und allet, wat drinsteht, is dann wech. Die Dateien von de App und der Git-Verlauf bleiben."
+  },
+  "agents": {
+    "heading": "Agenten",
+    "ready": "Startklar",
+    "missing": "Nich installiert",
+    "error": "Hat nich jeklappt",
+    "install": "{agent} holen",
+    "signIn": "Im Terminal anmelden: {command}",
+    "recheck": "Nochma kieken",
+    "tools": "Werkzeuch",
+    "toolMissing": "nich jefunden",
+    "noneReady": "Keen Coding-Agent is startklar. Mach dir Claude Code, Codex oder opencode druff, meld dich an und kiek nochma."
+  },
+  "chat": {
+    "placeholder": "Sach ma, wat die App machen soll oder wat anders werden soll …",
+    "send": "Abschicken",
+    "stop": "Stopp ma!",
+    "starting": "{agent} wird anjeschmissen …",
+    "working": "{agent} ackert …",
+    "failed": "Der Agent hat uffjehört. Schreib wat, denn jeht's weiter.",
+    "reconnecting": "Verbindung kommt gleich wieder …",
+    "emptyTitle": "Na, wat bau'n wa?",
+    "emptyText": "Sach ma, wat die App machen soll, oder wat anders werden soll.",
+    "thinking": "Grübelt",
+    "inactive": "Der Agent legt los, wenn de wat schreibst.",
+    "finished": "{agent} is fertich."
+  },
+  "mode": {
+    "label": "Rechte",
+    "ask": "Nachfragen",
+    "auto": "Auto",
+    "unrestricted": "Ohne Bremse",
+    "warningTitle": "Ohne Bremse anmachen, wa?",
+    "enable": "Ohne Bremse anmachen",
+    "cancel": "Lass ma",
+    "back": "Zurück zu Nachfragen",
+    "active": "Ohne Bremse: {agent} macht, ohne zu fragen, überall uff deim Rechner."
+  },
+  "tool": {
+    "read": "Lesen",
+    "edit": "Dranrumbasteln",
+    "delete": "Wegmachen",
+    "move": "Verschieben",
+    "search": "Suchen",
+    "execute": "Ausführen",
+    "think": "Grübeln",
+    "fetch": "Holen",
+    "other": "Werkzeuch",
+    "failed": "Hat nich jeklappt",
+    "output": "Wat rausjekommen is",
+    "newFile": "Neue Datei",
+    "running": "Looft",
+    "completed": "Fertich"
+  },
+  "approval": {
+    "title": "{agent} fragt, ob er darf",
+    "command": "Befehl",
+    "files": "Dateien",
+    "allowOnce": "Eenmal darfste",
+    "allowInChat": "In dem Chat darfste",
+    "deny": "Nüscht da",
+    "allowed": "Darf er",
+    "denied": "Darf er nich",
+    "autoAllowed": "Darf er: im Ordner von de App",
+    "autoAllowedAuto": "Darf er: Auto",
+    "autoAllowedUnrestricted": "Darf er: ohne Bremse",
+    "cancelled": "Brauchts nich mehr",
+    "denyEndsTurn": "Wenn de Nüscht da sachst, hört der Agent mit dem Durchjang uff."
+  },
+  "notice": {
+    "cancelled": "Jestoppt.",
+    "refusal": "Der Agent hat keene Lust.",
+    "error": "Der Durchjang is schiefjejangen."
+  },
+  "projects": {
+    "new": "Neue App",
+    "empty": "Noch keene Apps.",
+    "newChat": "Neuer Chat mit {agent}",
+    "openFolder": "Ordner uffmachen",
+    "copyPath": "Ordnerpfad abschreiben",
+    "actions": "Wat man mit {name} machen kann",
+    "remove": "App rausschmeißen …",
+    "removeTitle": "{name} aus Studio rausschmeißen?",
+    "removeConfirm": "Rausschmeißen",
+    "keepsFolder": "Der Ordner {folder} bleibt, wie er is."
+  },
+  "newApp": {
+    "title": "Neue App",
+    "model": "Modell",
+    "modelLater": "{agent} lässt dich keen Modell aussuchen; er nimmt sein eijenet.",
+    "prompt": "Wat soll die App denn machen?",
+    "create": "Ab dafür",
+    "cancel": "Lass ma",
+    "startFrom": "Wo wa anfangen",
+    "empty": "Leere App",
+    "copy": "Kopie von ne mitjelieferte App",
+    "folder": "Ordner uff deim Rechner",
+    "chooseFolder": "Ordner aussuchen …",
+    "add": "Dazutun"
+  },
+  "checkpoint": {
+    "title": "{count} Dateien jeändert und committet",
+    "titleOne": "1 Datei jeändert und committet",
+    "show": "Zeich ma, wat anders is",
+    "undo": "Ab hier zurück",
+    "undone": "Zurückjemacht",
+    "undoConfirm": "Zurückmachen",
+    "close": "Zumachen",
+    "added": "neu",
+    "modified": "jeändert",
+    "deleted": "wech",
+    "renamed": "umjetauft"
+  },
+  "build": {
+    "running": "Studio baut die App …",
+    "failed": "Der Build is schiefjejangen",
+    "fix": "Der Agent soll det richten",
+    "succeeded": "Jebaut. Die Vorschau zeicht die neue Version."
+  },
+  "preview": {
+    "title": "Vorschau",
+    "toggle": "Vorschau an- oder ausmachen",
+    "rebuild": "Nochma bauen",
+    "close": "Vorschau zumachen",
+    "allow": "Darf se, zeich se",
+    "none": "Noch keene Vorschau. Die kommt nach de nächste Änderung vom Agent, oder bau se jetze.",
+    "show": "Zeigen",
+    "needsTarget": "Such dir n Ziel aus, wo die App druff loofen soll."
+  },
+  "previewBuild": {
+    "none": "Nich jebaut",
+    "running": "Wird jebaut",
+    "succeeded": "Jebaut",
+    "failed": "Build schiefjejangen"
+  },
+  "install": {
+    "title": "{name} installieren",
+    "cancel": "Lass ma",
+    "check": "Bauen und kieken",
+    "done": "{name} {version} is druff, wa.",
+    "action": "In Studio installieren"
+  }
+}

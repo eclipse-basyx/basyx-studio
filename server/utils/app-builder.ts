@@ -37,9 +37,10 @@ type Handler<O extends AppBuilderOperation> = (params: Params<O>, agents: AgentM
 const handlers: { [O in AppBuilderOperation]: Handler<O> } = {
   getStatus: ({ refresh }, agents) => agents.status(refresh),
   listProjects: (_, agents) => agents.projects(),
-  createProject: ({ name, agentId, prompt, source }, agents) => agents.createProject(name, agentId, prompt ?? null, source ?? null),
-  addFolder: ({ folderHandle, agentId, name }, agents) => agents.addFolder(folderHandle, agentId, name ?? null),
+  createProject: ({ name, agentId, model, prompt, source }, agents) => agents.createProject(name, agentId, prompt ?? null, source ?? null, model ?? null),
+  addFolder: ({ folderHandle, agentId, model, name }, agents) => agents.addFolder(folderHandle, agentId, name ?? null, model ?? null),
   listBundledApps: (_, agents) => agents.bundledApps(),
+  getAgentModels: ({ agentId }, agents) => agents.agentModels(agentId),
   removeProject: async ({ projectId, deleteFolder }, agents) => {
     await agents.removeProject(projectId, deleteFolder)
     return null
@@ -48,7 +49,7 @@ const handlers: { [O in AppBuilderOperation]: Handler<O> } = {
     await agents.openFolder(projectId)
     return null
   },
-  startConversation: ({ projectId, agentId }, agents) => agents.startConversation(projectId, agentId),
+  startConversation: ({ projectId, agentId, model }, agents) => agents.startConversation(projectId, agentId, model ?? null),
   deleteConversation: async ({ conversationId }, agents) => {
     await agents.deleteConversation(conversationId)
     return null
@@ -66,6 +67,7 @@ const handlers: { [O in AppBuilderOperation]: Handler<O> } = {
     return null
   },
   setModel: ({ conversationId, value }, agents) => agents.setModel(conversationId, value),
+  setPermissionMode: ({ conversationId, mode, acknowledgeRisk }, agents) => agents.setPermissionMode(conversationId, mode, acknowledgeRisk),
   getChanges: ({ projectId, commit }, agents) => agents.changes(projectId, commit),
   undoTurn: async ({ conversationId, commit }, agents) => {
     await agents.undo(conversationId, commit)
