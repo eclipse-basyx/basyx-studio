@@ -100,8 +100,9 @@ export type PolicyDecision = { answer: 'allow', reason: 'folder' | 'chat' | 'aut
 // Commands Auto never runs without asking: they act as another user, or
 // fetch code from the network and run it.
 const autoRefused = /(?:^|[\s;&|(])(?:sudo|su|doas|osascript|launchctl|crontab|chmod\s+[0-7]*s|curl|wget)(?=\s|$)/
-// Command substitution and variables can name any path.
-const hiddenPaths = /[`$]/
+// Command substitution, variables and escapes can hide paths or command names.
+const hiddenPaths = /[`$\\]/
+const directoryChange = /(?:^|[\s;&|()])(?:cd|pushd|popd)(?=[\s;&|()]|$)/
 
 /**
  * Whether Auto runs a command without asking: it runs in the folder, names
@@ -112,6 +113,12 @@ const hiddenPaths = /[`$]/
 export function isFolderCommand (command: string, folder: string): boolean {
   const commands = commandsOf(command, folder)
   if (commands === null || hiddenPaths.test(command) || autoRefused.test(command)) {
+    return false
+  }
+  // Only commandsOf's exact leading `cd <project> &&` is resolved. Other
+  // directory changes (including quoted builtins and shell wrappers) ask,
+  // since subsequent relative paths would no longer refer to the project.
+  if (directoryChange.test(commands.join(' ').replaceAll(/['"]/g, ''))) {
     return false
   }
   for (const word of commands.join(' ').split(/[\s;&|<>()]+/)) {

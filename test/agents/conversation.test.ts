@@ -94,6 +94,80 @@ async function until (check: () => boolean) {
 }
 
 describe('App Builder conversation over ACP (ADR 0054)', () => {
+  it('stops a pending saved-session load without reporting a fallback or reviving the agent', async () => {
+    let loading = false
+    let release: () => void = () => {}
+    let stopped = 0
+    const fake = agent({ name: 'loading-test' })
+      .onRequest(methods.agent.initialize, () => ({ protocolVersion: 1, agentCapabilities: { loadSession: true } }))
+      .onRequest(methods.agent.session.load, async () => {
+        loading = true
+        await new Promise<void>(resolve => {
+          release = resolve
+        })
+        return {}
+      })
+    const conversation = new Conversation({
+      projectId: 'p1', definition: claude, folder, sessionId: 'saved', history: [],
+      open: () => ({ target: fake, stop: () => {
+        stopped++
+      }, exited: new Promise(() => {}) }),
+    })
+    const events: ConversationEventEnvelope[] = []
+    conversation.subscribe(0, envelope => events.push(envelope))
+    const starting = conversation.start()
+    await expect.poll(() => loading).toBe(true)
+    conversation.stop()
+    const lastSeq = events.at(-1)!.seq
+    release()
+    await starting
+    expect(stopped).toBe(1)
+    expect(conversation.state).toBe('inactive')
+    expect(events.at(-1)!.seq).toBe(lastSeq)
+    expect(events.some(({ event }) => event.type === 'notice')).toBe(false)
+  })
+
+  it('ignores completion events from an after-turn hook that finishes after shutdown', async () => {
+    let finishing = false
+    let release: () => void = () => {}
+    const fake = agent({ name: 'completion-test' })
+      .onRequest(methods.agent.initialize, () => ({ protocolVersion: 1 }))
+      .onRequest(methods.agent.session.new, () => ({ sessionId: 'session' }))
+      .onRequest(methods.agent.session.prompt, async ({ params }) => {
+        if (params.prompt.some(block => block.type === 'text' && block.text === 'wait')) {
+          await new Promise<void>(() => {})
+        }
+        return { stopReason: 'end_turn' as const }
+      })
+    const conversation = new Conversation({
+      projectId: 'p1', definition: claude, folder,
+      open: () => ({ target: fake, stop: () => {}, exited: new Promise(() => {}) }),
+      hooks: { afterTurn: async () => {
+        finishing = true
+        await new Promise<void>(resolve => {
+          release = resolve
+        })
+        return [{ type: 'checkpoint', commit: 'a'.repeat(40), message: 'Done', files: [] }]
+      } },
+    })
+    const events: ConversationEventEnvelope[] = []
+    conversation.subscribe(0, envelope => events.push(envelope))
+    await conversation.start()
+    await conversation.prompt('Build it')
+    await expect.poll(() => finishing).toBe(true)
+    conversation.stop()
+    expect(conversation.state).toBe('inactive')
+    // A new process may already be working when the old hook returns.
+    await conversation.prompt('wait')
+    const lastSeq = events.at(-1)!.seq
+    release()
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(conversation.state).toBe('working')
+    expect(events.at(-1)!.seq).toBe(lastSeq)
+    expect(events.some(({ event }) => event.type === 'checkpoint')).toBe(false)
+    conversation.stop()
+  })
+
   it('starts in the agent\'s edit mode and reads its model choice', async () => {
     const fake: Fake = { modes: [], prompts: [], answers: [], cancelled: 0 }
     const { conversation } = await started(fake)

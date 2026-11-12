@@ -51,7 +51,7 @@
             <div class="text-label-large mb-1">{{ preview.consent.first ? t('preview.permissions') : t('preview.added') }}</div>
 
             <div class="d-flex flex-wrap ga-1">
-              <v-chip v-for="entry in preview.consent.first ? preview.consent.permissions : preview.consent.added" :key="entry" :text="entry" />
+              <v-chip v-for="entry in preview.consent.added" :key="entry" :text="entry" />
             </div>
           </v-card-text>
 

@@ -11,6 +11,7 @@ import { basename } from 'node:path'
 import { signPackage } from '@basyx/studio-app-kit/signature'
 import { appBuilderOperationSchemas } from '#shared/contract'
 import { ensureMachineKey, findMachineKey, signWithMachineKey } from '../lib/app-projects/keys'
+import { installationConnections } from '../lib/apps/connections'
 import { contributionsFor } from '../lib/apps/contributions'
 import { readAppPackage } from '../lib/apps/package'
 import { describeInstallation, findPreviewApp, inspectAppPackage, installApp, installPreviewApp, listInstallations, removeInstallation } from '../lib/apps/store'
@@ -133,10 +134,10 @@ export function previewInstaller (studio: StudioDeps & { backends: { stop: (id: 
     return null
   }
   return {
-    read: bytes => readAppPackage(bytes, studio.config.deploymentMode).manifest,
+    read: bytes => readAppPackage(bytes, studio.config.deploymentMode),
     current: async id => {
       const record = await findPreviewApp(studio, id)
-      return record ? { installationId: record.id, manifest: record.manifest } : null
+      return record ? { installationId: record.id, manifest: record.manifest, connections: await installationConnections(studio, record) } : null
     },
     install: async (bytes, id) => {
       const { record, previous } = await installPreviewApp(studio, bytes, id, installedBy)

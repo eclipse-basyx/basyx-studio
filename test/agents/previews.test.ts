@@ -1,6 +1,6 @@
-import type { ConversationEvent } from '#shared/contract'
+import type { AppConnectionSummary, ConversationEvent } from '#shared/contract'
 import type { BuildResult } from '../../server/lib/app-projects/build'
-import type { PreviewInstaller } from '../../server/lib/app-projects/previews'
+import type { PreviewInstaller, PreviewPackage } from '../../server/lib/app-projects/previews'
 import type { AppManifest } from '@basyx/studio-sdk/protocol'
 import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -13,14 +13,28 @@ function manifest (id: string, permissions: string[], extra: Partial<AppManifest
   return { id, version: '0.1.0', permissions, contributes: { modules: [] }, ...extra } as unknown as AppManifest
 }
 
+function previewPackage (manifest: AppManifest, connections: AppConnectionSummary[] = []): PreviewPackage {
+  return { manifest, connections }
+}
+
 describe('App Builder preview consent (ADR 0054, plan B4)', () => {
+  it('asks again when an existing connection gains or changes an operation', () => {
+    const current = manifest('local.a', ['studio.connections'], { connections: [{ id: 'orders', title: { en: 'Orders' }, api: 'orders.json', operations: ['listOrders'] }] })
+    const before: AppConnectionSummary[] = [{ id: 'orders', title: { en: 'Orders' }, description: null, operations: [{ operationId: 'listOrders', method: 'GET', path: '/orders', summary: null }] }]
+    const added: AppConnectionSummary[] = [{ ...before[0]!, operations: [...before[0]!.operations, { operationId: 'deleteOrder', method: 'DELETE', path: '/orders/{id}', summary: null }] }]
+    expect(consentFor(previewPackage(current, before), previewPackage({ ...current, connections: [{ ...current.connections![0]!, operations: ['listOrders', 'deleteOrder'] }] }, added))?.added).toContain('operation orders deleteOrder DELETE /orders/{id}')
+    const changed: AppConnectionSummary[] = [{ ...before[0]!, operations: [{ operationId: 'listOrders', method: 'DELETE', path: '/orders/all', summary: null }] }]
+    expect(consentFor(previewPackage(current, before), previewPackage(current, changed))?.added).toContain('operation orders listOrders DELETE /orders/all')
+    expect(consentFor(previewPackage(current, added), previewPackage(current, before))).toBeNull()
+  })
+
   it('asks for a first preview, and later only for what is new', () => {
     const first = manifest('local.a', ['studio.aas.read'])
-    expect(consentFor(null, first)).toEqual({ first: true, permissions: ['studio.aas.read'], added: ['permission studio.aas.read'] })
-    expect(consentFor(first, first)).toBeNull()
-    expect(consentFor(first, manifest('local.a', []))).toBeNull()
+    expect(consentFor(null, previewPackage(first))).toEqual({ first: true, permissions: ['studio.aas.read'], added: ['permission studio.aas.read'] })
+    expect(consentFor(previewPackage(first), previewPackage(first))).toBeNull()
+    expect(consentFor(previewPackage(first), previewPackage(manifest('local.a', [])))).toBeNull()
     const more = manifest('local.a', ['studio.aas.read', 'studio.aas.write'], { sandbox: { connectOrigins: ['https://api.example.com'], webAssembly: true } } as Partial<AppManifest>)
-    expect(consentFor(first, more)).toEqual({
+    expect(consentFor(previewPackage(first), previewPackage(more))).toEqual({
       first: false,
       permissions: ['studio.aas.read', 'studio.aas.write'],
       added: ['permission studio.aas.write', 'connectOrigins https://api.example.com', 'WebAssembly'],
@@ -28,7 +42,7 @@ describe('App Builder preview consent (ADR 0054, plan B4)', () => {
   })
 
   it('installs a preview beside the app, never over it', () => {
-    expect(previewAppId('local.shell-list')).toBe('local.shell-list.preview')
+    expect(previewAppId('ce944cd4-0100-46dd-b234-c1c56a368108')).toBe('local.preview.pce944cd4010046ddb234c1c56a368108')
   })
 })
 
@@ -37,10 +51,10 @@ function fakeInstaller () {
   const installed = new Map<string, AppManifest>()
   const installs: string[] = []
   const installer: PreviewInstaller = {
-    read: bytes => JSON.parse(new TextDecoder().decode(bytes)) as AppManifest,
-    current: async id => installed.has(id) ? { installationId: `inst-${id}`, manifest: installed.get(id)! } : null,
+    read: bytes => ({ manifest: JSON.parse(new TextDecoder().decode(bytes)) as AppManifest, connections: [] }),
+    current: async id => installed.has(id) ? { installationId: `inst-${id}`, manifest: installed.get(id)!, connections: [] } : null,
     install: async (bytes, id) => {
-      installed.set(id, { ...installer.read(bytes), id })
+      installed.set(id, { ...installer.read(bytes).manifest, id })
       installs.push(id)
       return `inst-${id}`
     },
@@ -59,6 +73,29 @@ function built (value: AppManifest): BuildResult {
 }
 
 describe('App Builder previews (ADR 0054, plan B1–B4)', () => {
+  it('isolates consent, installations and removal for projects with the same app ID across restarts', async () => {
+    const { installer, installed } = fakeInstaller()
+    const build = async () => built(manifest('local.a', ['studio.aas.read']))
+    const previews = new ProjectPreviews({ installer, build })
+    const other = { ...project, id: 'p2', folder: '/work/b' }
+    await previews.build(project)
+    await previews.approve(project)
+    const first = await previews.describe(project)
+    await previews.build(other)
+    expect((await previews.describe(other)).consent).toMatchObject({ first: true })
+    await previews.approve(other)
+    const second = await previews.describe(other)
+    expect(second.installationId).not.toBe(first.installationId)
+    expect(installed.size).toBe(2)
+
+    const restarted = new ProjectPreviews({ installer, build })
+    expect((await restarted.describe(project)).installationId).toBe(first.installationId)
+    expect((await restarted.describe(other)).installationId).toBe(second.installationId)
+    await restarted.remove(project)
+    expect((await restarted.describe(other)).installationId).toBe(second.installationId)
+    expect(installed.size).toBe(1)
+  })
+
   it('waits for the first OK, then updates the preview by itself', async () => {
     const { installer, installs } = fakeInstaller()
     let next = built(manifest('local.a', ['studio.aas.read']))
@@ -74,8 +111,8 @@ describe('App Builder previews (ADR 0054, plan B1–B4)', () => {
     expect(installs).toEqual([])
 
     await previews.approve(project)
-    expect(installs).toEqual(['local.a.preview'])
-    expect(await previews.describe(project)).toMatchObject({ consent: null, installationId: 'inst-local.a.preview', build: { state: 'succeeded' } })
+    expect(installs).toEqual([previewAppId(project.id)])
+    expect(await previews.describe(project)).toMatchObject({ consent: null, installationId: `inst-${previewAppId(project.id)}`, build: { state: 'succeeded' } })
 
     await previews.build(project)
     expect(installs).toHaveLength(2)
@@ -129,18 +166,21 @@ describe('App Builder previews (ADR 0054, plan B1–B4)', () => {
     expect(builds).toBe(2)
   })
 
-  it('removes the old preview when the agent changes the app ID', async () => {
+  it('keeps the project preview identifiable after the agent changes the app ID and Studio restarts', async () => {
     const { installer, installed } = fakeInstaller()
     let next = built(manifest('local.a', []))
-    const previews = new ProjectPreviews({ installer, build: async () => next })
+    const build = async () => next
+    const previews = new ProjectPreviews({ installer, build })
     await previews.build(project)
     await previews.approve(project)
+    const original = await previews.describe(project)
     next = built(manifest('local.b', []))
     await previews.build(project)
-    expect([...installed.keys()]).toEqual([])
-    await previews.approve(project)
-    expect([...installed.keys()]).toEqual(['local.b.preview'])
-    await previews.remove(project)
+    expect([...installed.keys()]).toEqual([previewAppId(project.id)])
+    expect(await previews.describe(project)).toMatchObject({ installationId: original.installationId, consent: null })
+    const restarted = new ProjectPreviews({ installer, build })
+    expect((await restarted.describe(project)).installationId).toBe(original.installationId)
+    await restarted.remove(project)
     expect([...installed.keys()]).toEqual([])
   })
 })

@@ -148,16 +148,18 @@ adapters can run an installed CLI in place of the one they depend on.
   build fails, the page shows the log and offers *Ask the agent to fix it*,
   which sends the log as the next prompt.
 - **Preview installation.** Each project has its own preview installation of
-  the app ID `<appId>.preview`. Studio rewrites the ID in the package before
+  the app ID `local.preview.p<projectId>` (UUID hyphens removed), independent
+  of the source app ID. Studio rewrites the ID in the package before
   installing it. Its version is `<version>-preview.<n>`, and the record carries
   `preview: true`. A preview is installed unsigned under developer mode
   (desktop's default), or signed with the machine key when unsigned installs
   are off. It runs with the same sandbox and capability bridge as any app.
   It is left out of Studio's navigation and view contributions and appears
   only in the builder's preview pane, on the active target. The permission
-  dialog appears in the pane only when permissions, origins or connections
-  change from the previous preview. Settings and connection bindings are
-  copied from the real installation if there is one.
+  dialog appears in the pane when permissions, origins or connections gain
+  access, including new OpenAPI operations or changed HTTP methods and paths.
+  Settings and connection bindings are copied from the real installation if
+  there is one.
 - **Install through the normal path.** *Install* builds the version in
   `package.json` (the page offers a patch or minor bump when it is not higher
   than the installed one). Then the existing inspect → consent → install

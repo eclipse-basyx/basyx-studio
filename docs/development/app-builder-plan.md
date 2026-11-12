@@ -100,7 +100,7 @@ with the plan and not discussed individually; they hold unless changed.
 | --- | --- | --- |
 | B1 | Build | After each turn that changed files, and on *Build*: Studio runs `pnpm install` (when `package.json` or the lockfile changed), `pnpm build` and `studio-app pack`, with fixed arguments. *Assumption* for the automatic build after every turn. |
 | B2 | Build errors | The log in a card with *Ask the agent to fix it*, which sends the log as the next prompt. |
-| B3 | Preview | A separate installation `<appId>.preview`, version `<version>-preview.<n>`, marked `preview`, out of navigation and view contributions, shown only in the preview pane on the active target. The pane picks a shell or submodel the app applies to, or the module's page. |
+| B3 | Preview | A separate project-owned installation `local.preview.p<projectId>` (UUID hyphens removed), version `<version>-preview.<n>`, marked `preview`, out of navigation and view contributions, shown only in the preview pane on the active target. The pane picks a shell or submodel the app applies to, or the module's page. |
 | B4 | Preview consent | Asked in the pane only when permissions, origins or connections change since the previous preview; settings and bindings are copied from the real installation. |
 | B5 | Install | *Install* or *Update* runs the existing inspect → consent → install flow with the version from `package.json`. When it is not higher than the installed one, the page offers a patch or minor bump. |
 | B6 | Trust | The user chooses: *Developer (unsigned)* or *Signed*. Signed uses the machine key by default, or the user's own key. |
@@ -348,13 +348,14 @@ runs `pnpm install` (only when `package.json` or the lockfile is newer than
 `node_modules`), `pnpm build` and `pnpm exec studio-app pack` in the folder
 (`server/lib/app-projects/build.ts`); the chat shows the build, and a failed
 one offers *Ask the agent to fix it* with the end of its log. The package
-installs as `<appId>.preview`, flagged `preview` (migration
-`0011_app_previews`), unsigned, with the checks of an upload but without
+installs as `local.preview.p<projectId>` (UUID hyphens removed), flagged
+`preview` (migration `0011_app_previews`), unsigned, with the checks of an upload but without
 version rules, so it never replaces the app and follows the folder. Previews
 are left out of `listActiveInstallations` (contributions, `openView`,
 `embedView`) and of the *Apps* list. The pane (`PreviewPane.vue`) asks first,
 and again when a build adds permissions, origins, sandbox features,
-connections or a backend; it shows a module or submodel view on a target,
+connections (including new OpenAPI operations or changed methods and paths)
+or a backend; it shows a module or submodel view on a target,
 shell and submodel the user picks. AAS Clicker built in about 6 seconds.
 
 Open: the build state and a preview waiting for the OK live in memory, so

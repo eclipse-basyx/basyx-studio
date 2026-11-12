@@ -1,4 +1,4 @@
-import type { AppContributions, AppPreview, ConversationEvent, PreviewConsent } from '#shared/contract'
+import type { AppConnectionSummary, AppContributions, AppPreview, ConversationEvent, PreviewConsent } from '#shared/contract'
 import type { BuildResult } from './build'
 import type { AppManifest } from '@basyx/studio-sdk/protocol'
 import { sandboxOrigins } from '@basyx/studio-app-kit/manifest'
@@ -9,42 +9,50 @@ import { StudioProblem } from '../problem'
 // Builder's preview pane shows. What the package asks for beyond the last
 // preview waits for the user's OK.
 
-/** The preview's app ID: the app's own ID with `.preview`, so it never replaces the app. */
-export function previewAppId (appId: string): string {
-  return `${appId}.preview`
+/** A stable, bounded app ID owned by the project, independent of its editable manifest ID. */
+export function previewAppId (projectId: string): string {
+  return `local.preview.p${projectId.replaceAll('-', '')}`
+}
+
+/** The package authority the user consents to, including its parsed OpenAPI documents. */
+export interface PreviewPackage {
+  manifest: AppManifest
+  connections: AppConnectionSummary[]
 }
 
 /** What `next` asks for beyond `previous` (plan B4); `null` when nothing new. */
-export function consentFor (previous: AppManifest | null, next: AppManifest): PreviewConsent | null {
+export function consentFor (previous: PreviewPackage | null, next: PreviewPackage): PreviewConsent | null {
   const before = new Set<string>()
   const after: string[] = []
-  const describe = (manifest: AppManifest) => [
-    ...manifest.permissions.map(permission => `permission ${permission}`),
-    ...Object.entries(sandboxOrigins(manifest)).flatMap(([kind, origins]) => origins.map(origin => `${kind} ${origin}`)),
-    ...(manifest.sandbox?.webAssembly ? ['WebAssembly'] : []),
-    ...(manifest.sandbox?.workers ? ['workers'] : []),
-    ...(manifest.connections ?? []).map(connection => `connection ${connection.id}`),
-    ...(manifest.backend ? ['backend'] : []),
+  const describe = ({ manifest, connections }: PreviewPackage) => [
+    ...manifest.permissions.map(permission => ['permission', permission]),
+    ...Object.entries(sandboxOrigins(manifest)).flatMap(([kind, origins]) => origins.map(origin => [kind, origin])),
+    ...(manifest.sandbox?.webAssembly ? [['WebAssembly']] : []),
+    ...(manifest.sandbox?.workers ? [['workers']] : []),
+    ...(manifest.connections ?? []).map(connection => ['connection', connection.id]),
+    ...connections.flatMap(connection => connection.operations.map(operation => ['operation', connection.id, operation.operationId, operation.method, operation.path])),
+    ...(manifest.backend ? [['backend']] : []),
   ]
   for (const entry of previous ? describe(previous) : []) {
-    before.add(entry)
+    before.add(JSON.stringify(entry))
   }
   for (const entry of describe(next)) {
-    if (!before.has(entry)) {
-      after.push(entry)
+    // IDs and paths may contain spaces: compare tuples, not their readable labels.
+    if (!before.has(JSON.stringify(entry))) {
+      after.push(entry.join(' '))
     }
   }
   if (previous && after.length === 0) {
     return null
   }
-  return { first: previous === null, permissions: [...next.permissions], added: after }
+  return { first: previous === null, permissions: [...next.manifest.permissions], added: after }
 }
 
 /** Installs previews; Studio's app store behind it (server/utils/app-builder.ts). */
 export interface PreviewInstaller {
-  /** Checks a package as an upload is checked, and returns its manifest. */
-  read: (bytes: Uint8Array) => AppManifest
-  current: (previewAppId: string) => Promise<{ installationId: string, manifest: AppManifest } | null>
+  /** Checks a package as an upload is checked, including its OpenAPI operations. */
+  read: (bytes: Uint8Array) => PreviewPackage
+  current: (previewAppId: string) => Promise<(PreviewPackage & { installationId: string }) | null>
   install: (bytes: Uint8Array, previewAppId: string) => Promise<string>
   contributions: (previewAppId: string) => Promise<AppContributions | null>
   remove: (previewAppId: string) => Promise<void>
@@ -53,9 +61,7 @@ export interface PreviewInstaller {
 interface PreviewState {
   build: AppPreview['build']
   /** A built package waiting for the user's OK. */
-  pending: { bytes: Uint8Array, previewAppId: string, consent: PreviewConsent } | null
-  /** The preview's app ID, from the last built manifest. */
-  previewAppId: string | null
+  pending: { bytes: Uint8Array, consent: PreviewConsent } | null
   running: Promise<void> | null
   /** Another build was asked for while one ran. */
   again: boolean
@@ -81,7 +87,7 @@ export class ProjectPreviews {
 
   async describe (project: PreviewProject): Promise<AppPreview> {
     const state = this.#state(project)
-    const id = state.previewAppId ?? previewAppId(project.appId)
+    const id = previewAppId(project.id)
     const current = await this.#installer.current(id)
     return {
       projectId: project.id,
@@ -122,23 +128,18 @@ export class ProjectPreviews {
       throw new StudioProblem('not_found', 'No preview waits for your OK.')
     }
     state.pending = null
-    await this.#installer.install(pending.bytes, pending.previewAppId)
+    await this.#installer.install(pending.bytes, previewAppId(project.id))
   }
 
   async remove (project: PreviewProject): Promise<void> {
-    const state = this.#state(project)
     this.#states.delete(project.id)
-    for (const id of new Set([state.previewAppId, previewAppId(project.appId)])) {
-      if (id) {
-        await this.#installer.remove(id)
-      }
-    }
+    await this.#installer.remove(previewAppId(project.id))
   }
 
   #state (project: PreviewProject): PreviewState {
     let state = this.#states.get(project.id)
     if (!state) {
-      state = { build: { state: 'none', log: null, at: null }, pending: null, previewAppId: null, running: null, again: false }
+      state = { build: { state: 'none', log: null, at: null }, pending: null, running: null, again: false }
       this.#states.set(project.id, state)
     }
     return state
@@ -163,17 +164,12 @@ export class ProjectPreviews {
       return
     }
     try {
-      const manifest = this.#installer.read(result.packageBytes)
-      const id = previewAppId(manifest.id)
-      if (state.previewAppId && state.previewAppId !== id) {
-        // The agent changed the app ID: the old preview goes.
-        await this.#installer.remove(state.previewAppId)
-      }
-      state.previewAppId = id
+      const pkg = this.#installer.read(result.packageBytes)
+      const id = previewAppId(project.id)
       const current = await this.#installer.current(id)
-      const consent = consentFor(current?.manifest ?? null, manifest)
+      const consent = consentFor(current, pkg)
       if (consent) {
-        state.pending = { bytes: result.packageBytes, previewAppId: id, consent }
+        state.pending = { bytes: result.packageBytes, consent }
       } else {
         state.pending = null
         await this.#installer.install(result.packageBytes, id)

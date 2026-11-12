@@ -74,7 +74,8 @@ Its chat runs a coding agent (Claude Code, Codex or opencode, over the Agent
 Client Protocol) in a project folder on the user's computer; the agent is
 full-trust local software the user chose, outside this platform's isolation.
 What it builds is not: Studio builds the folder itself, installs the result
-as a preview (`<appId>.preview`, flagged and shown only in the App Builder),
+as a project-owned preview (`local.preview.p<projectId>`, with UUID hyphens
+removed, flagged and shown only in the App Builder),
 and installs a release through the same inspect, consent and install path as
 an upload, unsigned in developer mode or signed. The App Builder's machine
 key is a trust store publisher (*This computer*) for `local.*` app IDs only,

@@ -195,13 +195,13 @@ export class Conversation {
     const notes = this.#notes.splice(0)
     const sent = notes.length > 0 ? `${notes.map(note => `(Note from BaSyx Studio: ${note})`).join('\n')}\n\n${text}` : text
     connection.agent.request(methods.agent.session.prompt, { sessionId, prompt: [{ type: 'text', text: sent }] }).then(
-      result => this.#endTurn(text, result.stopReason),
+      result => this.#endTurn(text, result.stopReason, connection),
       error => {
-        if (this.#state !== 'working') {
+        if (this.#state !== 'working' || this.#connection !== connection) {
           return
         }
         this.#emit({ type: 'error', message: authHint(error, this.definition) ?? messageOf(error) })
-        return this.#endTurn(text, 'error')
+        return this.#endTurn(text, 'error', connection)
       },
     )
   }
@@ -315,10 +315,15 @@ export class Conversation {
 
   /** Stops the agent; the chat stays and starts it again on the next prompt. */
   stop (): void {
-    if (this.#state === 'idle' || this.#state === 'failed') {
-      this.#setState('inactive')
-      this.#stopProcess()
+    if (this.#state === 'closed') {
+      return
     }
+    this.#cancelApprovals()
+    if (this.#state === 'working') {
+      this.#emit({ type: 'turnEnded', stopReason: 'cancelled' })
+    }
+    this.#setState('inactive')
+    this.#stopProcess()
   }
 
   /** Ends the chat and the agent process for good. */
@@ -352,6 +357,9 @@ export class Conversation {
     const app = client({ name: 'basyx-studio' })
       .onRequest(methods.client.session.requestPermission, ({ params, signal }) => this.#requestPermission(params, signal))
       .onNotification(methods.client.session.update, ({ params }) => {
+        if (this.#process !== agentProcess) {
+          return
+        }
         const { update } = params
         if (update.sessionUpdate === 'config_option_update') {
           if (this.#applyOptions(update.configOptions)) {
@@ -389,11 +397,20 @@ export class Conversation {
         clientCapabilities: { fs: { readTextFile: false, writeTextFile: false }, terminal: false },
         clientInfo: { name: 'basyx-studio', title: 'BaSyx Studio', version: '1' },
       })
+      if (this.#process !== agentProcess) {
+        return
+      }
       const session = await this.#openSession(connection, init.agentCapabilities?.loadSession === true)
+      if (this.#process !== agentProcess) {
+        return
+      }
       this.#agentModes = session.modes?.availableModes.map(mode => mode.id) ?? []
       const agentMode = this.#agentMode()
       if (agentMode) {
         await connection.agent.request(methods.agent.session.setMode, { sessionId: session.sessionId, modeId: agentMode })
+      }
+      if (this.#process !== agentProcess) {
+        return
       }
       this.#applyOptions(session.configOptions)
       // The agent starts with the settings of the user's own configuration;
@@ -403,6 +420,9 @@ export class Conversation {
         const setting = this.#setting(kind)
         if (wanted && setting && setting.current !== wanted && setting.options.some(option => option.value === wanted)) {
           const result = await connection.agent.request(methods.agent.session.setConfigOption, { sessionId: session.sessionId, configId: setting.id, value: wanted })
+          if (this.#process !== agentProcess) {
+            return
+          }
           if (!this.#applyOptions(result.configOptions as SessionConfigOption[])) {
             this.#assign(kind, { ...setting, current: wanted })
           }
@@ -412,6 +432,9 @@ export class Conversation {
       this.#saveSession()
       this.#setState('idle')
     } catch (error) {
+      if (this.#process !== agentProcess) {
+        return
+      }
       this.#fail(`${this.definition.name} could not start: ${messageOf(error)}`)
       this.#stopProcess()
       throw new StudioProblem('agent_unavailable', `${this.definition.name} could not start: ${messageOf(error)}`, { cause: error })
@@ -425,6 +448,9 @@ export class Conversation {
         const loaded = await connection.agent.request(methods.agent.session.load, { sessionId: this.#sessionId, cwd: this.folder, mcpServers: [] })
         return { sessionId: this.#sessionId, ...loaded }
       } catch (error) {
+        if (this.#connection !== connection) {
+          throw error
+        }
         this.#emit({ type: 'notice', text: `${this.definition.name} could not continue the earlier session (${messageOf(error)}), so it starts a new one in the same folder. It does not remember this chat.` })
       } finally {
         this.#replaying = false
@@ -543,17 +569,26 @@ export class Conversation {
     }
   }
 
-  async #endTurn (prompt: string, stopReason: string): Promise<void> {
+  async #endTurn (prompt: string, stopReason: string, connection: ClientConnection): Promise<void> {
+    if (this.#state !== 'working' || this.#connection !== connection) {
+      return
+    }
     this.#cancelApprovals()
     this.#emit({ type: 'turnEnded', stopReason })
     try {
       for (const event of await this.#hooks.afterTurn?.(prompt) ?? []) {
+        if (this.#state !== 'working' || this.#connection !== connection) {
+          return
+        }
         this.#emit(event)
       }
     } catch (error) {
+      if (this.#state !== 'working' || this.#connection !== connection) {
+        return
+      }
       this.#emit({ type: 'error', message: messageOf(error) })
     }
-    if (this.#state === 'working') {
+    if (this.#state === 'working' && this.#connection === connection) {
       this.#setState('idle')
     }
   }

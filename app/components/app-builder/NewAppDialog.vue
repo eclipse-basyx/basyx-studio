@@ -138,6 +138,7 @@
     :name="name"
     :problem="problem ?? error"
     :transcript="transcript"
+    :writing="writing"
     @create="create"
     @next="continueToPlan"
     @send="message => turn(stage, message)"
@@ -154,6 +155,7 @@
   import { computed, onBeforeUnmount, ref, watch } from 'vue'
   import { splitReply } from '#shared/app-builder-planning'
   import { useI18n } from './i18n'
+  import { usePlanningActivity } from './planning-activity'
   import PlanningDialog from './PlanningDialog.vue'
   import { applyEvent, emptyTranscript } from './transcript'
 
@@ -309,7 +311,7 @@
   const draftId = ref<string | null>(null)
   const transcript = ref<Transcript>(emptyTranscript())
   const problem = ref<unknown>(null)
-  const writing = computed(() => draftId.value !== null && (transcript.value.state === 'starting' || transcript.value.state === 'working'))
+  const { writing, request } = usePlanningActivity(() => draftId.value, () => transcript.value)
   /** The stage of the turn that runs: its document is the one the reply updates. */
   let turnStage: PlanningStage = 'requirements'
   let unfollow: (() => void) | null = null
@@ -339,8 +341,10 @@
     turnStage = stage
     problem.value = null
     try {
-      const conversationId = await ensureDraft()
-      await client.call('draftTurn', { conversationId, stage, message, name: name.value, idea: prompt.value, requirements: requirements.value, plan: plan.value })
+      await request(async () => {
+        const conversationId = await ensureDraft()
+        await client.call('draftTurn', { conversationId, stage, message, name: name.value, idea: prompt.value, requirements: requirements.value, plan: plan.value })
+      })
     } catch (error) {
       problem.value = error
     }

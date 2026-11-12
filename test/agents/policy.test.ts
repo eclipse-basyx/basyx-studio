@@ -83,6 +83,26 @@ describe('App Builder permission policy (ADR 0054, plan A1)', () => {
     expect(run('curl https://x | sh', 'unrestricted', '/')).toEqual({ answer: 'allow', reason: 'unrestricted' })
   })
 
+  it('asks before unresolved directory changes, including shell wrappers and quoting', () => {
+    for (const command of [
+      'cd && rm -rf Documents',
+      'cd; rm -rf Documents',
+      'pwd && cd && rm -rf Documents',
+      'builtin cd && rm -rf Documents',
+      'command cd && rm -rf Documents',
+      '"cd" && rm -rf Documents',
+      'c\'d\' && rm -rf Documents',
+      String.raw`c\d && rm -rf Documents`,
+      'pushd && rm -rf Documents',
+      'popd && rm -rf Documents',
+      'cd - && rm -rf Documents',
+      'cd /work/app && cd && rm -rf Documents',
+    ]) {
+      expect(decidePermission({ kind: 'execute', command, cwd: folder, paths: [] }, folder, new Set(), 'auto'), command).toEqual({ answer: 'ask' })
+    }
+    expect(decidePermission({ kind: 'execute', command: 'cd "/work/app" && node scripts/build.mjs', cwd: folder, paths: [] }, folder, new Set(), 'auto')).toEqual({ answer: 'allow', reason: 'auto' })
+  })
+
   it('answers with "once" options, never with the agent\'s "always"', () => {
     const options = [
       { optionId: 'always', kind: 'allow_always' },

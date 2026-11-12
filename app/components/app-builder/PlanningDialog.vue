@@ -178,13 +178,12 @@
   const stage = defineModel<PlanningStage>('stage', { required: true })
   const requirements = defineModel<string>('requirements', { required: true })
   const plan = defineModel<string>('plan', { required: true })
-  const props = defineProps<{ transcript: Transcript, agent: string, name: string, busy: boolean, problem: unknown }>()
+  const props = defineProps<{ transcript: Transcript, agent: string, name: string, busy: boolean, problem: unknown, writing: boolean }>()
   const emit = defineEmits<{ send: [message: string], stop: [], next: [], create: [] }>()
   const { t } = useI18n()
 
   const view = ref<'edit' | 'preview'>('edit')
   const draft = ref('')
-  const writing = computed(() => props.transcript.state === 'starting' || props.transcript.state === 'working')
   const document = computed(() => stage.value === 'plan' ? plan.value : requirements.value)
 
   type Message
@@ -221,7 +220,7 @@
 
   function send () {
     const text = draft.value.trim()
-    if (!text || writing.value) {
+    if (!text || props.writing) {
       return
     }
     emit('send', text)

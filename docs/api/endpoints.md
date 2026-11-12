@@ -339,7 +339,7 @@ current target.
 | `setSetting` | Sets the agent's `model`, `effort` (ACP config category `thought_level`) or `speed` (Claude's fast mode, `on`/`off`) to one of the values it offers; a stopped agent takes it when it starts. A chat's `state` events carry all three, and `usage` events report the context window's `used` and `size` in tokens |
 | `setPermissionMode` | `ask`, `auto` or `unrestricted` for a chat; `unrestricted` needs `acknowledgeRisk: true` and is not kept when Studio restarts |
 | `getChanges`, `undoTurn` | A turn's commit as a patch; undoes a turn and the ones after it in a new commit |
-| `getPreview`, `buildPreview`, `approvePreview` | A project's last build and its preview installation (`<appId>.preview`, shown only in the App Builder); builds it now; installs a build that waited for the user's OK on new permissions |
+| `getPreview`, `buildPreview`, `approvePreview` | A project's last build and its preview installation (`local.preview.p<projectId>`, UUID hyphens removed, shown only in the App Builder); builds it now; installs a build that waited for the user's OK on new permissions or connection operations |
 | `getReleaseInfo`, `getMachineKey` | The app's version and the installed one, with the versions it could take; this computer's signing key (created on first use) |
 | `inspectRelease`, `installRelease`, `exportRelease` | Raises the version if asked, builds and signs (unsigned, this computer's key, or an own key from a `signing-key` grant) and checks the package as an upload; installs the checked package; saves it with its `.sig` to an `app-package` grant. Administrators only |
 
