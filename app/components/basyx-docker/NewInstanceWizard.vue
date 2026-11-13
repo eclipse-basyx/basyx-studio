@@ -31,63 +31,31 @@
     <v-divider />
 
     <div class="d-flex flex-grow-1 overflow-hidden">
-      <div ref="form" class="flex-grow-1 overflow-y-auto pa-8">
-        <!-- The form uses the full width of the work area, like the instance overview. -->
-        <v-sheet color="transparent">
-          <!-- Step 1: preset and, for secured instances, the access model. -->
-          <template v-if="step === 1">
-            <v-radio-group v-model="preset" hide-details>
-              <v-row density="compact">
-                <v-col v-for="option in selectablePresets" :key="option" :cols="choiceColumns">
-                  <v-card
-                    :class="{ 'border-primary': preset === option }"
-                    :color="preset === option ? 'primary' : undefined"
-                    height="100%"
-                    :variant="preset === option ? 'tonal' : undefined"
-                  >
-                    <v-radio class="align-start pa-3 w-100 h-100" :data-test="`preset-${option}`" :value="option">
-                      <template #label>
-                        <div class="ml-1">
-                          <div class="d-flex flex-wrap align-center ga-2 mb-1">
-                            <v-icon :icon="presetIcons[option]" size="small" />
-                            <span class="font-weight-medium">{{ t(`preset.${option}`) }}</span>
-                            <v-chip v-if="option === 'quick'" color="success" size="x-small" :text="t('preset.recommended')" />
-                          </div>
-
-                          <div class="text-body-small text-medium-emphasis text-wrap">{{ t(`preset.${option}Text`) }}</div>
-                        </div>
-                      </template>
-                    </v-radio>
-                  </v-card>
-                </v-col>
-              </v-row>
-            </v-radio-group>
-
-            <!-- The access model follows the template grid, with the chosen
-               model's details in a single panel below. -->
-            <template v-if="spec.security.mode === 'keycloak'">
-              <div class="text-title-small mt-6">{{ t('access.title') }}</div>
-              <div class="text-body-small text-medium-emphasis mb-2">{{ t('access.hint') }}</div>
-
-              <v-radio-group v-model="access" hide-details>
+      <div class="d-flex flex-column flex-grow-1 overflow-hidden">
+        <div ref="form" class="flex-grow-1 overflow-y-auto pa-8">
+          <!-- The form uses the full width of the work area, like the instance overview. -->
+          <v-sheet color="transparent">
+            <!-- Step 1: preset and, for secured instances, the access model. -->
+            <template v-if="step === 1">
+              <v-radio-group v-model="preset" hide-details>
                 <v-row density="compact">
-                  <v-col v-for="option in accessModels" :key="option" :cols="choiceColumns">
+                  <v-col v-for="option in selectablePresets" :key="option" :cols="choiceColumns">
                     <v-card
-                      :class="{ 'border-primary': access === option }"
-                      :color="access === option ? 'primary' : undefined"
+                      :class="{ 'border-primary': preset === option }"
+                      :color="preset === option ? 'primary' : undefined"
                       height="100%"
-                      :variant="access === option ? 'tonal' : undefined"
+                      :variant="preset === option ? 'tonal' : undefined"
                     >
-                      <v-radio class="align-start pa-3 w-100 h-100" :data-test="`access-${option}`" :value="option">
+                      <v-radio class="align-start pa-3 w-100 h-100" :data-test="`preset-${option}`" :value="option">
                         <template #label>
                           <div class="ml-1">
                             <div class="d-flex flex-wrap align-center ga-2 mb-1">
-                              <v-icon :icon="accessModelDetails[option].icon" size="small" />
-                              <span class="font-weight-medium">{{ t(`access.${option}`) }}</span>
-                              <v-chip :text="t(`access.${option}Technology`)" />
+                              <v-icon :icon="presetIcons[option]" size="small" />
+                              <span class="font-weight-medium">{{ t(`preset.${option}`) }}</span>
+                              <v-chip v-if="option === 'quick'" color="success" size="x-small" :text="t('preset.recommended')" />
                             </div>
 
-                            <div class="text-body-small text-medium-emphasis text-wrap">{{ t(`access.${option}Text`) }}</div>
+                            <div class="text-body-small text-medium-emphasis text-wrap">{{ t(`preset.${option}Text`) }}</div>
                           </div>
                         </template>
                       </v-radio>
@@ -96,293 +64,355 @@
                 </v-row>
               </v-radio-group>
 
-              <v-card class="mt-3" data-test="access-details">
-                <v-card-text class="d-flex flex-column ga-4">
-                  <div>
-                    <div class="text-body-small text-medium-emphasis mb-1">{{ t('access.includedUsers') }}</div>
-                    <div class="text-body-medium">{{ t(`access.${access}Users`) }}</div>
-                  </div>
+              <!-- The access model follows the template grid, with the chosen
+                 model's details in a single panel below. -->
+              <template v-if="spec.security.mode === 'keycloak'">
+                <div class="text-title-small mt-6">{{ t('access.title') }}</div>
+                <div class="text-body-small text-medium-emphasis mb-2">{{ t('access.hint') }}</div>
 
-                  <div>
-                    <div class="text-body-small text-medium-emphasis mb-1">{{ t('access.permissions') }}</div>
-
-                    <div
-                      v-for="permission in accessModelDetails[access].permissions"
-                      :key="permission"
-                      class="d-flex align-start ga-2 text-body-medium mb-1"
-                    >
-                      <v-icon class="mt-1" color="success" icon="mdi-check" size="small" />
-                      <span>{{ t(`access.${permission}`) }}</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div class="text-body-small text-medium-emphasis mb-1">{{ t('access.bestFor') }}</div>
-                    <div class="text-body-medium">{{ t(`access.${access}UseCase`) }}</div>
-                  </div>
-                </v-card-text>
-              </v-card>
-            </template>
-          </template>
-
-          <!-- Step 2: name and startup files; optional settings stay out of the main path. -->
-          <template v-else-if="step === 2">
-            <v-text-field
-              v-model="spec.name"
-              data-test="name"
-              density="compact"
-              :hint="t('wizard.nameHint')"
-              :label="t('wizard.name')"
-              persistent-hint
-              :rules="[nameRule]"
-            />
-
-            <div class="d-flex align-center ga-2 mt-6 mb-2">
-              <div class="text-title-small flex-grow-1">{{ t('wizard.aasx') }}</div>
-
-              <v-btn-secondary
-                data-test="add-aasx"
-                prepend-icon="mdi-plus"
-                size="small"
-                :text="t('wizard.aasxAdd')"
-                @click="pickFiles"
-              />
-            </div>
-
-            <v-card>
-              <v-list v-if="files.length > 0">
-                <template v-for="(file, index) in files" :key="file.key">
-                  <v-divider v-if="index > 0" />
-
-                  <v-list-item prepend-icon="mdi-package-variant-closed" :title="file.name">
-                    <template #append>
-                      <v-btn
-                        v-tooltip="t('wizard.aasxRemove')"
-                        :aria-label="t('wizard.aasxRemove')"
-                        icon="mdi-close"
-                        @click="file.remove"
-                      />
-                    </template>
-                  </v-list-item>
-                </template>
-              </v-list>
-
-              <v-card-text v-else class="text-body-medium text-medium-emphasis">{{ t('wizard.aasxNone') }}</v-card-text>
-            </v-card>
-
-            <div class="text-title-small mt-6 mb-2">{{ t('wizard.storage') }}</div>
-
-            <v-radio-group v-model="spec.persistence" hide-details>
-              <v-row density="compact">
-                <v-col v-for="option in persistenceOptions" :key="option" cols="12" sm="6">
-                  <v-card
-                    :class="{ 'border-primary': spec.persistence === option }"
-                    :color="spec.persistence === option ? 'primary' : undefined"
-                    height="100%"
-                    :variant="spec.persistence === option ? 'tonal' : undefined"
-                  >
-                    <v-radio class="align-start pa-3 w-100" :data-test="`persistence-${option}`" :value="option">
-                      <template #label>
-                        <div class="ml-1">
-                          <div class="font-weight-medium mb-1">{{ t(`persistence.${option}`) }}</div>
-                          <div class="text-body-small text-medium-emphasis text-wrap">{{ t(`persistence.${option}Text`) }}</div>
-                        </div>
-                      </template>
-                    </v-radio>
-                  </v-card>
-                </v-col>
-              </v-row>
-            </v-radio-group>
-
-            <!-- Optional settings share one inset instead of nesting more cards. -->
-            <v-card class="mt-6">
-              <v-expansion-panels>
-                <v-expansion-panel data-test="advanced">
-                  <v-expansion-panel-title>
-                    <div>
-                      <div class="font-weight-medium">{{ t('wizard.advanced') }}</div>
-                      <div class="text-body-small text-medium-emphasis">{{ advancedSummary }}</div>
-                    </div>
-                  </v-expansion-panel-title>
-
-                  <v-expansion-panel-text>
-                    <div class="d-flex flex-column ga-6 pt-2">
-                      <section class="d-flex flex-column ga-4">
-                        <div>
-                          <h2 class="text-title-small ma-0">{{ t('wizard.services') }}</h2>
-                          <p class="text-body-small text-medium-emphasis ma-0">{{ t('wizard.servicesHint') }}</p>
-                        </div>
-
-                        <v-select
-                          v-model="spec.topology"
-                          :items="topologyOptions"
-                          :label="t('wizard.topology')"
-                        />
-
-                        <div>
-                          <div class="text-body-small text-medium-emphasis mb-1">{{ t('wizard.features') }}</div>
-
-                          <v-row density="compact">
-                            <v-col :cols="settingsColumns">
-                              <v-checkbox v-model="spec.features.history" :label="t('wizard.history')" />
-                            </v-col>
-
-                            <v-col :cols="settingsColumns">
-                              <v-checkbox v-model="spec.features.eventFeed" :label="t('wizard.eventFeed')" />
-                            </v-col>
-
-                            <v-col :cols="settingsColumns">
-                              <v-checkbox
-                                v-model="spec.features.registrySync"
-                                :disabled="spec.topology === 'separate'"
-                                :label="t('wizard.registrySync')"
-                              />
-                            </v-col>
-
-                            <v-col :cols="settingsColumns">
-                              <v-checkbox v-model="spec.features.discoverySync" :label="t('wizard.discoverySync')" />
-                            </v-col>
-                          </v-row>
-                        </div>
-                      </section>
-
-                      <v-divider />
-
-                      <section class="d-flex flex-column ga-4">
-                        <div>
-                          <h2 class="text-title-small ma-0">{{ t('wizard.runtime') }}</h2>
-                          <p class="text-body-small text-medium-emphasis ma-0">{{ t('wizard.runtimeHint') }}</p>
-                        </div>
-
-                        <v-select
-                          v-model="spec.images.channel"
-                          :items="imageOptions"
-                          :label="t('wizard.images')"
-                        />
-
-                        <v-checkbox v-model="restartAlways" :label="t('wizard.restart')" />
-                      </section>
-
-                      <v-divider />
-
-                      <section class="d-flex flex-column ga-4">
-                        <div>
-                          <h2 class="text-title-small ma-0">{{ t('wizard.network') }}</h2>
-                          <p class="text-body-small text-medium-emphasis ma-0">{{ t('wizard.networkHint') }}</p>
-                        </div>
-
-                        <v-row density="compact">
-                          <v-col class="d-flex flex-column ga-3" :cols="settingsColumns">
-                            <v-select
-                              v-model="portMode"
-                              :items="portOptions"
-                              :label="t('wizard.ports')"
-                            />
-
-                            <v-number-input
-                              v-if="portMode === 'fixed'"
-                              v-model="basePort"
-                              control-variant="hidden"
-                              density="compact"
-                              :hint="t('wizard.basePortHint')"
-                              :label="t('wizard.basePort')"
-                              :max="64000"
-                              :min="1024"
-                              persistent-hint
-                            />
-                          </v-col>
-
-                          <v-col class="d-flex flex-column ga-2" :cols="settingsColumns">
-                            <v-checkbox v-model="network" :label="t('wizard.exposure')" />
-
-                            <v-alert
-                              v-if="network"
-                              density="compact"
-                              :text="t('wizard.exposureWarning')"
-                              type="warning"
-                            />
-                          </v-col>
-                        </v-row>
-                      </section>
-                    </div>
-                  </v-expansion-panel-text>
-                </v-expansion-panel>
-              </v-expansion-panels>
-            </v-card>
-          </template>
-
-          <!-- Step 3: what will happen, in plain words. -->
-          <template v-else>
-            <v-alert v-if="importInfo?.notes.length" class="mb-4" :title="t('wizard.importNotes')" type="info">
-              <ul class="ps-4">
-                <li v-for="note in importInfo.notes" :key="note">{{ t(`wizard.note_${note}`) }}</li>
-              </ul>
-            </v-alert>
-
-            <v-progress-linear v-if="planning" />
-
-            <div v-else-if="plan" class="d-flex flex-column ga-4" data-test="review">
-              <v-alert
-                v-if="plan.portsInUse.length > 0"
-                :text="t('wizard.portsInUse', { ports: plan.portsInUse.join(', ') })"
-                type="warning"
-              />
-
-              <v-card data-test="summary-facts">
-                <v-card-text class="d-flex flex-column ga-4">
-                  <h2 class="text-title-small font-weight-medium ma-0">{{ t('wizard.summary') }}</h2>
-
-                  <p class="text-body-medium text-medium-emphasis ma-0" data-test="summary">{{ summary }}</p>
-
-                  <v-divider />
-
+                <v-radio-group v-model="access" hide-details>
                   <v-row density="compact">
-                    <v-col v-for="fact in summaryFacts" :key="fact.label" class="pb-2" :cols="settingsColumns">
-                      <div class="text-body-small text-medium-emphasis mb-1">{{ fact.label }}</div>
-                      <div class="text-body-medium">{{ fact.value }}</div>
+                    <v-col v-for="option in accessModels" :key="option" :cols="choiceColumns">
+                      <v-card
+                        :class="{ 'border-primary': access === option }"
+                        :color="access === option ? 'primary' : undefined"
+                        height="100%"
+                        :variant="access === option ? 'tonal' : undefined"
+                      >
+                        <v-radio class="align-start pa-3 w-100 h-100" :data-test="`access-${option}`" :value="option">
+                          <template #label>
+                            <div class="ml-1">
+                              <div class="d-flex flex-wrap align-center ga-2 mb-1">
+                                <v-icon :icon="accessModelDetails[option].icon" size="small" />
+                                <span class="font-weight-medium">{{ t(`access.${option}`) }}</span>
+                                <v-chip :text="t(`access.${option}Technology`)" />
+                              </div>
+
+                              <div class="text-body-small text-medium-emphasis text-wrap">{{ t(`access.${option}Text`) }}</div>
+                            </div>
+                          </template>
+                        </v-radio>
+                      </v-card>
                     </v-col>
                   </v-row>
-                </v-card-text>
-              </v-card>
+                </v-radio-group>
+
+                <v-card class="mt-3" data-test="access-details">
+                  <v-card-text class="d-flex flex-column ga-4">
+                    <div>
+                      <div class="text-body-small text-medium-emphasis mb-1">{{ t('access.includedUsers') }}</div>
+                      <div class="text-body-medium">{{ t(`access.${access}Users`) }}</div>
+                    </div>
+
+                    <div>
+                      <div class="text-body-small text-medium-emphasis mb-1">{{ t('access.permissions') }}</div>
+
+                      <div
+                        v-for="permission in accessModelDetails[access].permissions"
+                        :key="permission"
+                        class="d-flex align-start ga-2 text-body-medium mb-1"
+                      >
+                        <v-icon class="mt-1" color="success" icon="mdi-check" size="small" />
+                        <span>{{ t(`access.${permission}`) }}</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div class="text-body-small text-medium-emphasis mb-1">{{ t('access.bestFor') }}</div>
+                      <div class="text-body-medium">{{ t(`access.${access}UseCase`) }}</div>
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </template>
+            </template>
+
+            <!-- Step 2: name and startup files; optional settings stay out of the main path. -->
+            <template v-else-if="step === 2">
+              <v-text-field
+                v-model="spec.name"
+                data-test="name"
+                density="compact"
+                :hint="t('wizard.nameHint')"
+                :label="t('wizard.name')"
+                persistent-hint
+                :rules="[nameRule]"
+              />
+
+              <div class="d-flex align-center ga-2 mt-6 mb-2">
+                <div class="text-title-small flex-grow-1">{{ t('wizard.aasx') }}</div>
+
+                <v-btn-secondary
+                  data-test="add-aasx"
+                  prepend-icon="mdi-plus"
+                  size="small"
+                  :text="t('wizard.aasxAdd')"
+                  @click="pickFiles"
+                />
+              </div>
 
               <v-card>
-                <v-card-text class="pb-0">
-                  <h2 class="text-title-small font-weight-medium ma-0">{{ t('card.addresses') }}</h2>
-                </v-card-text>
-
-                <v-list lines="two">
-                  <template v-for="(address, index) in addresses" :key="address.url">
+                <v-list v-if="files.length > 0">
+                  <template v-for="(file, index) in files" :key="file.key">
                     <v-divider v-if="index > 0" />
 
-                    <v-list-item :subtitle="address.url">
-                      <template #title>
-                        <span class="text-body-medium">{{ address.title }}</span>
+                    <v-list-item prepend-icon="mdi-package-variant-closed" :title="file.name">
+                      <template #append>
+                        <v-btn
+                          v-tooltip="t('wizard.aasxRemove')"
+                          :aria-label="t('wizard.aasxRemove')"
+                          icon="mdi-close"
+                          @click="file.remove"
+                        />
                       </template>
                     </v-list-item>
                   </template>
                 </v-list>
+
+                <v-card-text v-else class="text-body-medium text-medium-emphasis">{{ t('wizard.aasxNone') }}</v-card-text>
               </v-card>
 
-              <div class="d-flex flex-column ga-2 text-body-small text-medium-emphasis">
-                <div v-if="plan.portsInUse.length === 0" class="d-flex align-start ga-2">
-                  <v-icon icon="mdi-download-outline" size="small" />
-                  <span>{{ plan.downloadMb ? t('wizard.download', { size: plan.downloadMb }) : t('wizard.downloadNone') }}</span>
-                </div>
+              <div class="text-title-small mt-6 mb-2">{{ t('wizard.storage') }}</div>
 
-                <div class="d-flex align-start ga-2">
-                  <v-icon icon="mdi-information-outline" size="small" />
-                  <span>{{ t('wizard.summaryNote') }}</span>
+              <v-radio-group v-model="spec.persistence" hide-details>
+                <v-row density="compact">
+                  <v-col v-for="option in persistenceOptions" :key="option" cols="12" sm="6">
+                    <v-card
+                      :class="{ 'border-primary': spec.persistence === option }"
+                      :color="spec.persistence === option ? 'primary' : undefined"
+                      height="100%"
+                      :variant="spec.persistence === option ? 'tonal' : undefined"
+                    >
+                      <v-radio class="align-start pa-3 w-100" :data-test="`persistence-${option}`" :value="option">
+                        <template #label>
+                          <div class="ml-1">
+                            <div class="font-weight-medium mb-1">{{ t(`persistence.${option}`) }}</div>
+                            <div class="text-body-small text-medium-emphasis text-wrap">{{ t(`persistence.${option}Text`) }}</div>
+                          </div>
+                        </template>
+                      </v-radio>
+                    </v-card>
+                  </v-col>
+                </v-row>
+              </v-radio-group>
+
+              <!-- Optional settings share one inset instead of nesting more cards. -->
+              <v-card class="mt-6">
+                <v-expansion-panels>
+                  <v-expansion-panel data-test="advanced">
+                    <v-expansion-panel-title>
+                      <div>
+                        <div class="font-weight-medium">{{ t('wizard.advanced') }}</div>
+                        <div class="text-body-small text-medium-emphasis">{{ advancedSummary }}</div>
+                      </div>
+                    </v-expansion-panel-title>
+
+                    <v-expansion-panel-text>
+                      <div class="d-flex flex-column ga-6 pt-2">
+                        <section class="d-flex flex-column ga-4">
+                          <div>
+                            <h2 class="text-title-small ma-0">{{ t('wizard.services') }}</h2>
+                            <p class="text-body-small text-medium-emphasis ma-0">{{ t('wizard.servicesHint') }}</p>
+                          </div>
+
+                          <v-select
+                            v-model="spec.topology"
+                            :items="topologyOptions"
+                            :label="t('wizard.topology')"
+                          />
+
+                          <div>
+                            <div class="text-body-small text-medium-emphasis mb-1">{{ t('wizard.features') }}</div>
+
+                            <v-row density="compact">
+                              <v-col :cols="settingsColumns">
+                                <v-checkbox v-model="spec.features.history" :label="t('wizard.history')" />
+                              </v-col>
+
+                              <v-col :cols="settingsColumns">
+                                <v-checkbox v-model="spec.features.eventFeed" :label="t('wizard.eventFeed')" />
+                              </v-col>
+
+                              <v-col :cols="settingsColumns">
+                                <v-checkbox
+                                  v-model="spec.features.registrySync"
+                                  :disabled="spec.topology === 'separate'"
+                                  :label="t('wizard.registrySync')"
+                                />
+                              </v-col>
+
+                              <v-col :cols="settingsColumns">
+                                <v-checkbox v-model="spec.features.discoverySync" :label="t('wizard.discoverySync')" />
+                              </v-col>
+                            </v-row>
+                          </div>
+                        </section>
+
+                        <v-divider />
+
+                        <section class="d-flex flex-column ga-4">
+                          <div>
+                            <h2 class="text-title-small ma-0">{{ t('wizard.runtime') }}</h2>
+                            <p class="text-body-small text-medium-emphasis ma-0">{{ t('wizard.runtimeHint') }}</p>
+                          </div>
+
+                          <v-select
+                            v-model="spec.images.channel"
+                            :items="imageOptions"
+                            :label="t('wizard.images')"
+                          />
+
+                          <v-checkbox v-model="restartAlways" :label="t('wizard.restart')" />
+                        </section>
+
+                        <v-divider />
+
+                        <section class="d-flex flex-column ga-4">
+                          <div>
+                            <h2 class="text-title-small ma-0">{{ t('wizard.network') }}</h2>
+                            <p class="text-body-small text-medium-emphasis ma-0">{{ t('wizard.networkHint') }}</p>
+                          </div>
+
+                          <v-row density="compact">
+                            <v-col class="d-flex flex-column ga-3" :cols="settingsColumns">
+                              <v-select
+                                v-model="portMode"
+                                :items="portOptions"
+                                :label="t('wizard.ports')"
+                              />
+
+                              <v-number-input
+                                v-if="portMode === 'fixed'"
+                                v-model="basePort"
+                                control-variant="hidden"
+                                density="compact"
+                                :hint="t('wizard.basePortHint')"
+                                :label="t('wizard.basePort')"
+                                :max="64000"
+                                :min="1024"
+                                persistent-hint
+                              />
+                            </v-col>
+
+                            <v-col class="d-flex flex-column ga-2" :cols="settingsColumns">
+                              <v-checkbox v-model="network" :label="t('wizard.exposure')" />
+
+                              <v-alert
+                                v-if="network"
+                                density="compact"
+                                :text="t('wizard.exposureWarning')"
+                                type="warning"
+                              />
+                            </v-col>
+                          </v-row>
+                        </section>
+                      </div>
+                    </v-expansion-panel-text>
+                  </v-expansion-panel>
+                </v-expansion-panels>
+              </v-card>
+            </template>
+
+            <!-- Step 3: what will happen, in plain words. -->
+            <template v-else>
+              <v-alert v-if="importInfo?.notes.length" class="mb-4" :title="t('wizard.importNotes')" type="info">
+                <ul class="ps-4">
+                  <li v-for="note in importInfo.notes" :key="note">{{ t(`wizard.note_${note}`) }}</li>
+                </ul>
+              </v-alert>
+
+              <v-progress-linear v-if="planning" />
+
+              <div v-else-if="plan" class="d-flex flex-column ga-4" data-test="review">
+                <v-alert
+                  v-if="plan.portsInUse.length > 0"
+                  :text="t('wizard.portsInUse', { ports: plan.portsInUse.join(', ') })"
+                  type="warning"
+                />
+
+                <v-card data-test="summary-facts">
+                  <v-card-text class="d-flex flex-column ga-4">
+                    <h2 class="text-title-small font-weight-medium ma-0">{{ t('wizard.summary') }}</h2>
+
+                    <p class="text-body-medium text-medium-emphasis ma-0" data-test="summary">{{ summary }}</p>
+
+                    <v-divider />
+
+                    <v-row density="compact">
+                      <v-col v-for="fact in summaryFacts" :key="fact.label" class="pb-2" :cols="settingsColumns">
+                        <div class="text-body-small text-medium-emphasis mb-1">{{ fact.label }}</div>
+                        <div class="text-body-medium">{{ fact.value }}</div>
+                      </v-col>
+                    </v-row>
+                  </v-card-text>
+                </v-card>
+
+                <v-card>
+                  <v-card-text class="pb-0">
+                    <h2 class="text-title-small font-weight-medium ma-0">{{ t('card.addresses') }}</h2>
+                  </v-card-text>
+
+                  <v-list lines="two">
+                    <template v-for="(address, index) in addresses" :key="address.url">
+                      <v-divider v-if="index > 0" />
+
+                      <v-list-item :subtitle="address.url">
+                        <template #title>
+                          <span class="text-body-medium">{{ address.title }}</span>
+                        </template>
+                      </v-list-item>
+                    </template>
+                  </v-list>
+                </v-card>
+
+                <div class="d-flex flex-column ga-2 text-body-small text-medium-emphasis">
+                  <div v-if="plan.portsInUse.length === 0" class="d-flex align-start ga-2">
+                    <v-icon icon="mdi-download-outline" size="small" />
+                    <span>{{ plan.downloadMb ? t('wizard.download', { size: plan.downloadMb }) : t('wizard.downloadNone') }}</span>
+                  </div>
+
+                  <div class="d-flex align-start ga-2">
+                    <v-icon icon="mdi-information-outline" size="small" />
+                    <span>{{ t('wizard.summaryNote') }}</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-          </template>
-
-          <ErrorAlert v-if="error" class="mt-2" :error="error">
-            <template v-if="retry" #actions>
-              <v-btn :text="t('problem.retry')" @click="retry" />
             </template>
-          </ErrorAlert>
+
+            <ErrorAlert v-if="error" class="mt-2" :error="error">
+              <template v-if="retry" #actions>
+                <v-btn :text="t('problem.retry')" @click="retry" />
+              </template>
+            </ErrorAlert>
+          </v-sheet>
+        </div>
+
+        <v-divider />
+
+        <v-sheet class="d-flex flex-0-0 align-center ga-2 px-4" height="72">
+          <v-btn :text="t('wizard.cancel')" @click="emit('cancel')" />
+
+          <v-spacer />
+          <v-btn v-if="step > 1" prepend-icon="mdi-chevron-left" :text="t('wizard.back')" @click="step--" />
+
+          <v-btn-primary
+            v-if="step < 3"
+            append-icon="mdi-chevron-right"
+            data-test="next"
+            :disabled="step === 2 && Boolean(nameProblem)"
+            :text="t('wizard.next')"
+            @click="step++"
+          />
+
+          <v-btn-primary
+            v-else
+            data-test="submit"
+            :disabled="!plan || plan.portsInUse.length > 0"
+            :loading="submitting"
+            prepend-icon="mdi-play"
+            :text="stack ? t('wizard.apply') : t('wizard.start')"
+            @click="submit"
+          />
         </v-sheet>
       </div>
 
@@ -391,7 +421,6 @@
         v-if="summaryOpen && step < 3"
         :aria-label="t('wizard.summary')"
         class="d-flex flex-column ga-3 flex-shrink-0 overflow-y-auto border-s px-4 pt-3 pb-4"
-        color="background"
         data-test="summary-panel"
         tag="aside"
         width="300"
@@ -434,7 +463,6 @@
       <v-sheet
         v-else-if="lgAndUp && step < 3"
         class="d-flex flex-column align-center flex-shrink-0 border-s pt-3"
-        color="background"
         data-test="summary-rail"
         width="48"
       >
@@ -448,34 +476,6 @@
         />
       </v-sheet>
     </div>
-
-    <v-divider />
-
-    <v-sheet class="d-flex flex-0-0 align-center ga-2 px-4" height="72">
-      <v-btn :text="t('wizard.cancel')" @click="emit('cancel')" />
-
-      <v-spacer />
-      <v-btn v-if="step > 1" prepend-icon="mdi-chevron-left" :text="t('wizard.back')" @click="step--" />
-
-      <v-btn-primary
-        v-if="step < 3"
-        append-icon="mdi-chevron-right"
-        data-test="next"
-        :disabled="step === 2 && Boolean(nameProblem)"
-        :text="t('wizard.next')"
-        @click="step++"
-      />
-
-      <v-btn-primary
-        v-else
-        data-test="submit"
-        :disabled="!plan || plan.portsInUse.length > 0"
-        :loading="submitting"
-        prepend-icon="mdi-play"
-        :text="stack ? t('wizard.apply') : t('wizard.start')"
-        @click="submit"
-      />
-    </v-sheet>
   </div>
 </template>
 
