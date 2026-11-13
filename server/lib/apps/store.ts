@@ -365,10 +365,15 @@ export async function findPreviewApp (deps: Pick<StudioDeps, 'db'>, previewAppId
  * (ADR 0054, plan B3): the package under `previewAppId`, unsigned as in
  * developer mode, with the checks of an upload except signatures and
  * versions, since Studio built it from the project's folder itself. The
- * user confirmed its permissions in the preview pane.
+ * user confirmed its permissions in the preview pane. When `sourceAppId`,
+ * the project's app, is installed and trusted, the preview starts from its
+ * settings and uses its infrastructure settings and connection bindings
+ * (`previewOf`), so it runs where the app does.
  */
-export async function installPreviewApp (deps: StudioDeps, bytes: Uint8Array, previewAppId: string, installedBy: string): Promise<{ record: AppInstallationRecord, previous: AppInstallationRecord | null }> {
+export async function installPreviewApp (deps: StudioDeps, bytes: Uint8Array, previewAppId: string, installedBy: string, sourceAppId: string | null = null): Promise<{ record: AppInstallationRecord, previous: AppInstallationRecord | null }> {
   requireAppsEnabled(deps)
+  // A preview runs its code on real targets like any app: a deployment that fixes its apps has none.
+  requireAppChanges(deps)
   if (!deps.config.apps.allowUnsigned) {
     throw new StudioProblem('app_unsigned_disabled', 'App Builder previews install unsigned, as in developer mode; set STUDIO_APPS_ALLOW_UNSIGNED=true.')
   }
@@ -385,8 +390,17 @@ export async function installPreviewApp (deps: StudioDeps, bytes: Uint8Array, pr
     if (existing && !existing.preview) {
       throw new StudioProblem('app_already_installed', `${previewAppId} is installed as an app of its own, so Studio does not replace it with a preview.`)
     }
+    const [source] = sourceAppId && sourceAppId !== previewAppId
+      ? await tx.select().from(appInstallations).where(eq(appInstallations.appId, sourceAppId))
+      : []
+    const original = source && !source.preview && !installationTrust(source, deps.config.apps.trustStore).revoked ? source : null
     const written = await writeInstallation(tx, existing?.id ?? newInstallationId(), existing !== undefined, pkg, sourceOf(null, 'unsigned', { bundled: false, managed: false, installedBy }))
-    const [record] = await tx.update(appInstallations).set({ preview: true }).where(eq(appInstallations.id, written.id)).returning()
+    const [record] = await tx.update(appInstallations).set({
+      preview: true,
+      previewOf: original?.appId ?? null,
+      // Previews have no settings page: the app's values, where they fit the preview's settings.
+      ...(original ? { settings: keptValues(pkg.manifest, original.settings).kept } : {}),
+    }).where(eq(appInstallations.id, written.id)).returning()
     return { record: record!, previous: existing ?? null }
   })
 }

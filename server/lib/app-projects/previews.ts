@@ -2,6 +2,7 @@ import type { AppConnectionSummary, AppContributions, AppPreview, ConversationEv
 import type { BuildResult } from './build'
 import type { AppManifest } from '@basyx/studio-sdk/protocol'
 import { sandboxOrigins } from '@basyx/studio-app-kit/manifest'
+import { sha256Hex } from '../apps/package'
 import { StudioProblem } from '../problem'
 
 // A project's preview (ADR 0054, plan B1–B4): Studio builds the folder,
@@ -21,7 +22,7 @@ export interface PreviewPackage {
 }
 
 /** What `next` asks for beyond `previous` (plan B4); `null` when nothing new. */
-export function consentFor (previous: PreviewPackage | null, next: PreviewPackage): PreviewConsent | null {
+export function consentFor (previous: PreviewPackage | null, next: PreviewPackage): Omit<PreviewConsent, 'digest'> | null {
   const before = new Set<string>()
   const after: string[] = []
   const describe = ({ manifest, connections }: PreviewPackage) => [
@@ -53,7 +54,8 @@ export interface PreviewInstaller {
   /** Checks a package as an upload is checked, including its OpenAPI operations. */
   read: (bytes: Uint8Array) => PreviewPackage
   current: (previewAppId: string) => Promise<(PreviewPackage & { installationId: string }) | null>
-  install: (bytes: Uint8Array, previewAppId: string) => Promise<string>
+  /** `sourceAppId` is the project's app, whose settings and bindings the preview uses where it is installed. */
+  install: (bytes: Uint8Array, previewAppId: string, sourceAppId: string) => Promise<string>
   contributions: (previewAppId: string) => Promise<AppContributions | null>
   remove: (previewAppId: string) => Promise<void>
 }
@@ -120,15 +122,21 @@ export class ProjectPreviews {
     return state.running
   }
 
-  /** Installs the package that waited for the user's OK. */
-  async approve (project: PreviewProject): Promise<void> {
+  /**
+   * Installs the package that waited for the user's OK. `digest` names the
+   * package the user saw: a build that replaced it since then asks again.
+   */
+  async approve (project: PreviewProject, digest: string): Promise<void> {
     const state = this.#state(project)
     const pending = state.pending
     if (!pending) {
       throw new StudioProblem('not_found', 'No preview waits for your OK.')
     }
+    if (pending.consent.digest !== digest) {
+      throw new StudioProblem('preview_changed', 'The preview was built again after you saw what it asks for; check it again.')
+    }
     state.pending = null
-    await this.#installer.install(pending.bytes, previewAppId(project.id))
+    await this.#installer.install(pending.bytes, previewAppId(project.id), project.appId)
   }
 
   async remove (project: PreviewProject): Promise<void> {
@@ -169,10 +177,10 @@ export class ProjectPreviews {
       const current = await this.#installer.current(id)
       const consent = consentFor(current, pkg)
       if (consent) {
-        state.pending = { bytes: result.packageBytes, consent }
+        state.pending = { bytes: result.packageBytes, consent: { ...consent, digest: sha256Hex(result.packageBytes) } }
       } else {
         state.pending = null
-        await this.#installer.install(result.packageBytes, id)
+        await this.#installer.install(result.packageBytes, id, project.appId)
       }
       state.build = { state: 'succeeded', log: result.log, at: this.#now().toISOString() }
       report({ type: 'build', state: 'succeeded', log: null, consentNeeded: consent !== null })

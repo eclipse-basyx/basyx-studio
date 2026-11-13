@@ -57,7 +57,8 @@ adapters can run an installed CLI in place of the one they depend on.
   mode `workspace-write`: its OS sandbox keeps writes in the folder, runs
   commands inside the sandbox without asking, and asks to leave it. opencode
   runs in mode `build` with permission rules that Studio passes in
-  `OPENCODE_CONFIG_CONTENT`.
+  `OPENCODE_CONFIG_CONTENT`: every edit and command asks, so Studio's policy
+  decides it.
 - **The user's own accounts.** Agents sign in with the credentials the user
   already has in each CLI. Studio never reads, copies or stores them. Before
   a chat starts, Studio asks each CLI for its sign-in status (for Claude,
@@ -135,7 +136,7 @@ adapters can run an installed CLI in place of the one they depend on.
   every request and switches the agent to its own mode without checks where
   it has one: Claude to `bypassPermissions` (when its settings allow it),
   Codex to `agent-full-access` (no sandbox, no approvals); opencode asks
-  Studio for what its rules do not allow, and Studio allows it. The page
+  Studio for every edit and command, and Studio allows it. The page
   turns it on only after a warning that the user acknowledges each time, and
   the service refuses it without that acknowledgement
   (`setPermissionMode`, `acknowledgeRisk`). It applies to that chat only,
@@ -158,8 +159,13 @@ adapters can run an installed CLI in place of the one they depend on.
   only in the builder's preview pane, on the active target. The permission
   dialog appears in the pane when permissions, origins or connections gain
   access, including new OpenAPI operations or changed HTTP methods and paths.
-  Settings and connection bindings are copied from the real installation if
-  there is one.
+  The OK names the package's SHA-256, so a package built after the dialog
+  was shown is not installed with it. A deployment that does not allow
+  installing apps (`STUDIO_APPS_ALLOW_INSTALL=false`) installs no previews.
+  If the project's app is installed and trusted, the preview starts from its
+  installation settings and records it as `previewOf`; infrastructures then
+  give the preview the app's settings and connection bindings, for users who
+  may open the infrastructure.
 - **Install through the normal path.** *Install* builds the version in
   `package.json` (the page offers a patch or minor bump when it is not higher
   than the installed one). Then the existing inspect → consent → install

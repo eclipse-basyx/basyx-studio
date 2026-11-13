@@ -257,6 +257,7 @@
     "app_revoked": "Deze implementatie vertrouwt deze app niet meer.",
     "app_sandbox_not_granted": "De uitgever mag geen apps publiceren die code van buiten hun pakket uitvoeren.",
     "app_outdated": "De app is bijgewerkt. Laad hem opnieuw om de nieuwe versie te gebruiken.",
+    "preview_changed": "De preview is intussen opnieuw gebouwd. Controleer wat hij nu vraagt voordat u hem toestaat.",
     "app_edit_mode_required": "Schakel over naar de bewerkmodus zodat de app inhoud kan wijzigen.",
     "agent_unavailable": "De codeeragent is niet beschikbaar",
     "agent_busy": "Het gesprek is bezig"

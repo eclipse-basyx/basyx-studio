@@ -258,7 +258,11 @@ Consequences for the design (folded into ADR 0054):
   chat and sets it again after every load.
 - **opencode needs Studio's rules.** With its default settings, opencode ran
   `curl` and wrote outside the folder without asking. Studio always passes:
-  `{"permission":{"edit":"allow","bash":{"*":"ask","pnpm *":"allow","git status*":"allow","git diff*":"allow","git log*":"allow"},"webfetch":"ask","external_directory":"ask"}}`.
+  `{"permission":{"edit":"ask","bash":{"*":"ask"},"webfetch":"ask","external_directory":"ask"}}`.
+  Every edit and command reaches Studio's policy, which allows the folder's
+  edits and its own command list: rules that allow by themselves would skip
+  Studio, so the planning chat could edit and `git diff --output=<file>`
+  would write outside the folder.
   A *Deny* ends opencode's turn, so the card says so.
 - **"Allow in this chat" stays in Studio.** The agents' `allow_always`
   options can store rules that outlive the chat (Claude's

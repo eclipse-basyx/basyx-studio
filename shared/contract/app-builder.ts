@@ -262,6 +262,8 @@ export const previewConsentSchema = z.object({
   permissions: z.array(z.string()),
   /** Permissions, origins, sandbox features and connections new since the last preview. */
   added: z.array(z.string()),
+  /** The SHA-256 of the package this consent is for; the OK names it, so a later build is not installed with it. */
+  digest: z.string(),
 })
 export type PreviewConsent = z.infer<typeof previewConsentSchema>
 
@@ -366,7 +368,8 @@ export const appBuilderOperationSchemas = {
   getChanges: z.object({ projectId, commit }),
   getPreview: z.object({ projectId }),
   buildPreview: z.object({ projectId }),
-  approvePreview: z.object({ projectId }),
+  /** `digest` is the consent's: a package built after the user saw it is not installed (`preview_changed`). */
+  approvePreview: z.object({ projectId, digest: z.string().regex(/^[0-9a-f]{64}$/) }),
   getReleaseInfo: z.object({ projectId }),
   inspectRelease: z.object({
     projectId,

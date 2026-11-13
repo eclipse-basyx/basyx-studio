@@ -442,7 +442,7 @@ export interface HttpCallBroker extends ConnectionTokenSource {
 
 export interface HttpCall {
   actor: Actor
-  installation: Pick<AppInstallationRecord, 'id' | 'appId' | 'manifest'>
+  installation: Pick<AppInstallationRecord, 'id' | 'appId' | 'manifest'> & { previewOf?: string | null }
   /** The app connections' indexed documents, by connection ID. */
   apis: ReadonlyMap<string, ConnectionApi>
   /** The infrastructure of the frame's or token's target; `null` without one, or for a workspace. */
@@ -453,6 +453,15 @@ export interface HttpCall {
 }
 
 /** The `http` connection of an infrastructure that binds an app connection, if any (K3). */
+/**
+ * The app ID under which infrastructures hold an installation's settings and
+ * connection bindings: an App Builder preview uses those of the installed app
+ * it previews (ADR 0054), every other installation its own.
+ */
+export function configurationAppId (installation: Pick<AppInstallationRecord, 'appId'> & { previewOf?: string | null }): string {
+  return installation.previewOf ?? installation.appId
+}
+
 export function boundConnection (record: Pick<InfrastructureRecord, 'connections'>, appId: string, connectionId: string): HttpConnection | undefined {
   return record.connections.find((connection): connection is HttpConnection =>
     connection.type === 'http' && connection.apps.some(binding => binding.app === appId && binding.connection === connectionId))
@@ -509,9 +518,9 @@ export async function callHttpConnection (deps: StudioDeps, broker: HttpCallBrok
     if (!record) {
       throw new StudioProblem('connection_not_bound', 'Connections belong to infrastructures; open the app on a target of an infrastructure.')
     }
-    connection = boundConnection(record, installation.appId, declared.id)
+    connection = boundConnection(record, configurationAppId(installation), declared.id)
     if (!connection) {
-      throw new StudioProblem('connection_not_bound', `No connection of ${record.name} is bound to ${installation.appId} ${declared.id}.`)
+      throw new StudioProblem('connection_not_bound', `No connection of ${record.name} is bound to ${configurationAppId(installation)} ${declared.id}.`)
     }
     // With a service identity too: only users who may open the infrastructure use its connections (SEC-005).
     await broker.access(record, actor.sessionId)

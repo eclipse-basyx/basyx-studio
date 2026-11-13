@@ -50,6 +50,7 @@ const definitions: Record<ProblemCode, ProblemDefinition> = {
   app_revoked: { status: 403, title: 'The app is no longer trusted', retryable: false },
   app_sandbox_not_granted: { status: 403, title: 'The publisher may not publish apps that run code from outside their package', retryable: false },
   app_outdated: { status: 409, title: 'The app was updated; reload it', retryable: false },
+  preview_changed: { status: 409, title: 'The preview was built again; check what it asks for now', retryable: false },
   app_edit_mode_required: { status: 403, title: 'Switch to edit mode to change content from an app', retryable: false },
   app_not_found: { status: 404, title: 'The app is not installed', retryable: false },
   app_permission_not_declared: { status: 403, title: 'The app did not declare the permission for this call', retryable: false },

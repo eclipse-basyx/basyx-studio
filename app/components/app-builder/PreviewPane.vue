@@ -215,13 +215,20 @@
   }
 
   async function approve () {
+    const digest = preview.value?.consent?.digest
+    if (!digest) {
+      return
+    }
     loadVersion++
     approving.value = true
     try {
-      preview.value = await client.call('approvePreview', { projectId: props.projectId })
+      // The OK names the package the user saw; a newer build asks again (`preview_changed`).
+      preview.value = await client.call('approvePreview', { projectId: props.projectId, digest })
       error.value = null
     } catch (error_) {
       error.value = error_
+      // Shows what the waiting package asks for now, next to the problem.
+      preview.value = await client.call('getPreview', { projectId: props.projectId }).catch(() => preview.value)
     }
     approving.value = false
   }

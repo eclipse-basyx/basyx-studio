@@ -66,6 +66,8 @@ export const problemCodes = [
   'app_outdated',
   /** A structural write or attachment upload of an app outside Studio's edit mode (MVP-7 A1). */
   'app_edit_mode_required',
+  /** The App Builder built another preview package after the one the user was asked to allow (ADR 0054, plan B4). */
+  'preview_changed',
   'app_not_found',
   'app_permission_not_declared',
   'app_backend_unavailable',

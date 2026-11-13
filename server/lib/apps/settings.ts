@@ -8,7 +8,7 @@ import { eq } from 'drizzle-orm'
 import { appSettingsUpdateSchema } from '#shared/contract'
 import { appInstallations } from '../../database/schema'
 import { recordAudit } from '../audit'
-import { boundConnection } from '../connections/http'
+import { boundConnection, configurationAppId } from '../connections/http'
 import { StudioProblem } from '../problem'
 import { getInstallation } from './store'
 
@@ -83,12 +83,12 @@ export function infrastructureValuesFor (record: Pick<InfrastructureRecord, 'app
  * infrastructure binds it. Workspaces and frames without a target have no
  * infrastructure (`null`).
  */
-export function targetContext (installation: Pick<AppInstallationRecord, 'appId' | 'manifest' | 'settings'>, record: Pick<InfrastructureRecord, 'appSettings' | 'connections'> | null): AppTargetContext {
+export function targetContext (installation: Pick<AppInstallationRecord, 'appId' | 'manifest' | 'settings'> & { previewOf?: string | null }, record: Pick<InfrastructureRecord, 'appSettings' | 'connections'> | null): AppTargetContext {
   return {
-    settings: resolveSettings(installation.manifest, installation.settings, infrastructureValuesFor(record, installation.appId)),
+    settings: resolveSettings(installation.manifest, installation.settings, infrastructureValuesFor(record, configurationAppId(installation))),
     connections: Object.fromEntries((installation.manifest.connections ?? []).map(connection => [
       connection.id,
-      { bound: record !== null && boundConnection(record, installation.appId, connection.id) !== undefined },
+      { bound: record !== null && boundConnection(record, configurationAppId(installation), connection.id) !== undefined },
     ])),
   }
 }
@@ -104,7 +104,7 @@ export interface TargetAccessCheck {
  * check (SEC-005). A delegated-user infrastructure the user has not
  * authorized is refused with `target_auth_required`.
  */
-export async function userTargetContext (broker: TargetAccessCheck, sessionId: string, installation: Pick<AppInstallationRecord, 'appId' | 'manifest' | 'settings'>, record: InfrastructureRecord | null): Promise<AppTargetContext> {
+export async function userTargetContext (broker: TargetAccessCheck, sessionId: string, installation: Pick<AppInstallationRecord, 'appId' | 'manifest' | 'settings'> & { previewOf?: string | null }, record: InfrastructureRecord | null): Promise<AppTargetContext> {
   if (record) {
     await broker.access(record, sessionId)
   }

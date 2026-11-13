@@ -68,6 +68,11 @@ function fakeInstaller () {
 
 const project = { id: 'p1', appId: 'local.a', folder: '/work/a' }
 
+/** The user's OK to the consent the preview pane shows now. */
+async function approveShown (previews: ProjectPreviews, target: typeof project): Promise<void> {
+  await previews.approve(target, (await previews.describe(target)).consent!.digest)
+}
+
 function built (value: AppManifest): BuildResult {
   return { ok: true, log: '$ pnpm build', packageBytes: new TextEncoder().encode(JSON.stringify(value)) }
 }
@@ -79,11 +84,11 @@ describe('App Builder previews (ADR 0054, plan B1–B4)', () => {
     const previews = new ProjectPreviews({ installer, build })
     const other = { ...project, id: 'p2', folder: '/work/b' }
     await previews.build(project)
-    await previews.approve(project)
+    await approveShown(previews, project)
     const first = await previews.describe(project)
     await previews.build(other)
     expect((await previews.describe(other)).consent).toMatchObject({ first: true })
-    await previews.approve(other)
+    await approveShown(previews, other)
     const second = await previews.describe(other)
     expect(second.installationId).not.toBe(first.installationId)
     expect(installed.size).toBe(2)
@@ -110,7 +115,7 @@ describe('App Builder previews (ADR 0054, plan B1–B4)', () => {
     expect((await previews.describe(project)).consent).toMatchObject({ first: true })
     expect(installs).toEqual([])
 
-    await previews.approve(project)
+    await approveShown(previews, project)
     expect(installs).toEqual([previewAppId(project.id)])
     expect(await previews.describe(project)).toMatchObject({ consent: null, installationId: `inst-${previewAppId(project.id)}`, build: { state: 'succeeded' } })
 
@@ -121,7 +126,28 @@ describe('App Builder previews (ADR 0054, plan B1–B4)', () => {
     await previews.build(project)
     expect(installs).toHaveLength(2)
     expect((await previews.describe(project)).consent).toMatchObject({ first: false, added: ['permission studio.aas.write'] })
-    await expect(previews.approve(project).then(() => previews.approve(project))).rejects.toMatchObject({ code: 'not_found' })
+    const shown = (await previews.describe(project)).consent!.digest
+    await previews.approve(project, shown)
+    await expect(previews.approve(project, shown)).rejects.toMatchObject({ code: 'not_found' })
+  })
+
+  it('does not install a package built after the one the user was asked about', async () => {
+    const { installer, installs } = fakeInstaller()
+    let next = built(manifest('local.a', ['studio.aas.read']))
+    const previews = new ProjectPreviews({ installer, build: async () => next })
+    await previews.build(project)
+    const shown = (await previews.describe(project)).consent!
+    expect(shown.digest).toMatch(/^[0-9a-f]{64}$/)
+
+    next = built(manifest('local.a', ['studio.aas.read', 'studio.aas.write']))
+    await previews.build(project)
+    await expect(previews.approve(project, shown.digest)).rejects.toMatchObject({ code: 'preview_changed' })
+    expect(installs).toEqual([])
+
+    const now = (await previews.describe(project)).consent!
+    expect(now.permissions).toEqual(['studio.aas.read', 'studio.aas.write'])
+    await previews.approve(project, now.digest)
+    expect(installs).toEqual([previewAppId(project.id)])
   })
 
   it('reports a failed build with its log, and a package Studio refuses with its findings', async () => {
@@ -172,7 +198,7 @@ describe('App Builder previews (ADR 0054, plan B1–B4)', () => {
     const build = async () => next
     const previews = new ProjectPreviews({ installer, build })
     await previews.build(project)
-    await previews.approve(project)
+    await approveShown(previews, project)
     const original = await previews.describe(project)
     next = built(manifest('local.b', []))
     await previews.build(project)

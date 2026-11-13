@@ -1,7 +1,7 @@
 import { execFile, spawn } from 'node:child_process'
 import { accessSync, constants, statSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { delimiter, join } from 'node:path'
+import { delimiter, join, posix, win32 } from 'node:path'
 
 // Finds the tools the App Builder needs (ADR 0054). A GUI app on macOS and
 // Linux does not get the user's shell PATH, so it is read once from the
@@ -16,11 +16,58 @@ export interface CommandResult {
 export type RunCommand = (file: string, args: string[], options: { env: NodeJS.ProcessEnv, timeoutMs: number, cwd?: string }) => Promise<CommandResult>
 
 export const runCommand: RunCommand = (file, args, { env, timeoutMs, cwd }) => new Promise(resolve => {
-  execFile(file, args, { env, cwd, timeout: timeoutMs, windowsHide: true, maxBuffer: 16 * 1024 * 1024 }, (error, stdout, stderr) => {
+  let launch: CommandLaunch
+  try {
+    launch = commandLaunch(file, args, env)
+  } catch (error) {
+    resolve({ code: null, stdout: '', stderr: error instanceof Error ? error.message : String(error) })
+    return
+  }
+  execFile(launch.file, launch.args, { env, cwd, timeout: timeoutMs, windowsHide: true, maxBuffer: 16 * 1024 * 1024, windowsVerbatimArguments: launch.windowsVerbatimArguments }, (error, stdout, stderr) => {
     const code = error ? (typeof error.code === 'number' ? error.code : null) : 0
     resolve({ code, stdout: String(stdout), stderr: String(stderr) })
   })
 })
+
+/** How Node starts a command: directly, or a Windows shim through `cmd.exe`. */
+export interface CommandLaunch {
+  file: string
+  args: string[]
+  windowsVerbatimArguments: boolean
+}
+
+// What cmd.exe interprets outside quotes; each gets a caret (cross-spawn's set).
+const cmdMetaCharacters = /([()\][%!^"`<>&|;, *?])/g
+// cmd.exe expands variables before it reads carets, and a line break ends the command.
+const cmdUnescapable = /[%\r\n\0]/
+
+/**
+ * One argument of a Windows shim's command line, quoted for the program
+ * and escaped for cmd.exe twice: once for `cmd /c`, and once more for the
+ * `%*` through which npm's shims (`pnpm.cmd`) pass it on.
+ */
+export function cmdShimArgument (argument: string): string {
+  if (cmdUnescapable.test(argument)) {
+    throw new Error(`A Windows command shim cannot be passed ${JSON.stringify(argument)}: cmd.exe would read %, line breaks or NUL in it.`)
+  }
+  const quoted = `"${argument.replaceAll(/(\\*)"/g, String.raw`$1$1\"`).replace(/(\\*)$/, '$1$1')}"`
+  return quoted.replaceAll(cmdMetaCharacters, '^$1').replaceAll(cmdMetaCharacters, '^$1')
+}
+
+/**
+ * Starts `.cmd` and `.bat` files through `cmd.exe`, since Node refuses to
+ * run them directly (CVE-2024-27980); every other file runs directly.
+ */
+export function commandLaunch (file: string, args: string[], env: NodeJS.ProcessEnv = process.env, platform: NodeJS.Platform = process.platform): CommandLaunch {
+  if (platform !== 'win32' || !/\.(?:cmd|bat)$/i.test(file)) {
+    return { file, args, windowsVerbatimArguments: false }
+  }
+  if (cmdUnescapable.test(file)) {
+    throw new Error(`Studio cannot start ${file} through cmd.exe: its path contains %, line breaks or NUL.`)
+  }
+  const line = [file.replaceAll(cmdMetaCharacters, '^$1'), ...args.map(argument => cmdShimArgument(argument))].join(' ')
+  return { file: env.ComSpec ?? env.COMSPEC ?? 'cmd.exe', args: ['/d', '/s', '/c', `"${line}"`], windowsVerbatimArguments: true }
+}
 
 const startMarker = '__STUDIO_PATH_START__'
 const endMarker = '__STUDIO_PATH_END__'
@@ -93,17 +140,23 @@ function isExecutable (path: string, platform: NodeJS.Platform): boolean {
   }
 }
 
-/** The first executable named `name` on `path`, as a shell would find it. */
+/**
+ * The first executable named `name` on `path`, as a shell would find it. On
+ * Windows only names with an extension from `PATHEXT` count: npm puts an
+ * extensionless shell script for Git Bash beside `claude.cmd`, which
+ * Windows cannot run.
+ */
 export function findExecutable (name: string, path: string, options: { platform?: NodeJS.Platform, pathExt?: string, exists?: (path: string) => boolean } = {}): string | null {
   const platform = options.platform ?? process.platform
   const exists = options.exists ?? (candidate => isExecutable(candidate, platform))
-  const extensions = platform === 'win32' ? ['', ...(options.pathExt ?? '.COM;.EXE;.BAT;.CMD').split(';').filter(Boolean).map(extension => extension.toLowerCase())] : ['']
+  const extensions = platform === 'win32' ? (options.pathExt ?? process.env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD').split(';').filter(Boolean).map(extension => extension.toLowerCase()) : ['']
+  const joinPath = platform === 'win32' ? win32.join : posix.join
   for (const directory of path.split(platform === 'win32' ? ';' : ':')) {
     if (!directory) {
       continue
     }
     for (const extension of extensions) {
-      const candidate = join(directory, `${name}${extension}`)
+      const candidate = joinPath(directory, `${name}${extension}`)
       if (exists(candidate)) {
         return candidate
       }

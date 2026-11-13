@@ -9,7 +9,7 @@ import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { appInstallations, auditEvents, infrastructures } from '~~/server/database/schema'
 import { targetContext, updateInstallationSettings, userTargetContext } from '~~/server/lib/apps/settings'
-import { describeInstallation, getInstallation, inspectAppPackage, installApp } from '~~/server/lib/apps/store'
+import { describeInstallation, getInstallation, inspectAppPackage, installApp, installPreviewApp } from '~~/server/lib/apps/store'
 import { loadStudioConfig } from '~~/server/lib/config'
 import { SecretCipher } from '~~/server/lib/crypto/cipher'
 import { openDatabase } from '~~/server/lib/database/client'
@@ -201,6 +201,22 @@ infrastructures:
 
     const [audit] = await handle.db.select().from(auditEvents).where(eq(auditEvents.action, 'app.settings.update'))
     expect(audit?.details).toEqual({ appId, changed: ['pageSize', 'serialIdName'] })
+  })
+
+  it('reach an App Builder preview of the app through the installed app (ADR 0054)', async () => {
+    const installation = await install()
+    await reconcileManagedInfrastructures(deps, parseInfrastructureFile(twoPlants('[urn:example:pump]', '[urn:example:compressor]'), 'infrastructures.yaml'))
+    const updated = await updateInstallationSettings(deps, admin, installation.id, { values: { pageSize: 50 } }, 'r2')
+    const developer = { ...deps, config: { ...deps.config, apps: { ...deps.config.apps, allowUnsigned: true } } }
+    const { record: preview } = await installPreviewApp(developer, packageOf(withForecast()), 'local.preview.p1', 'app-builder', appId)
+    expect(preview).toMatchObject({ previewOf: appId, settings: { pageSize: 50 } })
+    expect(targetContext(preview, await plant('plant-north'))).toEqual(targetContext(updated, await plant('plant-north')))
+    expect(targetContext(preview, await plant('plant-north')).connections).toEqual({ forecast: { bound: true } })
+
+    // Without an installed app, the preview has its own (empty) configuration.
+    const { record: alone } = await installPreviewApp(developer, packageOf(withForecast()), 'local.preview.p2', 'app-builder', 'org.example.not-installed')
+    expect(alone.previewOf).toBeNull()
+    expect(targetContext(alone, await plant('plant-north')).connections).toEqual({ forecast: { bound: false } })
   })
 
   it('reach only users who may open the infrastructure, for frames and backends', async () => {

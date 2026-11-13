@@ -3,6 +3,7 @@ import type { AgentApp, Stream } from '@agentclientprotocol/sdk'
 import { spawn } from 'node:child_process'
 import { Readable, Writable } from 'node:stream'
 import { ndJsonStream } from '@agentclientprotocol/sdk'
+import { commandLaunch } from './environment'
 
 // Starts an agent as a child process that speaks ACP on its stdio
 // (ADR 0054). Tests open an in-process agent instead.
@@ -35,14 +36,15 @@ export const openAgentProcess: OpenAgent = ({ definition, cliPath, nodePath, fol
   const [command, args] = launch.runner === 'adapter'
     ? [nodePath, [launch.adapterScript!, ...launch.args]]
     : [cliPath, launch.args]
-  const child = spawn(command, args, {
+  const childEnv = { ...env, ...launch.env(cliPath), ...(launch.runner === 'adapter' ? { ELECTRON_RUN_AS_NODE: '1' } : {}) }
+  // npm's Windows shims (`opencode.cmd`) start through cmd.exe, with the path quoted for it.
+  const started = commandLaunch(command, args, childEnv)
+  const child = spawn(started.file, started.args, {
     cwd: folder,
-    env: { ...env, ...launch.env(cliPath), ...(launch.runner === 'adapter' ? { ELECTRON_RUN_AS_NODE: '1' } : {}) },
+    env: childEnv,
     stdio: ['pipe', 'pipe', 'pipe'],
     windowsHide: true,
-    // npm's Windows shims (`opencode.cmd`) only start through the shell; the
-    // arguments are fixed by the catalogue.
-    shell: process.platform === 'win32' && /\.(?:cmd|bat)$/i.test(command),
+    windowsVerbatimArguments: started.windowsVerbatimArguments,
   })
   const tail: string[] = []
   child.stderr.setEncoding('utf8').on('data', (chunk: string) => {

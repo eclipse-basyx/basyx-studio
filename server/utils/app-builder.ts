@@ -89,7 +89,7 @@ const handlers: { [O in AppBuilderOperation]: Handler<O> } = {
   },
   getPreview: ({ projectId }, agents) => agents.preview(projectId),
   buildPreview: ({ projectId }, agents) => agents.buildPreview(projectId),
-  approvePreview: ({ projectId }, agents) => agents.approvePreview(projectId),
+  approvePreview: ({ projectId, digest }, agents) => agents.approvePreview(projectId, digest),
   getReleaseInfo: ({ projectId }, agents) => agents.releaseInfo(projectId),
   inspectRelease: ({ projectId, bump, signing, keyHandle, passphrase }, agents, call) => {
     requireAdmin(call)
@@ -139,8 +139,8 @@ export function previewInstaller (studio: StudioDeps & { backends: { stop: (id: 
       const record = await findPreviewApp(studio, id)
       return record ? { installationId: record.id, manifest: record.manifest, connections: await installationConnections(studio, record) } : null
     },
-    install: async (bytes, id) => {
-      const { record, previous } = await installPreviewApp(studio, bytes, id, installedBy)
+    install: async (bytes, id, sourceAppId) => {
+      const { record, previous } = await installPreviewApp(studio, bytes, id, installedBy, sourceAppId)
       if (previous) {
         await studio.backends?.stop(record.id)
       }

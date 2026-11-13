@@ -13,6 +13,11 @@ import { applyMigrations, loadMigrationsFromDirectory } from '~~/server/lib/data
 import { previewInstaller } from '~~/server/utils/app-builder'
 import { manifestOf, zipApp } from './support'
 
+/** The user's OK to the consent the preview pane shows now. */
+async function approveShown (previews: ProjectPreviews, project: { id: string, appId: string, folder: string }): Promise<void> {
+  await previews.approve(project, (await previews.describe(project)).consent!.digest)
+}
+
 const migrationsDirectory = new URL('../../server/database/migrations', import.meta.url).pathname
 const admin: Actor = { subject: 'studio-admin', name: 'Admin', roles: ['studio-admin'], isAdmin: true, sessionId: 's1' }
 
@@ -60,12 +65,14 @@ describe('App Builder previews in the app store (ADR 0054, plan B3)', () => {
     expect(await findPreviewApp(deps, 'local.shell-list.preview')).toBeNull()
   })
 
-  it('never replaces an installed app, and needs developer mode', async () => {
+  it('never replaces an installed app, and needs developer mode and installs allowed', async () => {
     await installApp(deps, admin, zipApp(manifestOf({ id: 'org.example.real' })), null, 'r1')
     expect(await findPreviewApp(deps, 'org.example.real')).toBeNull()
     await expect(installPreviewApp(deps, zipApp(manifestOf()), 'org.example.real', 'app-builder')).rejects.toMatchObject({ code: 'app_already_installed' })
     const signedOnly = { ...deps, config: configWith({ allowUnsigned: false }) }
     await expect(installPreviewApp(signedOnly, zipApp(manifestOf()), 'local.x.preview', 'app-builder')).rejects.toMatchObject({ code: 'app_unsigned_disabled' })
+    const fixedApps = { ...deps, config: { ...configWith({}), deployment: { appInstalls: false } } as StudioConfig }
+    await expect(installPreviewApp(fixedApps, zipApp(manifestOf()), 'local.x.preview', 'app-builder')).rejects.toMatchObject({ code: 'forbidden' })
   })
 
   it('requires renewed consent for changed OpenAPI methods and paths, including after a restart', async () => {
@@ -86,7 +93,7 @@ describe('App Builder previews in the app store (ADR 0054, plan B3)', () => {
     let previews = new ProjectPreviews({ installer, build })
     await previews.build(project)
     expect((await previews.describe(project)).consent?.added).toContain('operation orders orders GET /orders')
-    await previews.approve(project)
+    await approveShown(previews, project)
     const original = await previews.describe(project)
 
     // Stable operation ID: the authority comes from its actual HTTP method and path.
@@ -95,7 +102,7 @@ describe('App Builder previews in the app store (ADR 0054, plan B3)', () => {
     await previews.build(project)
     expect((await previews.describe(project)).consent?.added).toContain('operation orders orders DELETE /orders')
     expect((await previews.describe(project)).contributions).toEqual(original.contributions)
-    await previews.approve(project)
+    await approveShown(previews, project)
     await previews.build(project)
     expect((await previews.describe(project)).consent).toBeNull()
 
@@ -111,7 +118,7 @@ describe('App Builder previews in the app store (ADR 0054, plan B3)', () => {
     const installer = previewInstaller({ ...deps, backends: null }, 'app-builder')!
     const previews = new ProjectPreviews({ installer, build: async () => ({ ok: true, log: '', packageBytes: pkg }) })
     await previews.build(project)
-    await previews.approve(project)
+    await approveShown(previews, project)
     const installed = (await installer.current(previewAppId(project.id)))!
     expect(installed.manifest.id.length).toBeLessThanOrEqual(128)
     expect(parseManifest(JSON.stringify(installed.manifest)).findings).toEqual([])
@@ -133,7 +140,7 @@ describe('App Builder previews in the app store (ADR 0054, plan B3)', () => {
     const installer = previewInstaller({ ...deps, backends: null }, 'app-builder')!
     const previews = new ProjectPreviews({ installer, build: async () => ({ ok: true, log: '', packageBytes: bytes }) })
     await previews.build(project)
-    await previews.approve(project)
+    await approveShown(previews, project)
     bytes = pack('op GET /orders', 'delete', '/all')
     await previews.build(project)
     expect((await previews.describe(project)).consent).toMatchObject({ first: false, added: ['operation orders op GET /orders DELETE /all'] })

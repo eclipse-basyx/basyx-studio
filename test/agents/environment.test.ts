@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { agentProcessEnv, findExecutable, loginShellPath, mergePaths, pathFromShellOutput, versionFromOutput } from '../../server/lib/agents/environment'
+import { agentProcessEnv, cmdShimArgument, commandLaunch, findExecutable, loginShellPath, mergePaths, pathFromShellOutput, versionFromOutput } from '../../server/lib/agents/environment'
 import { opencodeDesktopCli } from '../../server/lib/agents/manager'
 
 describe('App Builder environment (ADR 0054)', () => {
@@ -35,6 +35,30 @@ describe('App Builder environment (ADR 0054)', () => {
     expect(findExecutable('claude', '/a:/b', { platform: 'linux', exists: file => files.has(file) })).toBe('/b/claude')
     expect(findExecutable('codex', '/a:/b', { platform: 'linux', exists: file => files.has(file) })).toBeNull()
     expect(findExecutable('opencode', String.raw`C:\tools`, { platform: 'win32', exists: file => files.has(file.replaceAll('/', '\\')) })).toMatch(/opencode\.cmd$/)
+  })
+
+  it('skips the extensionless npm script beside a Windows shim, and uses PATHEXT', () => {
+    const files = new Set([String.raw`C:\npm\claude`, String.raw`C:\npm\claude.cmd`, String.raw`C:\bin\git.exe`])
+    const exists = (file: string) => files.has(file)
+    expect(findExecutable('claude', String.raw`C:\npm`, { platform: 'win32', exists })).toBe(String.raw`C:\npm\claude.cmd`)
+    expect(findExecutable('git', String.raw`C:\npm;C:\bin`, { platform: 'win32', exists })).toBe(String.raw`C:\bin\git.exe`)
+    expect(findExecutable('claude', String.raw`C:\npm`, { platform: 'win32', pathExt: '.EXE', exists })).toBeNull()
+  })
+
+  it('starts Windows shims through cmd.exe, with each argument kept whole', () => {
+    expect(commandLaunch('/usr/bin/pnpm', ['build'], {}, 'linux')).toEqual({ file: '/usr/bin/pnpm', args: ['build'], windowsVerbatimArguments: false })
+    expect(commandLaunch(String.raw`C:\bin\git.exe`, ['status'], {}, 'win32')).toMatchObject({ file: String.raw`C:\bin\git.exe`, windowsVerbatimArguments: false })
+    const shim = commandLaunch(String.raw`C:\Program Files\nodejs\pnpm.cmd`, ['run', 'build'], { ComSpec: String.raw`C:\Windows\system32\cmd.exe` }, 'win32')
+    expect(shim).toEqual({
+      file: String.raw`C:\Windows\system32\cmd.exe`,
+      args: ['/d', '/s', '/c', String.raw`"C:\Program^ Files\nodejs\pnpm.cmd ^^^"run^^^" ^^^"build^^^""`],
+      windowsVerbatimArguments: true,
+    })
+    // Metacharacters stay literal through both of cmd.exe's passes.
+    expect(cmdShimArgument('a & b')).toBe('^^^"a^^^ ^^^&^^^ b^^^"')
+    expect(cmdShimArgument('say "hi"')).toBe(String.raw`^^^"say^^^ \^^^"hi\^^^"^^^"`)
+    expect(() => cmdShimArgument('%PATH%')).toThrow(/cmd\.exe/)
+    expect(() => cmdShimArgument('one\ntwo')).toThrow(/cmd\.exe/)
   })
 
   it('reads versions from the CLIs\' own wording', () => {

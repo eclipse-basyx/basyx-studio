@@ -336,6 +336,7 @@
     "app_revoked": "Diese Bereitstellung vertraut dieser App nicht mehr.",
     "app_sandbox_not_granted": "Der Herausgeber darf keine Apps veröffentlichen, die Code von außerhalb ihres Pakets ausführen.",
     "app_outdated": "Die App wurde aktualisiert. Laden Sie sie neu, um die neue Version zu verwenden.",
+    "preview_changed": "Die Vorschau wurde inzwischen neu gebaut. Prüfen Sie, was sie jetzt anfordert, bevor Sie sie zulassen.",
     "app_edit_mode_required": "Wechseln Sie in den Bearbeitungsmodus, damit die App Inhalte ändern kann.",
     "agent_unavailable": "Der Coding-Agent ist nicht verfügbar",
     "agent_busy": "Die Unterhaltung ist beschäftigt"

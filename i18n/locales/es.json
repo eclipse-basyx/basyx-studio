@@ -257,6 +257,7 @@
     "app_revoked": "Esta implementación ya no confía en esta app.",
     "app_sandbox_not_granted": "El editor no puede publicar apps que ejecutan código de fuera de su paquete.",
     "app_outdated": "La app se ha actualizado. Recárguela para usar la nueva versión.",
+    "preview_changed": "La vista previa se ha vuelto a compilar mientras tanto. Compruebe lo que solicita ahora antes de permitirla.",
     "app_edit_mode_required": "Cambie al modo de edición para que la app pueda modificar contenido.",
     "agent_unavailable": "El agente de programación no está disponible",
     "agent_busy": "La conversación está ocupada"

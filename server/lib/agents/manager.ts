@@ -507,9 +507,9 @@ export class AgentManager {
   }
 
   /** Installs the preview that waits for the user's OK (plan B4). */
-  async approvePreview (projectId: string): Promise<AppPreview> {
+  async approvePreview (projectId: string, digest: string): Promise<AppPreview> {
     const project = await this.#project(projectId)
-    await this.#requirePreviews().approve(project)
+    await this.#requirePreviews().approve(project, digest)
     return await this.#requirePreviews().describe(project)
   }
 

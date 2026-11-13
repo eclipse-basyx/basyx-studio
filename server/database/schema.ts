@@ -128,6 +128,11 @@ export const appInstallations = pgTable('app_installations', {
   managed: boolean('managed').notNull().default(false),
   /** The App Builder's preview of a project's app (ADR 0054): shown only in its preview pane, not in Studio's navigation or views. */
   preview: boolean('preview').notNull().default(false),
+  /**
+   * For a preview: the installed app of the project it previews, whose settings it starts
+   * from and whose infrastructure settings and connection bindings it uses (ADR 0054).
+   */
+  previewOf: text('preview_of'),
   /** The values an administrator set for the installation's settings (ADR 0048); kept by updates where they still fit. */
   settings: jsonb('settings').$type<AppSettingValues>().notNull().default({}),
   installedBy: text('installed_by').notNull(),

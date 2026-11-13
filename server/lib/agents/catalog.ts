@@ -7,24 +7,16 @@ import type { CommandResult } from './environment'
 // The edit modes and opencode's permission rules come from the Phase 0
 // spikes (docs/development/app-builder-plan.md, "Phase 0 results").
 
-/** Commands the agent may run in the project folder without asking (plan A1). */
+/**
+ * opencode's rules (plan A1): every edit and command asks, so Studio's policy
+ * (policy.ts) decides each one. Rules that allow by themselves would skip
+ * Studio, which then could neither keep the planning chat read-only nor
+ * refuse what its own command list leaves out (`git diff --output=<file>`).
+ */
 export const opencodePermissionRules = {
   permission: {
-    edit: 'allow',
-    bash: {
-      '*': 'ask',
-      'pnpm install': 'allow',
-      'pnpm install *': 'allow',
-      'pnpm build': 'allow',
-      'pnpm test': 'allow',
-      'pnpm test *': 'allow',
-      'pnpm typecheck': 'allow',
-      'pnpm lint': 'allow',
-      'pnpm package': 'allow',
-      'git status*': 'allow',
-      'git diff*': 'allow',
-      'git log*': 'allow',
-    },
+    edit: 'ask',
+    bash: { '*': 'ask' },
     webfetch: 'ask',
     external_directory: 'ask',
   },
@@ -127,7 +119,7 @@ export function agentCatalog (resolve: (specifier: string) => string): AgentDefi
       installUrl: 'https://opencode.ai/download',
       signInCommand: 'opencode auth login',
       editMode: null,
-      // opencode asks Studio for everything its rules do not allow, and Studio allows it.
+      // opencode asks Studio for every edit and command, and Studio allows it.
       unrestrictedMode: null,
       readOnlyMode: null,
       denyEndsTurn: true,
