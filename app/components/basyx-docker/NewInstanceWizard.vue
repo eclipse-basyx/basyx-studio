@@ -455,8 +455,6 @@
             <span class="text-end">{{ fact.value }}</span>
           </div>
         </div>
-
-        <v-card class="text-body-small text-medium-emphasis pa-3">{{ t('wizard.summaryNote') }}</v-card>
       </v-sheet>
 
       <!-- Hidden, the summary folds into a rail on the right edge that opens it again. -->
