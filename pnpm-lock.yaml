@@ -188,8 +188,8 @@ importers:
         specifier: 1.2.1
         version: 1.2.1(@nuxt/schema@4.6.4)(@pinia/colada@1.4.9(pinia@4.1.0(@vue/devtools-api@8.2.1)(typescript@6.0.3)(vue@3.5.45(typescript@6.0.3)))(vue@3.5.45(typescript@6.0.3)))(confbox@0.3.1)(dotenv@17.4.2)(giget@3.3.1)(jiti@2.7.0)(magic-string@1.4.5)(mlly@1.8.2)(oxc-parser@0.141.0)(rolldown@1.2.18)(unplugin@3.7.0(esbuild@0.28.2)(rolldown@1.2.18)(rollup@4.67.4)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(sass@1.108.2)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1)))
       '@plantuml/core':
-        specifier: ^1.2026.9
-        version: 1.2026.9
+        specifier: ^1.2026.10
+        version: 1.2026.10
       aas-package3-typescript:
         specifier: ^1.1.0
         version: 1.1.0
@@ -2789,8 +2789,8 @@ packages:
     resolution: {integrity: sha512-SEeaJLb3qBNF/OaXnaR1NmmBbFYk1zC0ZH/52fATcRPLFg/p791YrcyFFy44Bo9sLaGuSuLp5Q6axbb/O+v/RA==}
     engines: {node: ^14.18.0 || >=16.0.0}
 
-  '@plantuml/core@1.2026.9':
-    resolution: {integrity: sha512-Qy46og9hEb+wOFtjUfniWkl/BDwHpDuebQX5rF+35s9PS2G4cKZf1iWw4E/ELLQ0pTkESPDoQTbKWcc3ZyVcVA==}
+  '@plantuml/core@1.2026.10':
+    resolution: {integrity: sha512-m67zsiUiJGAUfrk7xM2i3b9Y8HPefXder+v7STblGZgW96GUOnJTCBfJAX1d9ElDzV9d7zrEJO9S7/FHfkaGMg==}
 
   '@playwright/test@1.65.0':
     resolution: {integrity: sha512-iGURLGuKDLakSEl7Pgfv8h7f+XLT+V861Wfhz0zlEl5nyFuKUopdkFBPKqTllTUp06aOwPuH8iuUEb3yp3MpbQ==}
@@ -10257,7 +10257,7 @@ snapshots:
 
   '@pkgr/core@0.3.6': {}
 
-  '@plantuml/core@1.2026.9': {}
+  '@plantuml/core@1.2026.10': {}
 
   '@playwright/test@1.65.0':
     dependencies:
