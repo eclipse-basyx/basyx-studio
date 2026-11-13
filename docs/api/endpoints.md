@@ -309,3 +309,42 @@ restoring it.
 
 External links and clipboard writes run from an explicit action on the native
 page. Lifecycle calls are audited with their result when their job ends.
+
+## App Builder (desktop, ADR 0054)
+
+The native App Builder page runs coding agents (Claude Code, Codex, opencode)
+over the Agent Client Protocol. It uses `POST /app-builder/{operation}`, with
+the user's Studio session and CSRF token; in hosted mode every operation
+answers `unsupported_operation`.
+
+`createProject` and `addFolder` accept an optional `previewTargetId` (a target
+ID or `null`). It is saved on the project and returned by `listProjects`;
+the preview uses it by default. With no saved target, it uses Studio's
+current target.
+
+| Operation | Purpose |
+| --- | --- |
+| `getStatus` | Which agent CLIs are installed and signed in, the models each agent offered in its last chat (`model`, null before its first), and where node, pnpm and git are (`refresh: true` checks again) |
+| `listProjects` | The projects (an app's sources in a git folder on this computer), each with its chats |
+| `createProject` | Creates a project under the projects folder from the template, or as a copy of a bundled app (`source`), commits it, and starts a chat, with `model` when the agent offers it; a prompt starts its first turn. With `planning` (`requirements`, `plan`, the planning chat's `draftId`), Studio writes `docs/requirements.md` and `docs/plan.md` into the first commit, ends the planning chat, and the first turn builds the app from them, with the prompt as the user's idea |
+| `addFolder`, `listBundledApps` | Registers an app's folder (an `app-project` grant) where it is; the bundled apps a project can copy |
+| `startDraft`, `draftTurn`, `discardDraft` | The planning chat of a new app: the agent (and `model`) runs read-only in a temporary folder with the app template, made for the app's `name` as it would be created now, where Studio allows reading and searching and denies everything else; it is not saved. `draftTurn` sends a turn of a `stage` (`requirements` or `plan`) with the user's `message` (empty: the stage's first draft), the `name`, the `idea` and both documents as the user edited them; the chat shows only the message, and the agent returns the stage's whole document in a fenced block with the info string `studio-requirements` or `studio-plan`. Its events are a conversation's (`GET …/conversations/{conversationId}/events`) |
+| `getAgentModels` | The models an agent offers for a new chat: those of its last chat, else asked once from a session without a prompt in an empty temporary folder |
+| `removeProject`, `openFolder` | Removes a project from Studio, with `deleteFolder: true` also its folder; opens the folder in the file manager |
+| `listProjectFiles`, `readProjectFile`, `saveProjectFile` | Browses a registered project's folders by relative `path`, opens a UTF-8 text file (up to 2 MiB), and saves `content` with the opened file's `revision` (SHA-256). Saves fail with `revision_conflict` after another edit and `agent_busy` while the agent works. Git internals, dependencies, path traversal and symbolic links cannot be opened |
+| `startConversation`, `deleteConversation` | A new chat in a project's folder with one agent (and `model`, as `createProject`); deletes a chat and its history (the files stay) |
+| `sendPrompt`, `cancelTurn` | Starts a turn (and a saved chat's agent, resuming its session), or stops it; the turn's progress arrives as events |
+| `answerApproval` | `allowOnce`, `allowInChat` or `deny` for a permission request that Studio's policy did not answer |
+| `setModel` | Switches the agent's model, where it offers a choice |
+| `setSetting` | Sets the agent's `model`, `effort` (ACP config category `thought_level`) or `speed` (Claude's fast mode, `on`/`off`) to one of the values it offers; a stopped agent takes it when it starts. A chat's `state` events carry all three, and `usage` events report the context window's `used` and `size` in tokens |
+| `setPermissionMode` | `ask`, `auto` or `unrestricted` for a chat; `unrestricted` needs `acknowledgeRisk: true` and is not kept when Studio restarts |
+| `getChanges`, `undoTurn` | A turn's commit as a patch; undoes a turn and the ones after it in a new commit |
+| `getPreview`, `buildPreview`, `approvePreview` | A project's last build and its preview installation (`local.preview.p<projectId>`, UUID hyphens removed, shown only in the App Builder); builds it now; installs a build that waited for the user's OK on new permissions or connection operations |
+| `getReleaseInfo`, `getMachineKey` | The app's version and the installed one, with the versions it could take; this computer's signing key (created on first use) |
+| `inspectRelease`, `installRelease`, `exportRelease` | Raises the version if asked, builds and signs (unsigned, this computer's key, or an own key from a `signing-key` grant) and checks the package as an upload; installs the checked package; saves it with its `.sig` to an `app-package` grant. Administrators only |
+
+`GET /app-builder/conversations/{conversationId}/events` streams a
+conversation's events as Server-Sent Events, each with its number as `id`;
+`?after=` or `Last-Event-ID` resumes after a given event. The schemas are in
+`shared/contract/app-builder.ts`. Failures use `agent_unavailable` (CLI
+missing, signed out, or the agent stopped) and `agent_busy`.

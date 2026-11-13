@@ -1,0 +1,161 @@
+{
+  "app": {
+    "subtitle": "Sag, was fer e App de willscht, unn e Coding-Agent baut se der uff dem Rechner."
+  },
+  "chats": {
+    "untitled": "Neier Chat",
+    "cancel": "Losses",
+    "delete": "Chat wegmache",
+    "deleteTitle": "Den Chat wegmache?",
+    "deleteText": "De Chat unn alles, was drin steht, is dann fort. Die Dateie vun de App unn de Git-Verlauf bleiwe."
+  },
+  "agents": {
+    "heading": "Agente",
+    "ready": "Parat",
+    "missing": "Net installiert",
+    "error": "Hot net geklappt",
+    "install": "{agent} hole",
+    "signIn": "Im Terminal oomelde: {command}",
+    "recheck": "Nochemol gucke",
+    "tools": "Werkzeich",
+    "toolMissing": "net gfunne",
+    "noneReady": "Ken Coding-Agent is parat. Mach der Claude Code, Codex odder opencode druff, meld dich oo unn guck nochemol."
+  },
+  "chat": {
+    "placeholder": "Sag, was die App mache soll odder was annerscht werre soll …",
+    "send": "Abschicke",
+    "stop": "Halt!",
+    "starting": "{agent} werd oogschmisse …",
+    "working": "{agent} schafft …",
+    "failed": "De Agent hot uffgheert. Schreib ebbes, dann geht's widder los.",
+    "reconnecting": "Verbinnung kummt glei widder …",
+    "emptyTitle": "Alla, was baue mer?",
+    "emptyText": "Sag, was die App mache soll, odder was annerscht werre soll.",
+    "thinking": "Iwwerlegt",
+    "inactive": "De Agent legt los, wann de ebbes schreibscht.",
+    "finished": "{agent} is fertisch."
+  },
+  "mode": {
+    "label": "Rechte",
+    "ask": "Nochfroge",
+    "auto": "Auto",
+    "unrestricted": "Ohne Bremse",
+    "warningTitle": "Ohne Bremse oomache?",
+    "enable": "Ohne Bremse oomache",
+    "cancel": "Losses",
+    "back": "Zurick zu Nochfroge",
+    "active": "Ohne Bremse: {agent} macht, ohne se froge, iwwerall uff dem Rechner."
+  },
+  "tool": {
+    "read": "Lese",
+    "edit": "Dro rumschaffe",
+    "delete": "Wegmache",
+    "move": "Verschiewe",
+    "search": "Suche",
+    "execute": "Ausfiehre",
+    "think": "Iwwerlege",
+    "fetch": "Hole",
+    "other": "Werkzeich",
+    "failed": "Hot net geklappt",
+    "output": "Was rauskumme is",
+    "newFile": "Nei Datei",
+    "running": "Lafft",
+    "completed": "Fertisch"
+  },
+  "approval": {
+    "title": "{agent} frogt, ob er derf",
+    "command": "Befehl",
+    "files": "Dateie",
+    "allowOnce": "Ämol derfscht",
+    "allowInChat": "In dem Chat derfscht",
+    "deny": "Nix do",
+    "allowed": "Derf er",
+    "denied": "Derf er net",
+    "autoAllowed": "Derf er: im Ordner vun de App",
+    "autoAllowedAuto": "Derf er: Auto",
+    "autoAllowedUnrestricted": "Derf er: ohne Bremse",
+    "cancelled": "Brauchts nimmi",
+    "denyEndsTurn": "Wann de Nix do sagscht, heert de Agent mit dem Durchgang uff."
+  },
+  "notice": {
+    "cancelled": "Gestoppt.",
+    "refusal": "De Agent hot ken Luscht.",
+    "error": "De Durchgang is schief gange."
+  },
+  "projects": {
+    "new": "Nei App",
+    "empty": "Noch ke Apps.",
+    "newChat": "Neier Chat mit {agent}",
+    "openFolder": "Ordner uffmache",
+    "copyPath": "Ordnerpfad abschreiwe",
+    "actions": "Was mer mit {name} mache kann",
+    "remove": "App rausschmeiße …",
+    "removeTitle": "{name} aus Studio rausschmeiße?",
+    "removeConfirm": "Rausschmeiße",
+    "keepsFolder": "De Ordner {folder} bleibt, wie er is."
+  },
+  "newApp": {
+    "title": "Nei App",
+    "model": "Modell",
+    "modelLater": "{agent} losst dich ke Modell aussuche; er nimmt sei eigenes.",
+    "prompt": "Was soll die App dann mache?",
+    "create": "Alla hopp",
+    "cancel": "Losses",
+    "startFrom": "Wo mer oofange",
+    "empty": "Leeri App",
+    "copy": "Kopie vun ere mitgelieferte App",
+    "folder": "Ordner uff dem Rechner",
+    "chooseFolder": "Ordner aussuche …",
+    "add": "Dezu due"
+  },
+  "checkpoint": {
+    "title": "{count} Dateie geännert unn committet",
+    "titleOne": "1 Datei geännert unn committet",
+    "show": "Zeich, was annerscht is",
+    "undo": "Ab do zurick",
+    "undone": "Zurickgemacht",
+    "undoConfirm": "Zurickmache",
+    "close": "Zumache",
+    "added": "nei",
+    "modified": "geännert",
+    "deleted": "fort",
+    "renamed": "umgedaaft"
+  },
+  "build": {
+    "running": "Studio baut die App …",
+    "failed": "De Build is schief gange",
+    "fix": "De Agent soll's richte",
+    "succeeded": "Gebaut. Die Vorschau zeicht die nei Version."
+  },
+  "preview": {
+    "title": "Vorschau",
+    "toggle": "Vorschau oo- odder ausmache",
+    "rebuild": "Nochemol baue",
+    "close": "Vorschau zumache",
+    "allow": "Derf se, zeich se",
+    "none": "Noch ke Vorschau. Die kummt nach de nächschte Ännerung vum Agent, odder bau se jetzt.",
+    "show": "Zeiche",
+    "needsTarget": "Such der e Ziel aus, wo die App druff laafe soll."
+  },
+  "previewBuild": {
+    "none": "Net gebaut",
+    "running": "Werd gebaut",
+    "succeeded": "Gebaut",
+    "failed": "Build schief gange"
+  },
+  "install": {
+    "title": "{name} installiere",
+    "cancel": "Losses",
+    "check": "Baue unn gucke",
+    "done": "{name} {version} is druff.",
+    "action": "In Studio installiere"
+  },
+  "planning": {
+    "start": "Mit {agent} plane",
+    "skip": "Ohne Plan mache",
+    "next": "Weider zum Plan",
+    "create": "App mache",
+    "drafting": "{agent} schreibt de erschde Entworf …",
+    "working": "{agent} schreibt …"
+  }
+}

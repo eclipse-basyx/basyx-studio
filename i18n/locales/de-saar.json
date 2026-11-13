@@ -392,6 +392,7 @@
   "nav": {
     "targets": "AAS-Ziele",
     "targetsShort": "Ziele",
+    "appBuilderDesktopOnly": "De App Builder losst Coding-Agente uff deim Rechner laafe unn geht nur in de BaSyx-Studio-Desktop-App.",
     "dashboard": "Dehemm",
     "dashboardShort": "Dehemm",
     "shells": "Verwaltungsschale",

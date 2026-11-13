@@ -510,7 +510,10 @@
   const navItems = computed<NavItem[]>(() => {
     const items: NavItem[] = [{ key: 'targets', title: t('nav.targets'), short: t('nav.targetsShort'), icon: 'mdi-server-network', to: '/', exact: true }]
     if (session.isDesktop) {
-      items.push({ key: 'docker', title: t('nav.docker'), short: t('nav.dockerShort'), icon: 'mdi-docker', to: '/docker' })
+      items.push(
+        { key: 'docker', title: t('nav.docker'), short: t('nav.dockerShort'), icon: 'mdi-docker', to: '/docker' },
+        { key: 'app-builder', title: t('nav.appBuilder'), short: t('nav.appBuilderShort'), icon: 'mdi-creation-outline', to: '/app-builder' },
+      )
     }
     if (activeTargetId.value) {
       const base = `/targets/${activeTargetId.value}`

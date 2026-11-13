@@ -1,4 +1,4 @@
-import type { AppSettingValues, ClientCertificateSummary, Connection, EndpointInput, InfrastructureAppSettings, InfrastructureTemplate, ListSource, Preferences, SecuritySummary, ServiceProfiles, StackComponentId, StackSpec, SyncSettings } from '#shared/contract'
+import type { AgentId, AppProjectOrigin, AppSettingValues, ClientCertificateSummary, Connection, ConversationEvent, EndpointInput, InfrastructureAppSettings, InfrastructureTemplate, ListSource, Preferences, SecuritySummary, ServiceProfiles, StackComponentId, StackSpec, SyncSettings } from '#shared/contract'
 import type { AppManifest } from '@basyx/studio-sdk/protocol'
 import { boolean, customType, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 
@@ -126,6 +126,13 @@ export const appInstallations = pgTable('app_installations', {
   bundled: boolean('bundled').notNull().default(false),
   /** Installed from STUDIO_APP_PACKAGES at startup; not changed or uninstalled in the UI. */
   managed: boolean('managed').notNull().default(false),
+  /** The App Builder's preview of a project's app (ADR 0054): shown only in its preview pane, not in Studio's navigation or views. */
+  preview: boolean('preview').notNull().default(false),
+  /**
+   * For a preview: the installed app of the project it previews, whose settings it starts
+   * from and whose infrastructure settings and connection bindings it uses (ADR 0054).
+   */
+  previewOf: text('preview_of'),
   /** The values an administrator set for the installation's settings (ADR 0048); kept by updates where they still fit. */
   settings: jsonb('settings').$type<AppSettingValues>().notNull().default({}),
   installedBy: text('installed_by').notNull(),
@@ -181,4 +188,59 @@ export const containerSettings = pgTable('container_settings', {
   /** The chosen engine; `null` picks the first running one. */
   engineHost: text('engine_host'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+/**
+ * The App Builder's projects (ADR 0054, desktop only): an app's sources in a
+ * folder on this computer, which coding agents change. The files stay in
+ * the folder; this row says where it is and what it holds.
+ */
+export const appProjects = pgTable('app_projects', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  /** The app ID in its `studio-app.json`. */
+  appId: text('app_id').notNull(),
+  folder: text('folder').notNull().unique(),
+  origin: text('origin').$type<AppProjectOrigin>().notNull(),
+  /** The bundled app a copy started from. */
+  source: text('source'),
+  /** The default target used by the App Builder preview. */
+  previewTargetId: text('preview_target_id'),
+  ...timestamps,
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+/** A chat with one coding agent in a project's folder. */
+export const appBuilderConversations = pgTable('app_builder_conversations', {
+  id: text('id').primaryKey(),
+  projectId: text('project_id').notNull().references(() => appProjects.id, { onDelete: 'cascade' }),
+  agentId: text('agent_id').$type<AgentId>().notNull(),
+  title: text('title').notNull().default(''),
+  /** The agent's ACP session, for `session/load`. */
+  sessionId: text('session_id'),
+  /** The model the user chose, set again after a load. */
+  model: text('model'),
+  ...timestamps,
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, table => [index('app_builder_conversations_project').on(table.projectId)])
+
+/** What happened in a chat, to show it again (ADR 0054). */
+export const appBuilderEvents = pgTable('app_builder_events', {
+  conversationId: text('conversation_id').notNull().references(() => appBuilderConversations.id, { onDelete: 'cascade' }),
+  seq: integer('seq').notNull(),
+  at: timestamp('at', { withTimezone: true }).notNull(),
+  event: jsonb('event').$type<ConversationEvent>().notNull(),
+}, table => [primaryKey({ columns: [table.conversationId, table.seq] })])
+
+/**
+ * The App Builder's signing key of this computer (ADR 0054, plan B7): it
+ * signs the apps this computer builds, and Studio trusts it for `local.*`.
+ * The private key is encrypted with Studio's data key.
+ */
+export const machineSigningKeys = pgTable('machine_signing_keys', {
+  id: text('id').primaryKey(),
+  publicKey: text('public_key').notNull(),
+  privateKeyCiphertext: text('private_key_ciphertext').notNull(),
+  fingerprint: text('fingerprint').notNull(),
+  ...timestamps,
 })

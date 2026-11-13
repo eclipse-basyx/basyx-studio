@@ -14,6 +14,7 @@ This directory is the central source of product, architecture, decision, and dev
 ## Product
 
 - [Requirements](requirements.md): traceable product capabilities, priorities, and non-goals
+- [App Builder](app-builder.md): build, preview and install apps by chatting with a coding agent in the desktop app
 
 ## Architecture
 
@@ -53,6 +54,7 @@ ADRs are normative for architecture. If a later decision changes an accepted ADR
 - [External apps plan](development/external-apps-plan.md): published SDK and app kit, signed packages and updates, and a pilot app from another repository
 - [External apps follow-up plan](development/external-apps-follow-up-plan.md): what a multi-page app still misses after the pilot: shell summaries, settings per installation, history, localization, viewer size, views of other apps
 - [Package editing plan](development/package-editing-plan.md): details pane and headers, several open AASX packages, a typed clipboard with copies between targets, import and export formats
+- [App Builder plan](development/app-builder-plan.md): build, preview, install and improve apps by chatting with Claude, Codex or opencode on the desktop
 - [Test environment](../test-setup/README.md): local IdP and BaSyx targets for dev, build, and Electron testing
 - [Continuous integration](development/ci.md): the CI jobs, when a pull request skips one, and the end-to-end shards
 

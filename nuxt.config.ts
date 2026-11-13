@@ -119,11 +119,21 @@ export default defineNuxtConfig({
     // imports that plain Node ESM cannot load, so it must be bundled.
     externals: {
       inline: ['@aas-core-works/aas-core3.1-typescript'],
+      // The App Builder starts the ACP adapters as scripts (ADR 0054); nothing
+      // imports them, so tracing has to be told to copy them.
+      traceInclude: [
+        createRequire(import.meta.url).resolve('@agentclientprotocol/claude-agent-acp/dist/index.js'),
+        createRequire(import.meta.url).resolve('@agentclientprotocol/codex-acp/dist/index.js'),
+      ],
     },
     serverAssets: [
       { baseName: 'migrations', dir: './database/migrations' },
       // Apps shipped with Studio (ADR 0023), packaged by `pnpm apps:bundle`.
       { baseName: 'bundled-apps', dir: './bundled-apps' },
+      // The App Builder's template for new projects (ADR 0054).
+      { baseName: 'app-template', dir: '../examples/apps/starter', ignore: ['node_modules/**', 'dist/**', '*.zip', '*.sig'] },
+      // The sources of the bundled apps, which the App Builder copies (ADR 0054, plan P4).
+      { baseName: 'bundled-app-sources', dir: '../apps', ignore: ['**/node_modules/**', '**/dist/**', '**/*.zip', '**/*.sig'] },
     ],
   },
 

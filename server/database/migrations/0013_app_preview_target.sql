@@ -1,0 +1,1 @@
+ALTER TABLE "app_projects" ADD COLUMN "preview_target_id" text;

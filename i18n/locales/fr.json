@@ -257,7 +257,10 @@
     "app_revoked": "Ce déploiement ne fait plus confiance à cette app.",
     "app_sandbox_not_granted": "L’éditeur ne peut pas publier d’apps qui exécutent du code venant d’ailleurs que leur paquet.",
     "app_outdated": "L’app a été mise à jour. Rechargez-la pour utiliser la nouvelle version.",
-    "app_edit_mode_required": "Passez en mode édition pour que l’app puisse modifier le contenu."
+    "preview_changed": "L’aperçu a été reconstruit entre-temps. Vérifiez ce qu’il demande maintenant avant de l’autoriser.",
+    "app_edit_mode_required": "Passez en mode édition pour que l’app puisse modifier le contenu.",
+    "agent_unavailable": "L'agent de programmation n'est pas disponible",
+    "agent_busy": "La conversation est occupée"
   },
   "admin": {
     "title": "Infrastructures",
@@ -515,6 +518,7 @@
     "package": "Paquet d'application",
     "installed": "{name} {version} installée.",
     "uninstall": "Désinstaller",
+    "copyAndChange": "Copier et modifier dans le créateur d'applications",
     "uninstallConfirm": "Désinstaller « {name} » ? Ses vues et modules disparaissent pour tous les utilisateurs. Les données AAS modifiées par l'application restent telles quelles.",
     "cancel": "Annuler",
     "noApps": "Aucune application n'est installée.",
@@ -643,6 +647,9 @@
     "docker": "BaSyx Docker",
     "dockerShort": "Docker",
     "dockerDesktopOnly": "Les instances BaSyx locales sont disponibles uniquement dans l’application de bureau BaSyx Studio.",
+    "appBuilder": "Créateur d'applications",
+    "appBuilderShort": "Créateur",
+    "appBuilderDesktopOnly": "Le créateur d'applications exécute des agents de programmation sur votre ordinateur et n'est disponible que dans l'application de bureau BaSyx Studio.",
     "dashboard": "Accueil",
     "dashboardShort": "Accueil",
     "shells": "AAS",

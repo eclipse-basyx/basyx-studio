@@ -257,7 +257,10 @@
     "app_revoked": "Deze implementatie vertrouwt deze app niet meer.",
     "app_sandbox_not_granted": "De uitgever mag geen apps publiceren die code van buiten hun pakket uitvoeren.",
     "app_outdated": "De app is bijgewerkt. Laad hem opnieuw om de nieuwe versie te gebruiken.",
-    "app_edit_mode_required": "Schakel over naar de bewerkmodus zodat de app inhoud kan wijzigen."
+    "preview_changed": "De preview is intussen opnieuw gebouwd. Controleer wat hij nu vraagt voordat u hem toestaat.",
+    "app_edit_mode_required": "Schakel over naar de bewerkmodus zodat de app inhoud kan wijzigen.",
+    "agent_unavailable": "De codeeragent is niet beschikbaar",
+    "agent_busy": "Het gesprek is bezig"
   },
   "admin": {
     "title": "Infrastructuren",
@@ -515,6 +518,7 @@
     "package": "App-pakket",
     "installed": "{name} {version} geïnstalleerd.",
     "uninstall": "Verwijderen",
+    "copyAndChange": "Kopiëren en wijzigen in de App Builder",
     "uninstallConfirm": "‘{name}’ verwijderen? De weergaven en modules ervan verdwijnen voor alle gebruikers. AAS-gegevens die de app heeft gewijzigd, blijven zoals ze zijn.",
     "cancel": "Annuleren",
     "noApps": "Er zijn geen apps geïnstalleerd.",
@@ -643,6 +647,9 @@
     "docker": "BaSyx Docker",
     "dockerShort": "Docker",
     "dockerDesktopOnly": "Lokale BaSyx-instanties zijn alleen beschikbaar in de BaSyx Studio-desktopapp.",
+    "appBuilder": "App Builder",
+    "appBuilderShort": "Builder",
+    "appBuilderDesktopOnly": "De App Builder voert codeeragents uit op je computer en is alleen beschikbaar in de BaSyx Studio-desktopapp.",
     "dashboard": "Start",
     "dashboardShort": "Start",
     "shells": "AAS'en",

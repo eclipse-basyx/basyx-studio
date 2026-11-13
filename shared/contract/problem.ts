@@ -66,6 +66,8 @@ export const problemCodes = [
   'app_outdated',
   /** A structural write or attachment upload of an app outside Studio's edit mode (MVP-7 A1). */
   'app_edit_mode_required',
+  /** The App Builder built another preview package after the one the user was asked to allow (ADR 0054, plan B4). */
+  'preview_changed',
   'app_not_found',
   'app_permission_not_declared',
   'app_backend_unavailable',
@@ -89,6 +91,11 @@ export const problemCodes = [
   'container_start_failed',
   /** The engine refused an operation. */
   'container_operation_failed',
+  // The App Builder's coding agents (ADR 0054)
+  /** The agent's CLI is missing or signed out, or the agent process stopped. */
+  'agent_unavailable',
+  /** The conversation is in a turn already, or not in one. */
+  'agent_busy',
   // Connections to third-party services (ADR 0040)
   /** No connection of the infrastructure serves this purpose for the service the content names. */
   'connection_not_configured',

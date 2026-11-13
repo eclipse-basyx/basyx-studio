@@ -1,0 +1,1 @@
+ALTER TABLE "app_installations" ADD COLUMN "preview_of" text;

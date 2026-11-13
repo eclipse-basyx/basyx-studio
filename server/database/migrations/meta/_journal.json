@@ -71,6 +71,41 @@
       "when": 1792594067392,
       "tag": "0009_app_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794234929049,
+      "tag": "0010_app_builder",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794237193199,
+      "tag": "0011_app_previews",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794237738795,
+      "tag": "0012_machine_signing_key",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794408147341,
+      "tag": "0013_app_preview_target",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794559133562,
+      "tag": "0014_app_preview_source",
+      "breakpoints": true
     }
   ]
 }

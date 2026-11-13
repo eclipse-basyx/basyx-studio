@@ -1,9 +1,14 @@
 import type { DeploymentMode } from '#shared/contract'
 import type { StudioDeps } from '../lib/deps'
 import { existsSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import { dirname, join } from 'node:path'
 import { useRuntimeConfig } from 'nuxt/server'
 import { apiBasePath } from '#shared/contract'
+import { agentCatalog } from '../lib/agents/catalog'
+import { AgentManager, defaultProjectsDir } from '../lib/agents/manager'
+import { findMachineKey, trustMachineKey } from '../lib/app-projects/keys'
+import { DatabaseProjectStore } from '../lib/app-projects/store'
 import { embedTokenKey } from '../lib/apps/embeds'
 import { reconcileManagedPackages } from '../lib/apps/packages'
 import { BackendRunner } from '../lib/apps/runner'
@@ -28,8 +33,10 @@ import { CredentialBroker } from '../lib/targets/credentials'
 import { studioPath } from '../lib/urls'
 import { WorkspaceWorkerClient } from '../lib/workspaces/client'
 import { WorkspaceManager } from '../lib/workspaces/manager'
+import { loadAppTemplate, loadBundledAppSources } from '../nitro/app-template'
 import { loadBundledApps } from '../nitro/bundled-apps'
 import { loadMigrationsFromAssets } from '../nitro/migration-assets'
+import { previewInstaller, releaseInstaller } from './app-builder'
 
 export interface StudioRuntime extends StudioDeps {
   broker: CredentialBroker
@@ -49,6 +56,8 @@ export interface StudioRuntime extends StudioDeps {
   copies: CopyPlanStore
   /** Local BaSyx instances on Docker or Podman (ADR 0033); `null` when hosted. */
   containers: ContainerManager | null
+  /** The App Builder's coding agents (ADR 0054); `null` when hosted. */
+  agents: AgentManager | null
   close: () => Promise<void>
 }
 
@@ -137,6 +146,14 @@ async function initialize (): Promise<StudioRuntime> {
       // Apps before infrastructures: declared settings values are checked against them (ADR 0048).
       await installManagedPackages(deps)
       await installBundledApps(deps)
+      if (config.appBuilder) {
+        // The App Builder's key signs this computer's apps (ADR 0054); without
+        // it here, their installations would read as revoked.
+        const machineKey = await findMachineKey(deps)
+        if (machineKey) {
+          trustMachineKey(config.apps.trustStore, machineKey.publicKey)
+        }
+      }
       await reportRevokedApps(deps)
     }
     const declared = await reconcileManagedInfrastructures(deps, parseInfrastructureSources(config.managedInfrastructures))
@@ -182,6 +199,23 @@ async function initialize (): Promise<StudioRuntime> {
           },
         })
       : null
+    const agents = config.appBuilder
+      ? new AgentManager({
+          projectsDir: config.appBuilder.projectsDir ?? defaultProjectsDir(),
+          store: new DatabaseProjectStore(deps.db),
+          template: loadAppTemplate,
+          bundledSources: loadBundledAppSources,
+          takeFolder: handle => fileGrants.take(handle, 'app-project'),
+          studioVersion: String(runtimeConfig.version ?? '0.0.0'),
+          previews: previewInstaller({ ...deps, backends }, 'app-builder'),
+          releases: releaseInstaller({ ...deps, backends, fileGrants }),
+          // The adapters are started as scripts, never imported; Nitro's file
+          // tracing copies them into the server output (nuxt.config.ts).
+          agents: agentCatalog(createRequire(import.meta.url).resolve),
+          // Electron's Node in the desktop app (ELECTRON_RUN_AS_NODE).
+          nodePath: process.execPath,
+        })
+      : null
     console.info(`[studio] ${config.deploymentMode} mode, ${config.database.kind} database, public URL ${config.publicUrl}${config.basePath}`)
     return {
       ...deps,
@@ -194,7 +228,9 @@ async function initialize (): Promise<StudioRuntime> {
       fileGrants,
       copies: new CopyPlanStore(),
       containers,
+      agents,
       close: async () => {
+        await agents?.dispose()
         backends?.dispose()
         await containers?.dispose()
         workspaces?.dispose()

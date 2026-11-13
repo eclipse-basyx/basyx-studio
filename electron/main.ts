@@ -1,3 +1,4 @@
+import type { PreviewSelection, PreviewWindowRequest } from '../shared/app-preview-window'
 import type { ChildProcess } from 'node:child_process'
 import type { AddressInfo } from 'node:net'
 
@@ -10,7 +11,9 @@ import { join } from 'node:path'
 
 import { app, BrowserWindow, dialog, ipcMain, protocol, safeStorage, session, shell } from 'electron'
 import packageJson from '../package.json'
-import { isSaveKind, isStackFileKind, stackFileExtensions } from '../shared/file-grant-kinds'
+import { previewWindowUrl } from '../shared/app-preview-window'
+import { fileGrantExtensions, isFileGrantKind, isFolderKind, isSaveKind } from '../shared/file-grant-kinds'
+import { PreviewWindows } from './preview-windows'
 
 const launchSecretHeader = 'X-Studio-Launch-Secret'
 const brokerSecretHeader = 'X-Studio-Broker-Secret'
@@ -36,6 +39,7 @@ let rendererUrl: string | undefined
 let rendererLaunchSecret: string | undefined
 let studioService: ChildProcess | undefined
 let isQuitting = false
+const previewSelections = new Map<number, PreviewSelection>()
 
 function validateDevServerUrl (value: string): string {
   const url = new URL(value)
@@ -252,7 +256,7 @@ function guardFrameNavigation (win: BrowserWindow, url: string): void {
   })
 }
 
-async function createWindow (url: string, launchSecret?: string): Promise<void> {
+async function createWindow (url: string, launchSecret?: string, preview?: PreviewWindowRequest): Promise<BrowserWindow> {
   const rendererSession = session.fromPartition('studio')
   isolateApps(rendererSession, url, launchSecret)
 
@@ -272,16 +276,16 @@ async function createWindow (url: string, launchSecret?: string): Promise<void> 
 
   const win = new BrowserWindow({
     show: false,
-    title: 'BaSyx Studio',
+    title: preview ? 'Preview — BaSyx Studio' : 'BaSyx Studio',
     // Packaged builds take the icon from electron-builder (build/icon.*);
     // the development window runs the stock Electron and needs it here.
     ...(app.isPackaged ? {} : { icon: developmentIcon() }),
     // Room for the navigation rail, the shell list and the shell page; below
     // 960 px Studio switches to its phone layout.
-    width: 1440,
-    height: 900,
-    minWidth: 1024,
-    minHeight: 640,
+    width: preview ? 1000 : 1440,
+    height: preview ? 760 : 900,
+    minWidth: preview ? 480 : 1024,
+    minHeight: preview ? 400 : 640,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -290,6 +294,11 @@ async function createWindow (url: string, launchSecret?: string): Promise<void> 
       preload: join(import.meta.dirname, 'preload.cjs'),
     },
   })
+  if (preview) {
+    const contentsId = win.webContents.id
+    previewSelections.set(contentsId, preview.selection)
+    win.once('closed', () => previewSelections.delete(contentsId))
+  }
   guardUnsavedWorkspaces(win)
   guardFrameNavigation(win, url)
 
@@ -300,7 +309,8 @@ async function createWindow (url: string, launchSecret?: string): Promise<void> 
     }
   })
   // IdP sign-in for targets runs in the system browser (RFC 8252); the
-  // renderer never opens other windows. Email addresses and phone numbers
+  // renderer opens preview windows only through the validated native bridge.
+  // Email addresses and phone numbers
   // that apps open (studio.ui.openExternal) go to the mail or phone app.
   win.webContents.setWindowOpenHandler(({ url: targetUrl }) => {
     const protocol = new URL(targetUrl).protocol
@@ -311,11 +321,24 @@ async function createWindow (url: string, launchSecret?: string): Promise<void> 
   })
   win.once('ready-to-show', () => win.show())
 
-  await win.loadURL(url)
-  if (!app.isPackaged) {
-    win.webContents.openDevTools()
+  try {
+    await win.loadURL(preview ? previewWindowUrl(url, preview) : url)
+    if (!app.isPackaged && !preview) {
+      win.webContents.openDevTools()
+    }
+    return win
+  } catch (error) {
+    win.destroy()
+    throw error
   }
 }
+
+const previewWindows = new PreviewWindows(async request => {
+  if (!rendererUrl) {
+    throw new Error('The Studio Service is not running.')
+  }
+  return createWindow(rendererUrl, rendererLaunchSecret, request)
+})
 
 /** Calls a Studio Service endpoint reserved for this process. */
 async function callService<T> (path: string, init: { method?: string, body?: unknown } = {}): Promise<T> {
@@ -346,6 +369,20 @@ function isTrustedSender (event: Electron.IpcMainInvokeEvent): boolean {
 }
 
 function registerDesktopBridge (): void {
+  ipcMain.handle('studio:get-app-preview-selection', event => {
+    if (!isTrustedSender(event)) {
+      throw new Error('Untrusted sender.')
+    }
+    return previewSelections.get(event.sender.id) ?? null
+  })
+
+  ipcMain.handle('studio:open-app-preview', async (event, request: unknown) => {
+    if (!isTrustedSender(event)) {
+      throw new Error('Untrusted sender.')
+    }
+    await previewWindows.open(request)
+  })
+
   // Several packages at once, each as its own target (package editing plan, M4).
   ipcMain.handle('studio:choose-aasx-files', async event => {
     if (!isTrustedSender(event)) {
@@ -379,21 +416,22 @@ function registerDesktopBridge (): void {
 
 /**
  * Native dialogs for local BaSyx instances (ADR 0033): AASX files to load,
- * an export to import, and where to save an export. Each chosen path becomes
- * a single-use grant; the renderer only sees the handles.
+ * an export to import, and where to save an export; and for the App Builder
+ * (ADR 0054): a signing key, and where to save a package. Each chosen path
+ * becomes a single-use grant; the renderer only sees the handles.
  */
 async function chooseStackFiles (event: Electron.IpcMainInvokeEvent, kind: unknown, suggestedName: unknown): Promise<StudioFileGrantResult[]> {
   if (!isTrustedSender(event)) {
     throw new Error('Untrusted sender.')
   }
-  if (!isStackFileKind(kind)) {
+  if (!isFileGrantKind(kind)) {
     throw new Error('Unknown file kind.')
   }
   const window = BrowserWindow.fromWebContents(event.sender)
   const grant = (path: string, purpose: 'open' | 'save') => callService<StudioFileGrantResult>('desktop/file-grants', { method: 'POST', body: { path, purpose, kind } })
-  const extensions = [...stackFileExtensions[kind]]
+  const extensions = [...fileGrantExtensions[kind]]
   if (isSaveKind(kind)) {
-    const name = typeof suggestedName === 'string' && suggestedName ? suggestedName.replaceAll(/[/\\:*?"<>|]/g, '_').slice(0, 200) : 'basyx'
+    const name = typeof suggestedName === 'string' && suggestedName ? suggestedName.replaceAll(/[/\\:*?"<>|]/g, '_').slice(0, 200) : (kind === 'app-package' ? 'app' : 'basyx')
     const extension = extensions[0]!
     const options = { defaultPath: `${name}.${extension}`, filters: [{ name: extension.toUpperCase(), extensions }] }
     const result = window ? await dialog.showSaveDialog(window, options) : await dialog.showSaveDialog(options)
@@ -403,9 +441,13 @@ async function chooseStackFiles (event: Electron.IpcMainInvokeEvent, kind: unkno
     const path = result.filePath.toLowerCase().endsWith(`.${extension}`) ? result.filePath : `${result.filePath}.${extension}`
     return [await grant(path, 'save')]
   }
+  if (isFolderKind(kind)) {
+    const result = window ? await dialog.showOpenDialog(window, { properties: ['openDirectory'] }) : await dialog.showOpenDialog({ properties: ['openDirectory'] })
+    return result.canceled || !result.filePaths[0] ? [] : [await grant(result.filePaths[0], 'open')]
+  }
   const options: Electron.OpenDialogOptions = kind === 'stack-aasx'
     ? { properties: ['openFile', 'multiSelections'], filters: aasxFilters }
-    : { properties: ['openFile'], filters: [{ name: 'BaSyx setup', extensions }] }
+    : { properties: ['openFile'], filters: [{ name: kind === 'signing-key' ? 'Private key (PEM)' : 'BaSyx setup', extensions }] }
   const result = window ? await dialog.showOpenDialog(window, options) : await dialog.showOpenDialog(options)
   if (result.canceled) {
     return []

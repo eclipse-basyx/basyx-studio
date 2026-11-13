@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, extname, isAbsolute, resolve } from 'node:path'
 import { z } from 'zod'
 import { appsHostOf, installationPlaceholder } from './apps/origins'
-import { emptyTrustStore, parseTrustStore, TrustStoreError } from './apps/trust'
+import { parseTrustStore, TrustStoreError } from './apps/trust'
 import { parseOutboundProxy, ProxyConfigurationError } from './network/proxy'
 
 const csv = z
@@ -45,6 +45,7 @@ const envSchema = z.object({
   STUDIO_APPS_ALLOW_UNSIGNED: z.enum(['true', 'false']).optional(),
   STUDIO_APPS_TRUSTED_PUBLISHERS: z.string().min(1).optional(),
   STUDIO_APP_PACKAGES: csv.optional(),
+  STUDIO_APP_PROJECTS_DIR: z.string().min(1).optional(),
   STUDIO_DENO_PATH: z.string().min(1).optional(),
   STUDIO_INFRASTRUCTURES_FILE: z.string().min(1).optional(),
   STUDIO_INFRASTRUCTURES: z.string().optional(),
@@ -159,9 +160,16 @@ export interface StudioConfig {
   uploadMaxBytes: number
   /** Local BaSyx instances on Docker or Podman (ADR 0033); desktop only. */
   containers: { dataDir: string } | null
+  /** The App Builder's coding agents (ADR 0054); desktop only. `projectsDir` is STUDIO_APP_PROJECTS_DIR, or the default in the user's documents. */
+  appBuilder: { dataDir: string, projectsDir: string | null } | null
 }
 
 export class ConfigurationError extends Error {}
+
+/** The App Builder's folders (ADR 0054): its data in Studio's, projects where STUDIO_APP_PROJECTS_DIR says. */
+function appBuilderSettings (dataDir: string, projectsDir: string | undefined): NonNullable<StudioConfig['appBuilder']> {
+  return { dataDir: resolve(dataDir, 'app-builder'), projectsDir: projectsDir ? resolve(projectsDir) : null }
+}
 
 function readSecret (value: string | undefined, file: string | undefined, name: string): string | undefined {
   if (value && file) {
@@ -187,7 +195,8 @@ function readInfrastructureSources (file: string | undefined, inline: string | u
 
 function readTrustStore (file: string | undefined): TrustStore {
   if (!file) {
-    return emptyTrustStore
+    // A store of its own: the App Builder adds this computer's key to it (ADR 0054).
+    return { publishers: [] }
   }
   let text: string
   try {
@@ -371,6 +380,7 @@ export function loadStudioConfig (env: NodeJS.ProcessEnv, deploymentMode: Deploy
     deployment: deploymentSettings(values),
     uploadMaxBytes: values.STUDIO_UPLOAD_MAX_BYTES,
     containers: deploymentMode === 'desktop' ? { dataDir: resolve(values.STUDIO_DATA_DIR, 'containers') } : null,
+    appBuilder: deploymentMode === 'desktop' ? appBuilderSettings(values.STUDIO_DATA_DIR, values.STUDIO_APP_PROJECTS_DIR) : null,
   }
 }
 

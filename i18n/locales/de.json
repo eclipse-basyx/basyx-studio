@@ -336,7 +336,10 @@
     "app_revoked": "Diese Bereitstellung vertraut dieser App nicht mehr.",
     "app_sandbox_not_granted": "Der Herausgeber darf keine Apps veröffentlichen, die Code von außerhalb ihres Pakets ausführen.",
     "app_outdated": "Die App wurde aktualisiert. Laden Sie sie neu, um die neue Version zu verwenden.",
-    "app_edit_mode_required": "Wechseln Sie in den Bearbeitungsmodus, damit die App Inhalte ändern kann."
+    "preview_changed": "Die Vorschau wurde inzwischen neu gebaut. Prüfen Sie, was sie jetzt anfordert, bevor Sie sie zulassen.",
+    "app_edit_mode_required": "Wechseln Sie in den Bearbeitungsmodus, damit die App Inhalte ändern kann.",
+    "agent_unavailable": "Der Coding-Agent ist nicht verfügbar",
+    "agent_busy": "Die Unterhaltung ist beschäftigt"
   },
   "admin": {
     "title": "Infrastrukturen",
@@ -602,6 +605,7 @@
     "package": "App-Paket",
     "installed": "{name} {version} installiert.",
     "uninstall": "Deinstallieren",
+    "copyAndChange": "Im App Builder kopieren und ändern",
     "uninstallConfirm": "„{name}“ deinstallieren? Ihre Ansichten und Module verschwinden für alle Benutzer. AAS-Daten, die die App geändert hat, bleiben unverändert.",
     "cancel": "Abbrechen",
     "noApps": "Es sind keine Apps installiert.",
@@ -733,6 +737,9 @@
     "docker": "BaSyx Docker",
     "dockerShort": "Docker",
     "dockerDesktopOnly": "Lokale BaSyx-Instanzen sind nur in der BaSyx-Studio-Desktop-App verfügbar.",
+    "appBuilder": "App Builder",
+    "appBuilderShort": "Builder",
+    "appBuilderDesktopOnly": "Der App Builder führt Coding-Agenten auf deinem Computer aus und ist nur in der BaSyx-Studio-Desktop-App verfügbar.",
     "dashboard": "Startseite",
     "dashboardShort": "Start",
     "shells": "Verwaltungsschalen",
