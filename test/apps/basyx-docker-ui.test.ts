@@ -1,7 +1,7 @@
 import type { Problem } from '@basyx/studio-sdk'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { errorPresentation, nextStackName, presetSpec, selectablePresets, stackNameProblem } from '../../app/components/basyx-docker/support'
+import { errorPresentation, nextStackName, portSummary, presetSpec, selectablePresets, stackNameProblem } from '../../app/components/basyx-docker/support'
 
 const messages: Record<string, string> = {
   'error.actionEngine': 'Start Docker or Podman, then try again.',
@@ -10,7 +10,7 @@ const messages: Record<string, string> = {
   'error.code': 'Error code',
   'error.status': 'Status',
   'error.title': 'The action could not be completed',
-  'error.unexpected': 'BaSyx Docker encountered an unexpected error.',
+  'error.unexpected': 'An unexpected error occurred.',
   'problem.container_engine_unavailable': 'Docker or Podman does not answer.',
 }
 const t = (key: string) => messages[key] ?? key
@@ -60,6 +60,17 @@ describe('BaSyx Docker wizard translations', () => {
     )
     expect(required.every(key => messages.access[key].trim().length > 0)).toBe(true)
   })
+
+  it.each(locales)('names the credential user in password action labels in %s', locale => {
+    const messages = JSON.parse(readFileSync(new URL(`../../app/components/basyx-docker/locales/${locale}.json`, import.meta.url), 'utf8')) as {
+      signIn: Record<string, string>
+    }
+
+    for (const action of ['showPassword', 'hidePassword', 'copyPassword']) {
+      expect(messages.signIn[action]).toContain('{user}')
+    }
+    expect(messages.signIn.showPassword).not.toBe(messages.signIn.hidePassword)
+  })
 })
 
 describe('BaSyx Docker visual language', () => {
@@ -76,15 +87,17 @@ describe('BaSyx Docker visual language', () => {
   })
 
   it('renders engine and instance states as quiet icon-and-text readouts', () => {
+    const app = component('App')
     const engineStatus = component('EngineStatus')
-    const instanceCard = component('InstanceCard')
-    const engineActivator = engineStatus.match(/<v-btn[\s\S]*?>/)?.[0]
+    const instanceDetail = component('InstanceDetail')
 
-    expect(engineActivator).not.toContain(':color=')
-    expect(engineActivator).not.toContain('size="small"')
-    expect(engineStatus).toContain('icon="mdi-circle"')
-    expect(instanceCard).not.toContain('<v-chip\n          :color="statusLook.color"')
-    expect(instanceCard).toContain('icon="mdi-circle"')
+    // The engine is a list row with a status dot, not a coloured button.
+    expect(engineStatus).toContain('data-test="engine"')
+    expect(engineStatus).toContain('icon="mdi-circle" :size="10"')
+    expect(engineStatus).not.toContain('<v-btn-primary\n        v-bind="activator"')
+    // Rows and the detail share one status colour per state.
+    expect(app).toContain(':color="statusColors[stack.status]" icon="mdi-circle"')
+    expect(instanceDetail).toContain(':color="statusColors[stack.status]" data-test="status" prepend-icon="mdi-circle"')
   })
 
   it('reuses Studio button and card defaults for secondary actions and inset panels', () => {
@@ -100,19 +113,34 @@ describe('BaSyx Docker visual language', () => {
     expect(signIn.trimStart()).toMatch(/^<template>\s*<v-card/)
   })
 
-  it('uses the Studio page header and independent resource cards on the start page', () => {
+  it('lays the page out like the App Builder: a sidebar beside the selected instance', () => {
     const app = component('App')
-    const instanceCard = component('InstanceCard')
-    const pageHeader = readFileSync(new URL('../../app/components/PageHeader.vue', import.meta.url), 'utf8')
+    const instanceDetail = component('InstanceDetail')
+    const wizard = component('NewInstanceWizard')
 
-    expect(app).toContain('<PageHeader :subtitle="t(\'app.subtitle\')" :title="t(\'app.title\')">')
-    expect(app).toContain('<template v-if="engines && engineRunning && list && !wizard" #actions>')
-    expect(pageHeader).toContain('class="d-flex flex-wrap align-center ga-2"')
-    expect(app).toContain('<v-row v-else density="compact">')
-    expect(app).toMatch(/cols="12"\s+sm="6"/)
-    expect(app).not.toContain('text-title-medium font-weight-medium flex-grow-1')
-    expect(instanceCard.trimStart()).toMatch(/^<template>\s*<v-card class="d-flex flex-column h-100"/)
-    expect(instanceCard).toContain('<v-avatar color="primary" variant="tonal">')
+    // A full page without an app bar: the sidebar holds the title, the actions, the list and the engine.
+    expect(app.trimStart()).toMatch(/^<template>\s*<v-sheet-full-page>/)
+    expect(app).not.toContain('<PageHeader')
+    expect(app).toContain('class="d-flex flex-column flex-shrink-0 border-e" width="280"')
+    expect(app).toMatch(/data-test="new"[\s\S]*data-test="import"[\s\S]*<v-list[\s\S]*<EngineStatus/)
+    expect(app).toContain('class="d-flex align-center ga-5 ps-6 pe-4 pt-4 pb-4"')
+    // The detail uses the same compact title/action header as the wizard, with settings and tabs below.
+    expect(instanceDetail).toContain('data-test="instance-header" height="56"')
+    expect(instanceDetail).toContain('<h1 class="text-title-medium font-weight-medium text-truncate flex-grow-1 ma-0">{{ stack.name }}</h1>')
+    expect(instanceDetail).toContain('<v-tabs v-model="tab" density="compact">')
+    // Containers without a stored instance stay out of the list.
+    expect(app).toContain('stack.status !== \'orphan\'')
+    expect(instanceDetail).toContain('<DialogCard data-test="remove-confirm"')
+    // The wizard fills the work area; step 3 shows the facts in the page.
+    expect(wizard).toContain('data-test="wizard"')
+    // A summary beside steps 1 and 2 folds into a rail on wide screens; narrow forms use the full width.
+    expect(wizard).toContain('v-if="summaryOpen && step < 3"')
+    expect(wizard).toContain('data-test="toggle-summary"')
+    expect(wizard).toContain('data-test="summary-rail"')
+    expect(wizard).toContain('v-else-if="lgAndUp && step < 3"')
+    expect(wizard).toContain('const summaryOpen = ref(lgAndUp.value)')
+    expect(wizard).toContain('data-test="summary-facts"')
+    expect(wizard).toContain('v-for="fact in summaryFacts"')
   })
 })
 
@@ -131,6 +159,20 @@ describe('BaSyx Docker instance names', () => {
 
   it('picks the first unused default name regardless of case', () => {
     expect(nextStackName(['BaSyx 1', 'basyx 2', 'Demo'])).toBe('BaSyx 3')
+  })
+})
+
+describe('BaSyx Docker port summaries', () => {
+  const translate = (key: string, params?: Record<string, string | number>) => key === 'wizard.portsAuto'
+    ? 'Pick free ports'
+    : `Fixed, from ${params?.port}`
+
+  it('describes automatic allocation when the effective specification has no base port', () => {
+    expect(portSummary(translate, null)).toBe('Pick free ports')
+  })
+
+  it('shows the base port retained by an edited instance', () => {
+    expect(portSummary(translate, 18_190)).toBe('Fixed, from 18190')
   })
 })
 
@@ -159,7 +201,7 @@ describe('BaSyx Docker errors', () => {
       action: 'Try the action again. Open the technical details and include them when reporting the problem.',
       cause: 'socket closed while reading response',
       code: 'unexpected_error',
-      message: 'BaSyx Docker encountered an unexpected error.',
+      message: 'An unexpected error occurred.',
     })
   })
 })

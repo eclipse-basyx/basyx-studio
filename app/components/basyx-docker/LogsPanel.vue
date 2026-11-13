@@ -23,8 +23,6 @@
       />
 
       <v-btn :disabled="!text" prepend-icon="mdi-content-save-outline" :text="t('logs.save')" @click="save" />
-
-      <v-btn :aria-label="t('remove.cancel')" icon="mdi-close" size="small" @click="emit('close')" />
     </div>
 
     <ErrorAlert v-if="error" :error="error">
@@ -53,7 +51,6 @@
   import { useClient } from './support'
 
   const props = defineProps<{ stack: Stack }>()
-  const emit = defineEmits<{ close: [] }>()
   const { t } = useI18n()
   const client = useClient()
 
