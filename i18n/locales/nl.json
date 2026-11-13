@@ -644,8 +644,8 @@
   "nav": {
     "targets": "AAS-doelen",
     "targetsShort": "Doelen",
-    "docker": "BaSyx Docker",
-    "dockerShort": "Docker",
+    "docker": "Lokale servers",
+    "dockerShort": "Lokaal",
     "dockerDesktopOnly": "Lokale BaSyx-instanties zijn alleen beschikbaar in de BaSyx Studio-desktopapp.",
     "appBuilder": "App Builder",
     "appBuilderShort": "Builder",

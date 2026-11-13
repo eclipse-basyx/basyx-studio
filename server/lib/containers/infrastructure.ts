@@ -21,7 +21,7 @@ export function infrastructureInputOf (name: string, spec: StackSpec): Infrastru
   const issuer = issuerOfSpec(spec)
   return {
     name,
-    description: 'Local BaSyx instance, started with BaSyx Docker.',
+    description: 'Local BaSyx instance, started from Local Servers.',
     template: spec.topology === 'separate' ? 'mono-repo' : 'mono-all',
     endpoints,
     listSource: spec.features.registrySync ? 'registry' : 'repository',

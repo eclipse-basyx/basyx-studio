@@ -1,16 +1,14 @@
 <template>
-  <v-container>
-    <DockerApp v-if="session.isDesktop" :client="client" />
+  <DockerApp v-if="session.isDesktop" :client="client" />
 
-    <template v-else>
-      <PageHeader :title="t('nav.docker')" />
+  <v-container v-else>
+    <PageHeader :title="t('nav.docker')" />
 
-      <v-empty-state
-        icon="mdi-monitor-off"
-        :text="t('nav.dockerDesktopOnly')"
-        :title="t('nav.docker')"
-      />
-    </template>
+    <v-empty-state
+      icon="mdi-monitor-off"
+      :text="t('nav.dockerDesktopOnly')"
+      :title="t('nav.docker')"
+    />
   </v-container>
 </template>
 

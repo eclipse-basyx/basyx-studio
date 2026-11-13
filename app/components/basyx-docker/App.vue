@@ -1,92 +1,139 @@
 <template>
-  <div class="d-flex flex-column ga-3">
-    <PageHeader :subtitle="t('app.subtitle')" :title="t('app.title')">
-      <template v-if="engines && engineRunning && list && !wizard" #actions>
-        <EngineStatus :engines="engines" @select="selectEngine" />
-        <v-btn-secondary data-test="import" prepend-icon="mdi-import" :text="t('list.import')" @click="importStack" />
-        <v-btn-primary data-test="new" prepend-icon="mdi-plus" :text="t('list.new')" @click="openWizard()" />
-      </template>
-    </PageHeader>
+  <v-sheet-full-page>
+    <div class="d-flex flex-grow-1 overflow-hidden">
+      <!-- The sidebar, as in the App Builder: title, new and import, the instances, the engine. -->
+      <v-sheet class="d-flex flex-column flex-shrink-0 border-e" width="280">
+        <!-- One column grid: every icon at 24 px from the edge, every text after it. -->
+        <div class="d-flex align-center ga-5 ps-6 pe-4 pt-4 pb-4">
+          <v-icon color="primary" icon="mdi-docker" />
+          <span class="text-title-medium font-weight-bold">{{ t('app.title') }}</span>
+        </div>
 
-    <v-progress-linear v-if="!engines" />
+        <v-list class="mx-2 py-0" slim>
+          <v-list-item
+            :active="Boolean(wizard && !wizard.stack && !wizard.importInfo)"
+            base-color="primary"
+            data-test="new"
+            :disabled="!engineRunning || !list"
+            prepend-icon="mdi-plus"
+            :title="t('list.new')"
+            @click="openWizard()"
+          />
 
-    <template v-else-if="!engineRunning">
-      <ErrorAlert v-if="engineError" closable :error="engineError" @close="engineError = null">
-        <template #actions>
-          <v-btn :text="t('problem.retry')" @click="checkEngines(true)" />
-        </template>
-      </ErrorAlert>
+          <v-list-item
+            data-test="import"
+            :disabled="!engineRunning || !list"
+            prepend-icon="mdi-import"
+            :title="t('list.import')"
+            @click="importStack"
+          />
+        </v-list>
 
-      <EngineMissing :checking="checking" :engines="engines" @check="checkEngines(true)" />
-    </template>
+        <v-divider class="my-2" />
 
-    <NewInstanceWizard
-      v-else-if="wizard"
-      :key="wizard.key"
-      :existing="existingNames"
-      :import-info="wizard.importInfo"
-      :stack="wizard.stack"
-      @cancel="closeWizard"
-      @done="onWizardDone"
-    />
+        <div class="d-flex flex-column flex-grow-1 overflow-y-auto">
+          <v-list v-if="stacks.length > 0" class="mx-2 py-0" lines="two" slim>
+            <v-list-item
+              v-for="stack in stacks"
+              :key="stack.id"
+              :active="!wizard && stack.id === selected?.id"
+              :data-test="`row-${stack.id}`"
+              :title="stack.name"
+              @click="select(stack.id)"
+            >
+              <template #prepend>
+                <v-icon color="primary" :icon="stack.spec ? presetIcons[stack.spec.preset] : 'mdi-help-box-outline'" />
+              </template>
 
-    <template v-else-if="list">
-      <ErrorAlert
-        v-if="actionError"
-        closable
-        :error="actionError"
-        @close="actionError = null"
-      />
+              <template #subtitle>
+                <span class="d-inline-flex align-center ga-1">
+                  <v-icon :color="statusColors[stack.status]" icon="mdi-circle" size="8" />
+                  {{ rowSubtitle(stack) }}
+                </span>
+              </template>
+            </v-list-item>
+          </v-list>
 
-      <ErrorAlert
-        v-if="listError"
-        closable
-        :error="listError"
-        @close="listError = null"
-      >
-        <template #actions>
-          <v-btn :text="t('problem.retry')" @click="refresh" />
-        </template>
-      </ErrorAlert>
+          <v-empty-state
+            v-else
+            class="flex-grow-1"
+            :icon="engineRunning ? 'mdi-server-off' : 'mdi-server-outline'"
+            min-height="0"
+            size="40"
+            :text="engineRunning ? t('list.none') : t('list.waitingForEngine')"
+          />
+        </div>
 
-      <v-card v-if="list.items.length === 0" class="pa-4 text-center">
-        <v-icon color="medium-emphasis" icon="mdi-server-plus-outline" size="40" />
-        <div class="text-title-medium font-weight-medium mt-2">{{ t('list.emptyTitle') }}</div>
-        <div class="text-body-medium text-medium-emphasis mt-1 mb-4">{{ t('list.emptyText') }}</div>
-        <v-btn-primary prepend-icon="mdi-plus" :text="t('list.new')" @click="openWizard()" />
-      </v-card>
+        <v-divider />
 
-      <v-row v-else density="compact">
-        <v-col
-          v-for="stack in list.items"
-          :key="stack.id"
-          cols="12"
-          sm="6"
-        >
-          <InstanceCard
-            :job="jobs.get(stack.id) ?? null"
-            :stack="stack"
-            @change="openWizard(stack)"
-            @dismiss-job="dismissJob(stack.id)"
+        <EngineStatus
+          v-if="engines"
+          :engines="engines"
+          @select="selectEngine"
+        />
+      </v-sheet>
+
+      <!-- The work area: the selected instance, the wizard or a welcome. -->
+      <!-- A tint sets the work area apart from the sidebar and its cards. -->
+      <div class="d-flex flex-column flex-grow-1 overflow-y-auto bg-card-header">
+        <div v-if="actionError || listError || engineError" class="d-flex flex-column ga-2 px-8 pt-4">
+          <ErrorAlert v-if="engineError" closable :error="engineError" @close="engineError = null">
+            <template #actions>
+              <v-btn :text="t('problem.retry')" @click="checkEngines" />
+            </template>
+          </ErrorAlert>
+
+          <ErrorAlert v-if="actionError" closable :error="actionError" @close="actionError = null" />
+
+          <ErrorAlert v-if="listError" closable :error="listError" @close="listError = null">
+            <template #actions>
+              <v-btn :text="t('problem.retry')" @click="refresh" />
+            </template>
+          </ErrorAlert>
+        </div>
+
+        <v-progress-linear v-if="!engines" />
+
+        <EngineMissing v-else-if="!engineRunning" :engines="engines" />
+
+        <NewInstanceWizard
+          v-else-if="wizard"
+          :key="wizard.key"
+          :existing="existingNames"
+          :import-info="wizard.importInfo"
+          :stack="wizard.stack"
+          @cancel="closeWizard"
+          @done="onWizardDone"
+        />
+
+        <template v-else-if="list">
+          <v-empty-state
+            v-if="stacks.length === 0"
+            icon="mdi-server"
+            :text="t('list.emptyText')"
+            :title="t('list.emptyTitle')"
+          >
+            <template #actions>
+              <v-btn-primary prepend-icon="mdi-plus" :text="t('list.new')" @click="openWizard()" />
+              <v-btn-secondary prepend-icon="mdi-import" :text="t('list.import')" @click="importStack" />
+            </template>
+          </v-empty-state>
+
+          <InstanceDetail
+            v-else-if="selected"
+            :key="selected.id"
+            :job="jobs.get(selected.id) ?? null"
+            :stack="selected"
+            @change="openWizard(selected)"
+            @dismiss-job="dismissJob(selected.id)"
             @job="track"
           />
-        </v-col>
-      </v-row>
-    </template>
+        </template>
 
-    <ErrorAlert
-      v-else-if="listError"
-      closable
-      :error="listError"
-      @close="listError = null"
-    >
-      <template #actions>
-        <v-btn :text="t('problem.retry')" @click="refresh" />
-      </template>
-    </ErrorAlert>
-
-    <v-progress-linear v-else-if="engineRunning" />
-  </div>
+        <v-progress-linear v-else-if="!listError" />
+      </div>
+    </div>
+  </v-sheet-full-page>
 </template>
 
 <script lang="ts" setup>
@@ -97,9 +144,10 @@
   import EngineStatus from './EngineStatus.vue'
   import ErrorAlert from './ErrorAlert.vue'
   import { provideI18n } from './i18n'
-  import InstanceCard from './InstanceCard.vue'
+  import InstanceDetail from './InstanceDetail.vue'
   import NewInstanceWizard from './NewInstanceWizard.vue'
-  import { clientKey, problemOf } from './support'
+  import { createEngineRequestQueue, startContainerPolling } from './polling'
+  import { clientKey, presetIcons, problemOf, statusColors } from './support'
 
   // BaSyx Docker (ADR 0033): finds Docker or Podman, lists the instances,
   // and follows their jobs. All work happens in the Studio Service.
@@ -107,9 +155,9 @@
   provide(clientKey, props.client)
   const { t } = provideI18n()
   const containers = props.client.containers
+  const engineRequest = createEngineRequestQueue()
 
   const engines = ref<Engines | null>(null)
-  const checking = ref(false)
   const list = ref<StackList | null>(null)
   const engineError = ref<unknown | null>(null)
   const actionError = ref<unknown | null>(null)
@@ -117,26 +165,38 @@
   /** The running or last finished job per stack. */
   const jobs = reactive(new Map<string, Job>())
   const wizard = ref<{ key: number, stack: Stack | null, importInfo: StackImport | null } | null>(null)
+  const selectedId = ref<string | null>(null)
 
   const engineRunning = computed(() => Boolean(engines.value?.selected?.running))
   const existingNames = computed(() => list.value?.items.map(stack => stack.name) ?? [])
+  /** The instances Studio knows: containers it finds without a stored instance stay hidden. */
+  const stacks = computed(() => list.value?.items.filter(stack => stack.status !== 'orphan') ?? [])
+  /** The chosen instance, else the first one. */
+  const selected = computed(() => stacks.value.find(stack => stack.id === selectedId.value) ?? stacks.value[0] ?? null)
 
-  async function checkEngines (fresh = false) {
-    checking.value = true
+  function rowSubtitle (stack: Stack): string {
+    const status = t(`status.${stack.status}`)
+    return stack.spec ? `${status} · ${t(`preset.${stack.spec.preset}`)}` : status
+  }
+
+  function select (stackId: string) {
+    selectedId.value = stackId
+    wizard.value = null
+  }
+
+  async function checkEngines () {
     try {
-      engines.value = fresh || !engines.value ? await containers.listEngines() : engines.value
+      engines.value = await engineRequest(() => containers.listEngines())
       engineError.value = null
     } catch (error) {
       engineError.value = error
       engines.value = { selected: null, candidates: [], configured: null }
-    } finally {
-      checking.value = false
     }
   }
 
   async function selectEngine (host: string | null) {
     try {
-      engines.value = await containers.selectEngine(host)
+      engines.value = await engineRequest(() => containers.selectEngine(host))
       await refresh()
     } catch (error) {
       actionError.value = error
@@ -148,7 +208,8 @@
       return
     }
     try {
-      list.value = await containers.listStacks()
+      // Listing can also discover engines after the backend cache expires.
+      list.value = await engineRequest(() => containers.listStacks())
       listError.value = null
       for (const stack of list.value.items) {
         if (stack.jobId && jobs.get(stack.id)?.id !== stack.jobId) {
@@ -156,11 +217,11 @@
         }
       }
       if (!list.value.engineAvailable) {
-        await checkEngines(true)
+        await checkEngines()
       }
     } catch (error) {
       if (problemOf(error)?.code === 'container_engine_unavailable') {
-        await checkEngines(true)
+        await checkEngines()
       } else {
         listError.value = error
       }
@@ -212,6 +273,7 @@
 
   async function onWizardDone (job: Job) {
     wizard.value = null
+    selectedId.value = job.stackId
     track(job)
     await refresh()
   }
@@ -228,33 +290,18 @@
     }
   }
 
-  let timer: ReturnType<typeof setTimeout> | undefined
-  let ticks = 0
-  async function tick () {
-    ticks++
-    if (document.visibilityState === 'visible') {
-      if (engineRunning.value) {
-        const running = [...jobs.values()].some(job => job.state === 'running')
-        if (running) {
-          await followJobs()
-        }
-        // The list every five seconds, faster while something happens.
-        if (running || ticks % 4 === 0) {
-          await refresh()
-        }
-      } else {
-        await checkEngines(true)
-        await refresh()
-      }
-    }
-    timer = setTimeout(() => void tick(), engineRunning.value ? 1500 : 3000)
-  }
-
-  onMounted(async () => {
-    await checkEngines(true)
-    await refresh()
-    timer = setTimeout(() => void tick(), 1500)
+  let stopPolling: (() => void) | undefined
+  onMounted(() => {
+    stopPolling = startContainerPolling({
+      isVisible: () => document.visibilityState === 'visible',
+      isEngineRunning: () => engineRunning.value,
+      hasRunningJobs: () => [...jobs.values()].some(job => job.state === 'running'),
+      checkEngines,
+      refresh,
+      followJobs,
+      onError: error => (actionError.value = error),
+    })
   })
 
-  onBeforeUnmount(() => clearTimeout(timer))
+  onBeforeUnmount(() => stopPolling?.())
 </script>
