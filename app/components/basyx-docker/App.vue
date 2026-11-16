@@ -55,13 +55,32 @@
           </v-list>
 
           <v-empty-state
-            v-else
+            v-else-if="orphans.length === 0"
             class="flex-grow-1"
             :icon="engineRunning ? 'mdi-server-off' : 'mdi-server-outline'"
             min-height="0"
             size="40"
             :text="engineRunning ? t('list.none') : t('list.waitingForEngine')"
           />
+
+          <div v-else class="ps-6 pe-4 py-2 text-body-small text-medium-emphasis">{{ t('list.none') }}</div>
+
+          <!-- Containers Studio found without a stored instance: kept reachable so they can be deleted. -->
+          <template v-if="orphans.length > 0">
+            <div class="text-label-medium text-medium-emphasis ps-6 pe-4 pt-4 pb-1" data-test="orphans">{{ t('status.orphan') }}</div>
+
+            <v-list class="mx-2 py-0" slim>
+              <v-list-item
+                v-for="stack in orphans"
+                :key="stack.id"
+                :active="!wizard && stack.id === selected?.id"
+                :data-test="`row-${stack.id}`"
+                prepend-icon="mdi-help-box-outline"
+                :title="stack.name"
+                @click="select(stack.id)"
+              />
+            </v-list>
+          </template>
         </div>
 
         <v-divider />
@@ -107,8 +126,19 @@
         />
 
         <template v-else-if="list">
+          <!-- The selected instance, or a leftover container picked from "Found on this computer". -->
+          <InstanceDetail
+            v-if="selected"
+            :key="selected.id"
+            :job="jobs.get(selected.id) ?? null"
+            :stack="selected"
+            @change="openWizard(selected)"
+            @dismiss-job="dismissJob(selected.id)"
+            @job="track"
+          />
+
           <v-empty-state
-            v-if="stacks.length === 0"
+            v-else
             icon="mdi-server"
             :text="t('list.emptyText')"
             :title="t('list.emptyTitle')"
@@ -118,16 +148,6 @@
               <v-btn-secondary prepend-icon="mdi-import" :text="t('list.import')" @click="importStack" />
             </template>
           </v-empty-state>
-
-          <InstanceDetail
-            v-else-if="selected"
-            :key="selected.id"
-            :job="jobs.get(selected.id) ?? null"
-            :stack="selected"
-            @change="openWizard(selected)"
-            @dismiss-job="dismissJob(selected.id)"
-            @job="track"
-          />
         </template>
 
         <v-progress-linear v-else-if="!listError" />
@@ -169,10 +189,12 @@
 
   const engineRunning = computed(() => Boolean(engines.value?.selected?.running))
   const existingNames = computed(() => list.value?.items.map(stack => stack.name) ?? [])
-  /** The instances Studio knows: containers it finds without a stored instance stay hidden. */
+  /** The instances Studio knows. */
   const stacks = computed(() => list.value?.items.filter(stack => stack.status !== 'orphan') ?? [])
-  /** The chosen instance, else the first one. */
-  const selected = computed(() => stacks.value.find(stack => stack.id === selectedId.value) ?? stacks.value[0] ?? null)
+  /** Containers with Studio's label but no stored instance, listed apart so they can still be deleted (plan E6). */
+  const orphans = computed(() => list.value?.items.filter(stack => stack.status === 'orphan') ?? [])
+  /** The chosen instance or orphan, else the first instance. */
+  const selected = computed(() => list.value?.items.find(stack => stack.id === selectedId.value) ?? stacks.value[0] ?? null)
 
   function rowSubtitle (stack: Stack): string {
     const status = t(`status.${stack.status}`)
@@ -190,7 +212,9 @@
       engineError.value = null
     } catch (error) {
       engineError.value = error
-      engines.value = { selected: null, candidates: [], configured: null }
+      // A failed check says nothing about the engine: keep the last known
+      // state, so a brief hiccup does not unmount the wizard and its draft.
+      engines.value ??= { selected: null, candidates: [], configured: null }
     }
   }
 

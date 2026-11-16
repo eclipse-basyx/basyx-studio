@@ -128,8 +128,14 @@ describe('BaSyx Docker visual language', () => {
     expect(instanceDetail).toContain('data-test="instance-header" height="56"')
     expect(instanceDetail).toContain('<h1 class="text-title-medium font-weight-medium text-truncate flex-grow-1 ma-0">{{ stack.name }}</h1>')
     expect(instanceDetail).toContain('<v-tabs v-model="tab" density="compact">')
-    // Containers without a stored instance stay out of the list.
+    // Containers without a stored instance are listed apart, under "Found on this computer",
+    // and open the detail with Delete, so they can still be cleaned up (plan E6).
     expect(app).toContain('stack.status !== \'orphan\'')
+    expect(app).toContain('data-test="orphans">{{ t(\'status.orphan\') }}')
+    expect(app).toContain('v-for="stack in orphans"')
+    expect(app).toMatch(/<InstanceDetail\s+v-if="selected"/)
+    // A failed engine check keeps the last known engine, so the wizard and its draft stay mounted.
+    expect(app).toContain('engines.value ??= { selected: null, candidates: [], configured: null }')
     expect(instanceDetail).toContain('<DialogCard data-test="remove-confirm"')
     // The wizard fills the work area; step 3 shows the facts in the page.
     expect(wizard).toContain('data-test="wizard"')
