@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "BaSyx Docker",
+    "title": "Lokale Server",
     "subtitle": "BaSyx-Server auf diesem Computer starten und in Studio öffnen."
   },
   "engine": {
@@ -9,7 +9,7 @@
     "automatic": "Automatisch wählen",
     "notRunning": "läuft nicht",
     "missingTitle": "Keine Container-Engine gefunden",
-    "missingText": "BaSyx Docker braucht Docker Desktop oder Podman Desktop. Installieren Sie eines davon, starten Sie es und kehren Sie hierher zurück.",
+    "missingText": "Lokale Server laufen in Docker Desktop oder Podman Desktop. Installieren Sie eines davon, starten Sie es und kehren Sie hierher zurück.",
     "stoppedTitle": "{name} läuft nicht",
     "stoppedText": "Starten Sie {name} und warten Sie, bis es bereit ist. Diese Seite merkt das von selbst.",
     "getDocker": "Docker Desktop holen",
@@ -18,7 +18,11 @@
     "checking": "Suche Docker oder Podman …",
     "socket": "Engine-Socket",
     "useSocket": "Socket verwenden",
-    "socketHint": "unix:///pfad/zur/engine.sock oder npipe:////./pipe/name"
+    "socketHint": "unix:///pfad/zur/engine.sock oder npipe:////./pipe/name",
+    "none": "Keine gefunden",
+    "setSocket": "Socket festlegen",
+    "runningShort": "läuft",
+    "checkingAutomatically": "Diese Seite prüft alle paar Sekunden erneut."
   },
   "list": {
     "title": "Ihre BaSyx-Instanzen",
@@ -26,7 +30,10 @@
     "import": "Importieren",
     "emptyTitle": "Noch keine BaSyx-Instanz",
     "emptyText": "Legen Sie eine in drei Schritten an. Studio lädt alles Nötige herunter und trägt die Instanz bei Ihren Infrastrukturen ein.",
-    "otherEngine": "Läuft auf einer anderen Engine ({host})."
+    "otherEngine": "Läuft auf einer anderen Engine ({host}).",
+    "heading": "Instanzen",
+    "none": "Noch keine Instanzen.",
+    "waitingForEngine": "Ihre Instanzen erscheinen, sobald Docker oder Podman läuft."
   },
   "status": {
     "running": "Läuft",
@@ -94,7 +101,10 @@
     "notInStudio": "Noch nicht in Studio: Die Instanz wird eingetragen, sobald sie gestartet ist.",
     "orphanText": "Diese Container gehören zu einer Instanz, die Studio nicht mehr kennt. Sie können sie löschen.",
     "missingText": "Die Container wurden außerhalb von Studio entfernt. Legen Sie sie neu an; Ihre Daten sind noch da, wenn Sie sie behalten haben.",
-    "exportWarning": "Diese Datei enthält Passwörter und alle Instanzdaten. Geben Sie sie nur an vertrauenswürdige Personen weiter."
+    "exportWarning": "Diese Datei enthält Passwörter und alle Instanzdaten. Geben Sie sie nur an vertrauenswürdige Personen weiter.",
+    "parts": "Bestandteile",
+    "noAddresses": "Keine Adressen, solange die Instanz nicht läuft.",
+    "orphanSubtitle": "Container ohne Eintrag in Studio"
   },
   "remove": {
     "title": "„{name}“ löschen?",
@@ -109,12 +119,13 @@
     "user": "Benutzer",
     "role": "Rolle",
     "password": "Passwort",
-    "show": "Passwörter anzeigen",
+    "showPassword": "Passwort für {user} anzeigen",
+    "hidePassword": "Passwort für {user} ausblenden",
+    "copyPassword": "Passwort für {user} kopieren",
     "roleAdmin": "Administrator",
     "roleViewer": "Betrachter",
     "roleUser": "Benutzer",
     "console": "Keycloak-Verwaltung",
-    "account": "Eigenes Passwort ändern",
     "sharingHint": "Beim Teilen gehören AASX-Dateien, die beim Start geladen werden, niemandem: Nur admin sieht sie, bis admin sie teilt."
   },
   "logs": {
@@ -152,7 +163,9 @@
     "succeededCreate": "„{name}“ läuft.",
     "succeededStop": "„{name}“ wurde angehalten.",
     "succeededRemove": "„{name}“ wurde gelöscht.",
-    "unregisterFailed": "Studio konnte die Infrastruktur nicht entfernen; entfernen Sie sie unter Infrastrukturen von Hand."
+    "unregisterFailed": "Studio konnte die Infrastruktur nicht entfernen; entfernen Sie sie unter Infrastrukturen von Hand.",
+    "progress": "{done} von {total}",
+    "showLogs": "Protokolle anzeigen"
   },
   "wizard": {
     "stepWhat": "Template auswählen",
@@ -169,7 +182,6 @@
     "aasxAdd": "AASX-Dateien hinzufügen",
     "aasxNone": "Keine. Der Server startet leer.",
     "advanced": "Erweitert",
-    "advancedHint": "Optionale Einstellungen für Dienste, Daten, Netzwerk und Version.",
     "services": "Dienste",
     "servicesHint": "Aufbau und Funktionen der BaSyx-Instanz.",
     "features": "Funktionen",
@@ -220,11 +232,16 @@
     "note_ports_reassigned": "Ihre Ports sind hier belegt; stattdessen werden freie Ports gewählt.",
     "note_secrets_generated": "Die Datei enthält keine Passwörter; es werden neue erzeugt.",
     "note_compose_ignored": "Die Einstellungen stammen aus basyx-stack.json; Änderungen an docker-compose.yml werden nicht gelesen.",
-    "note_aasx_missing": "Einige AASX-Dateien fehlen in der Datei und werden weggelassen."
+    "note_aasx_missing": "Einige AASX-Dateien fehlen in der Datei und werden weggelassen.",
+    "summary": "Zusammenfassung",
+    "summaryNote": "Studio fügt die Instanz Ihren Infrastrukturen hinzu, sobald sie gestartet ist.",
+    "aasxRemove": "Datei entfernen",
+    "showSummary": "Zusammenfassung anzeigen",
+    "hideSummary": "Zusammenfassung ausblenden"
   },
   "error": {
     "title": "Die Aktion konnte nicht abgeschlossen werden",
-    "unexpected": "In BaSyx Docker ist ein unerwarteter Fehler aufgetreten.",
+    "unexpected": "Es ist ein unerwarteter Fehler aufgetreten.",
     "unknownCause": "Es wurde keine technische Ursache übermittelt.",
     "nextStep": "Das können Sie tun:",
     "technicalDetails": "Ursache und technische Details",
@@ -248,10 +265,10 @@
     "actionSignIn": "Melden Sie sich bei BaSyx Studio an und wiederholen Sie die Aktion."
   },
   "problem": {
-    "unauthenticated": "Sie müssen sich anmelden, bevor BaSyx Docker diese Aktion ausführen kann.",
+    "unauthenticated": "Sie müssen sich anmelden, bevor diese Aktion ausgeführt werden kann.",
     "forbidden": "Ihr Konto darf diese Aktion nicht ausführen.",
     "csrf_rejected": "BaSyx Studio hat die Anfrage abgelehnt, weil die Seitensitzung nicht mehr gültig ist.",
-    "invalid_request": "BaSyx Docker konnte die übermittelten Einstellungen nicht verwenden.",
+    "invalid_request": "Die übermittelten Einstellungen konnten nicht verwendet werden.",
     "validation_failed": "Einige übermittelte Einstellungen sind ungültig.",
     "not_found": "Die angeforderte Instanz oder der Vorgang existiert nicht mehr.",
     "container_engine_unavailable": "Docker oder Podman antwortet nicht. Starten Sie es und versuchen Sie es erneut.",
@@ -264,5 +281,38 @@
     "generic": "Etwas ist schiefgegangen.",
     "details": "Details",
     "retry": "Erneut versuchen"
+  },
+  "tab": {
+    "overview": "Übersicht",
+    "settings": "Einstellungen"
+  },
+  "componentState": {
+    "running": "Läuft",
+    "starting": "Startet",
+    "unhealthy": "Nicht gesund",
+    "stopped": "Gestoppt",
+    "exited": "Beendet",
+    "missing": "Fehlt",
+    "finished": "Abgeschlossen"
+  },
+  "facts": {
+    "template": "Template",
+    "signIn": "Anmeldung",
+    "noSignIn": "Keine Anmeldung",
+    "data": "Daten",
+    "dataKept": "In einem Volume gespeichert",
+    "dataEphemeral": "Startet leer",
+    "aasx": "AASX beim Start",
+    "files": "{count} Datei(en)",
+    "network": "Netzwerk",
+    "networkLocal": "Nur dieser Computer",
+    "networkShared": "Andere Computer im Netzwerk",
+    "portsFrom": "Fest, ab {port}",
+    "imagesTested": "Mit diesem Studio getestet",
+    "imagesLatest": "Neuester Snapshot",
+    "restart": "Mit Docker oder Podman starten",
+    "restartAlways": "Ja",
+    "restartManual": "Nein, nur von hier",
+    "none": "Keine"
   }
 }

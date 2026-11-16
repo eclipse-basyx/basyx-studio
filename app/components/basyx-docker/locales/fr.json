@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "BaSyx Docker",
+    "title": "Serveurs locaux",
     "subtitle": "Lancez des serveurs BaSyx sur cet ordinateur et ouvrez-les dans Studio."
   },
   "engine": {
@@ -9,7 +9,7 @@
     "automatic": "Choisir automatiquement",
     "notRunning": "arrêté",
     "missingTitle": "Aucun moteur de conteneurs trouvé",
-    "missingText": "BaSyx Docker a besoin de Docker Desktop ou de Podman Desktop. Installez l'un des deux, démarrez-le et revenez ici.",
+    "missingText": "Les serveurs locaux fonctionnent dans Docker Desktop ou Podman Desktop. Installez l’un des deux, démarrez-le et revenez ici.",
     "stoppedTitle": "{name} n'est pas démarré",
     "stoppedText": "Démarrez {name} et attendez qu'il soit prêt. Cette page le remarque d'elle-même.",
     "getDocker": "Obtenir Docker Desktop",
@@ -18,7 +18,11 @@
     "checking": "Recherche de Docker ou Podman…",
     "socket": "Socket du moteur",
     "useSocket": "Utiliser ce socket",
-    "socketHint": "unix:///chemin/engine.sock ou npipe:////./pipe/name"
+    "socketHint": "unix:///chemin/engine.sock ou npipe:////./pipe/name",
+    "none": "Aucun trouvé",
+    "setSocket": "Définir le socket",
+    "runningShort": "en marche",
+    "checkingAutomatically": "Cette page vérifie à nouveau toutes les quelques secondes."
   },
   "list": {
     "title": "Vos instances BaSyx",
@@ -26,7 +30,10 @@
     "import": "Importer",
     "emptyTitle": "Aucune instance BaSyx pour l'instant",
     "emptyText": "Créez-en une en trois étapes. Studio télécharge tout ce qu'il faut et ajoute l'instance à vos infrastructures.",
-    "otherEngine": "Fonctionne sur un autre moteur ({host})."
+    "otherEngine": "Fonctionne sur un autre moteur ({host}).",
+    "heading": "Instances",
+    "none": "Aucune instance pour l’instant.",
+    "waitingForEngine": "Vos instances apparaissent dès que Docker ou Podman est en marche."
   },
   "status": {
     "running": "En marche",
@@ -94,7 +101,10 @@
     "notInStudio": "Pas encore dans Studio : elle est ajoutée dès que l'instance a démarré.",
     "orphanText": "Ces conteneurs appartiennent à une instance que Studio ne connaît plus. Vous pouvez les supprimer.",
     "missingText": "Les conteneurs ont été supprimés hors de Studio. Recréez-les ; vos données sont toujours là si vous les avez conservées.",
-    "exportWarning": "Ce fichier contient les mots de passe et toutes les données. Partagez-le uniquement avec des personnes de confiance."
+    "exportWarning": "Ce fichier contient les mots de passe et toutes les données. Partagez-le uniquement avec des personnes de confiance.",
+    "parts": "Composants",
+    "noAddresses": "Aucune adresse tant que l’instance ne tourne pas.",
+    "orphanSubtitle": "Conteneurs sans entrée dans Studio"
   },
   "remove": {
     "title": "Supprimer « {name} » ?",
@@ -109,12 +119,13 @@
     "user": "Utilisateur",
     "role": "Rôle",
     "password": "Mot de passe",
-    "show": "Afficher les mots de passe",
+    "showPassword": "Afficher le mot de passe de {user}",
+    "hidePassword": "Masquer le mot de passe de {user}",
+    "copyPassword": "Copier le mot de passe de {user}",
     "roleAdmin": "Administrateur",
     "roleViewer": "Observateur",
     "roleUser": "Utilisateur",
     "console": "Administration Keycloak",
-    "account": "Changer son mot de passe",
     "sharingHint": "Avec le partage, les fichiers AASX chargés au démarrage n'appartiennent à personne : seul admin les voit jusqu'à ce qu'il les partage."
   },
   "logs": {
@@ -152,7 +163,9 @@
     "succeededCreate": "« {name} » est en marche.",
     "succeededStop": "« {name} » a été arrêtée.",
     "succeededRemove": "« {name} » a été supprimée.",
-    "unregisterFailed": "Studio n'a pas pu supprimer son infrastructure ; supprimez-la à la main sous Infrastructures."
+    "unregisterFailed": "Studio n'a pas pu supprimer son infrastructure ; supprimez-la à la main sous Infrastructures.",
+    "progress": "{done} sur {total}",
+    "showLogs": "Afficher les journaux"
   },
   "wizard": {
     "stepWhat": "Choisir un modèle",
@@ -169,7 +182,6 @@
     "aasxAdd": "Ajouter des fichiers AASX",
     "aasxNone": "Aucun. Le serveur démarre vide.",
     "advanced": "Avancé",
-    "advancedHint": "Paramètres facultatifs des services, des données, du réseau et de la version.",
     "services": "Services",
     "servicesHint": "Structure et fonctionnalités de l’instance BaSyx.",
     "features": "Fonctionnalités",
@@ -220,11 +232,16 @@
     "note_ports_reassigned": "Ses ports sont occupés ici ; des ports libres sont choisis à la place.",
     "note_secrets_generated": "Le fichier ne contient pas de mots de passe ; de nouveaux sont générés.",
     "note_compose_ignored": "Les paramètres viennent de basyx-stack.json ; les modifications de docker-compose.yml ne sont pas lues.",
-    "note_aasx_missing": "Certains fichiers AASX manquent dans le fichier et sont ignorés."
+    "note_aasx_missing": "Certains fichiers AASX manquent dans le fichier et sont ignorés.",
+    "summary": "Résumé",
+    "summaryNote": "Studio ajoute l’instance à vos infrastructures une fois qu’elle a démarré.",
+    "aasxRemove": "Retirer le fichier",
+    "showSummary": "Afficher le résumé",
+    "hideSummary": "Masquer le résumé"
   },
   "error": {
     "title": "L'action n'a pas pu être terminée",
-    "unexpected": "BaSyx Docker a rencontré une erreur inattendue.",
+    "unexpected": "Une erreur inattendue s’est produite.",
     "unknownCause": "Aucune cause technique n'a été fournie.",
     "nextStep": "Ce que vous pouvez faire :",
     "technicalDetails": "Cause et détails techniques",
@@ -248,10 +265,10 @@
     "actionSignIn": "Connectez-vous à BaSyx Studio, puis répétez l'action."
   },
   "problem": {
-    "unauthenticated": "Vous devez vous connecter avant que BaSyx Docker puisse terminer cette action.",
+    "unauthenticated": "Vous devez vous connecter avant que cette action puisse être effectuée.",
     "forbidden": "Votre compte n'est pas autorisé à terminer cette action.",
     "csrf_rejected": "BaSyx Studio a rejeté la requête car la session de la page n'est plus valide.",
-    "invalid_request": "BaSyx Docker n'a pas pu utiliser les paramètres envoyés.",
+    "invalid_request": "Les paramètres envoyés n’ont pas pu être utilisés.",
     "validation_failed": "Certains paramètres envoyés ne sont pas valides.",
     "not_found": "L'instance ou l'opération demandée n'existe plus.",
     "container_engine_unavailable": "Docker ou Podman ne répond pas. Démarrez-le et réessayez.",
@@ -264,5 +281,38 @@
     "generic": "Une erreur s'est produite.",
     "details": "Détails",
     "retry": "Réessayer"
+  },
+  "tab": {
+    "overview": "Vue d’ensemble",
+    "settings": "Paramètres"
+  },
+  "componentState": {
+    "running": "En marche",
+    "starting": "Démarrage",
+    "unhealthy": "Pas en bonne santé",
+    "stopped": "Arrêté",
+    "exited": "Terminé",
+    "missing": "Manquant",
+    "finished": "Achevé"
+  },
+  "facts": {
+    "template": "Modèle",
+    "signIn": "Connexion",
+    "noSignIn": "Sans connexion",
+    "data": "Données",
+    "dataKept": "Conservées dans un volume",
+    "dataEphemeral": "Démarre vide",
+    "aasx": "AASX au démarrage",
+    "files": "{count} fichier(s)",
+    "network": "Réseau",
+    "networkLocal": "Cet ordinateur uniquement",
+    "networkShared": "Autres ordinateurs de mon réseau",
+    "portsFrom": "Fixes, à partir de {port}",
+    "imagesTested": "Testée avec ce Studio",
+    "imagesLatest": "Snapshot le plus récent",
+    "restart": "Démarrer avec Docker ou Podman",
+    "restartAlways": "Oui",
+    "restartManual": "Non, seulement d’ici",
+    "none": "Aucun"
   }
 }

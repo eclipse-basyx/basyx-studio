@@ -180,6 +180,18 @@ export default defineVuetifyConfiguration({
       // v-main sets the layout variables: the app bar above, the phone navigation below.
       height: 'calc(100dvh - var(--v-layout-top) - var(--v-layout-bottom))',
       class: 'd-flex flex-column',
+      // A page wizard uses the stepper as a flat progress header above its form.
+      VStepper: {
+        flat: true,
+        rounded: 0,
+        VStepperHeader: { class: 'elevation-0' },
+        VStepperItem: { color: 'primary' },
+      },
+      VCheckbox: { VLabel: { class: 'text-body-medium text-wrap' } },
+      // Small actions next to table values have no surrounding frame.
+      VTable: {
+        VBtnGroup: { border: false, divided: false, size: 'small', density: 'comfortable', VIcon: { size: 18 } },
+      },
     },
     // The App Builder's page: a full page as VSheetFullPage, dense throughout
     // like the coding agents' own apps (small buttons, 32 px rows, compact

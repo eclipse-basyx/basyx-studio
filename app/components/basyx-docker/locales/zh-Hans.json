@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "BaSyx Docker",
+    "title": "本地服务器",
     "subtitle": "在这台电脑上运行 BaSyx 服务器，并在 Studio 中打开。"
   },
   "engine": {
@@ -9,7 +9,7 @@
     "automatic": "自动选择",
     "notRunning": "未运行",
     "missingTitle": "未找到容器引擎",
-    "missingText": "BaSyx Docker 需要 Docker Desktop 或 Podman Desktop。请安装其中之一并启动，然后回到这里。",
+    "missingText": "本地服务器在 Docker Desktop 或 Podman Desktop 中运行。请安装其中之一并启动，然后回到这里。",
     "stoppedTitle": "{name} 未运行",
     "stoppedText": "请启动 {name} 并等待其就绪。本页面会自动检测到。",
     "getDocker": "获取 Docker Desktop",
@@ -18,7 +18,11 @@
     "checking": "正在查找 Docker 或 Podman…",
     "socket": "引擎套接字",
     "useSocket": "使用此套接字",
-    "socketHint": "unix:///path/to/engine.sock 或 npipe:////./pipe/name"
+    "socketHint": "unix:///path/to/engine.sock 或 npipe:////./pipe/name",
+    "none": "未找到",
+    "setSocket": "设置套接字",
+    "runningShort": "运行中",
+    "checkingAutomatically": "此页面每隔几秒会重新检查。"
   },
   "list": {
     "title": "您的 BaSyx 实例",
@@ -26,7 +30,10 @@
     "import": "导入",
     "emptyTitle": "还没有 BaSyx 实例",
     "emptyText": "只需三步即可创建。Studio 会下载所需的一切，并把实例添加到您的基础设施中。",
-    "otherEngine": "运行在另一个引擎上（{host}）。"
+    "otherEngine": "运行在另一个引擎上（{host}）。",
+    "heading": "实例",
+    "none": "还没有实例。",
+    "waitingForEngine": "Docker 或 Podman 运行后，实例会显示在这里。"
   },
   "status": {
     "running": "运行中",
@@ -94,7 +101,10 @@
     "notInStudio": "尚未添加到 Studio：实例启动后会自动添加。",
     "orphanText": "这些容器属于 Studio 已不再知道的实例。您可以删除它们。",
     "missingText": "容器已在 Studio 之外被删除。请重新创建；如果您选择了保留数据，数据仍然存在。",
-    "exportWarning": "此文件包含密码和所有实例数据。请仅与可信任的人共享。"
+    "exportWarning": "此文件包含密码和所有实例数据。请仅与可信任的人共享。",
+    "parts": "组成部分",
+    "noAddresses": "实例未运行时没有地址。",
+    "orphanSubtitle": "没有 Studio 条目的容器"
   },
   "remove": {
     "title": "删除“{name}”？",
@@ -109,12 +119,13 @@
     "user": "用户",
     "role": "角色",
     "password": "密码",
-    "show": "显示密码",
+    "showPassword": "显示 {user} 的密码",
+    "hidePassword": "隐藏 {user} 的密码",
+    "copyPassword": "复制 {user} 的密码",
     "roleAdmin": "管理员",
     "roleViewer": "查看者",
     "roleUser": "用户",
     "console": "Keycloak 管理",
-    "account": "修改自己的密码",
     "sharingHint": "在共享模式下，启动时加载的 AASX 文件不属于任何人：在 admin 共享之前，只有 admin 能看到。"
   },
   "logs": {
@@ -152,7 +163,9 @@
     "succeededCreate": "“{name}”正在运行。",
     "succeededStop": "“{name}”已停止。",
     "succeededRemove": "“{name}”已删除。",
-    "unregisterFailed": "Studio 无法移除其基础设施；请在“基础设施”中手动移除。"
+    "unregisterFailed": "Studio 无法移除其基础设施；请在“基础设施”中手动移除。",
+    "progress": "{done}/{total}",
+    "showLogs": "显示日志"
   },
   "wizard": {
     "stepWhat": "选择模板",
@@ -169,7 +182,6 @@
     "aasxAdd": "添加 AASX 文件",
     "aasxNone": "无。服务器将从空开始。",
     "advanced": "高级",
-    "advancedHint": "服务、数据、网络和版本的可选设置。",
     "services": "服务",
     "servicesHint": "BaSyx 实例的结构和功能。",
     "features": "功能",
@@ -220,11 +232,16 @@
     "note_ports_reassigned": "其端口在此已被占用；将改用空闲端口。",
     "note_secrets_generated": "文件中没有密码；将生成新密码。",
     "note_compose_ignored": "设置来自 basyx-stack.json；不会读取对 docker-compose.yml 的修改。",
-    "note_aasx_missing": "文件中缺少部分 AASX 文件，这些文件将被忽略。"
+    "note_aasx_missing": "文件中缺少部分 AASX 文件，这些文件将被忽略。",
+    "summary": "摘要",
+    "summaryNote": "实例启动后，Studio 会将其添加到你的基础设施中。",
+    "aasxRemove": "移除文件",
+    "showSummary": "显示摘要",
+    "hideSummary": "隐藏摘要"
   },
   "error": {
     "title": "无法完成操作",
-    "unexpected": "BaSyx Docker 遇到意外错误。",
+    "unexpected": "发生意外错误。",
     "unknownCause": "未提供技术原因。",
     "nextStep": "您可以这样做：",
     "technicalDetails": "原因和技术详情",
@@ -248,10 +265,10 @@
     "actionSignIn": "请登录 BaSyx Studio，然后重复此操作。"
   },
   "problem": {
-    "unauthenticated": "请先登录，BaSyx Docker 才能完成此操作。",
+    "unauthenticated": "请先登录，才能完成此操作。",
     "forbidden": "您的帐户无权完成此操作。",
     "csrf_rejected": "页面会话已失效，因此 BaSyx Studio 拒绝了该请求。",
-    "invalid_request": "BaSyx Docker 无法使用提交的设置。",
+    "invalid_request": "无法使用提交的设置。",
     "validation_failed": "提交的部分设置无效。",
     "not_found": "请求的实例或操作已不存在。",
     "container_engine_unavailable": "Docker 或 Podman 没有响应。请启动后重试。",
@@ -264,5 +281,38 @@
     "generic": "出现了问题。",
     "details": "详情",
     "retry": "重试"
+  },
+  "tab": {
+    "overview": "概览",
+    "settings": "设置"
+  },
+  "componentState": {
+    "running": "运行中",
+    "starting": "正在启动",
+    "unhealthy": "不健康",
+    "stopped": "已停止",
+    "exited": "已退出",
+    "missing": "缺失",
+    "finished": "已完成"
+  },
+  "facts": {
+    "template": "模板",
+    "signIn": "登录",
+    "noSignIn": "无需登录",
+    "data": "数据",
+    "dataKept": "保存在卷中",
+    "dataEphemeral": "每次都从空开始",
+    "aasx": "启动时加载的 AASX",
+    "files": "{count} 个文件",
+    "network": "网络",
+    "networkLocal": "仅此计算机",
+    "networkShared": "我网络中的其他计算机",
+    "portsFrom": "固定，从 {port} 开始",
+    "imagesTested": "已在此 Studio 中测试",
+    "imagesLatest": "最新快照",
+    "restart": "随 Docker 或 Podman 启动",
+    "restartAlways": "是",
+    "restartManual": "否，仅从这里启动",
+    "none": "无"
   }
 }

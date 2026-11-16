@@ -71,13 +71,13 @@ test('creates, changes, exports, imports, retains and opens an instance through 
       }).catch(() => {})
     }
   })
-  await window.getByRole('link', { name: 'BaSyx Docker', exact: true }).click()
+  await window.getByRole('link', { name: 'Local Servers', exact: true }).click()
   await window.locator('[data-test="new"]').click()
   await window.locator('[data-test="next"]').click()
   await window.locator('[data-test="name"] input').fill('Desktop container regression')
+  await window.locator('[data-test="persistence-keep"] input').check()
   // Use a different block from the manager integration suite if both run locally.
   await window.locator('[data-test="advanced"]').getByRole('button').click()
-  await window.getByLabel('Keep data in a Docker volume', { exact: true }).check()
   await window.getByLabel('Ports', { exact: true }).press('ArrowDown')
   await window.getByRole('option').filter({ hasText: 'Fixed ports from' }).click()
   await window.getByLabel('First port', { exact: true }).fill('19100')
@@ -134,7 +134,7 @@ test('creates, changes, exports, imports, retains and opens an instance through 
   await expect(window.locator('[data-test="new"]')).toBeVisible({ timeout: 20_000 })
   await window.getByRole('button', { name: 'Toggle theme', exact: true }).click()
   await expect(window.locator('[data-test="new"]')).toBeVisible({ timeout: 20_000 })
-  await expect(card).toHaveCSS('background-color', 'rgb(33, 33, 33)')
+  await expect(card.locator('.v-card').first()).toHaveCSS('background-color', 'rgb(33, 33, 33)')
   await window.screenshot({ path: test.info().outputPath('containers-dark.png'), fullPage: true })
   await card.locator('[data-test="open"]').click()
   await expect(window).toHaveURL(/\/targets\//)
@@ -150,8 +150,20 @@ test('keeps the native page visible when Studio changes theme and viewport', asy
       console.error('Desktop console error:', message.text())
     }
   })
-  await window.getByRole('link', { name: 'BaSyx Docker', exact: true }).click()
+  await window.getByRole('link', { name: 'Local Servers', exact: true }).click()
   await expect(window.locator('[data-test="new"]')).toBeVisible()
+
+  const engineFooter = window.locator('[data-test="engine-footer"]')
+  const engineSelector = engineFooter.locator('[data-test="engine"]')
+  const engineHost = window.locator('[data-test="engine-host"] input')
+  await expect(engineSelector).toHaveText(/^\S+ · running$/)
+  await engineFooter.locator('.text-body-medium').click()
+  await expect(engineHost).toBeHidden()
+  await engineSelector.locator('.v-btn__content').click()
+  await expect(engineHost).toBeVisible()
+  await window.keyboard.press('Escape')
+  await expect(engineHost).toBeHidden()
+
   for (const width of [768, 375, 1440]) {
     await window.setViewportSize({ width, height: 900 })
     await expect(window.locator('[data-test="new"]')).toBeVisible({ timeout: 20_000 })

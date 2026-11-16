@@ -734,8 +734,8 @@
   "nav": {
     "targets": "AAS targets",
     "targetsShort": "Targets",
-    "docker": "BaSyx Docker",
-    "dockerShort": "Docker",
+    "docker": "Local Servers",
+    "dockerShort": "Local",
     "dockerDesktopOnly": "Local BaSyx instances are available only in the BaSyx Studio desktop app.",
     "appBuilder": "App Builder",
     "appBuilderShort": "Builder",

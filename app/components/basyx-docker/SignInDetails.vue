@@ -1,81 +1,60 @@
 <template>
-  <v-card class="pa-3" data-test="sign-in">
-    <div class="d-flex align-center ga-2 mb-2">
-      <div class="text-body-2 flex-grow-1">{{ t('signIn.text') }}</div>
-      <v-btn :aria-label="t('remove.cancel')" icon="mdi-close" size="small" @click="emit('close')" />
-    </div>
+  <v-card data-test="sign-in">
+    <v-card-text class="d-flex flex-column ga-4">
+      <p class="text-body-medium ma-0">{{ t('signIn.text') }}</p>
 
-    <v-progress-linear v-if="!details && !error" />
+      <v-progress-linear v-if="!details && !error" />
 
-    <ErrorAlert v-else-if="error" :error="error">
-      <template #actions>
-        <v-btn :text="t('problem.retry')" @click="load" />
+      <ErrorAlert v-else-if="error" :error="error">
+        <template #actions>
+          <v-btn :text="t('problem.retry')" @click="load" />
+        </template>
+      </ErrorAlert>
+
+      <template v-else-if="details">
+        <CredentialTable :users="details.users" @copy="copy" />
+
+        <v-alert v-if="sharing && stack.spec?.aasxFiles.length" class="my-2" :text="t('signIn.sharingHint')" type="info" />
+
+        <v-divider />
+
+        <section class="d-flex flex-column ga-3" data-test="console-sign-in">
+          <div class="d-flex align-center ga-2">
+            <h2 class="text-title-small font-weight-medium flex-grow-1 ma-0">{{ t('signIn.console') }}</h2>
+
+            <v-btn-widget-icon
+              v-tooltip="t('signIn.console')"
+              :aria-label="t('signIn.console')"
+              icon="mdi-open-in-new"
+              @click="client.ui.openExternal(details.console.url)"
+            />
+          </div>
+
+          <CredentialTable :users="consoleUsers" @copy="copy" />
+        </section>
       </template>
-    </ErrorAlert>
-
-    <template v-else-if="details">
-      <v-table density="compact">
-        <thead>
-          <tr>
-            <th>{{ t('signIn.user') }}</th>
-            <th>{{ t('signIn.role') }}</th>
-            <th>{{ t('signIn.password') }}</th>
-            <th />
-          </tr>
-        </thead>
-
-        <tbody>
-          <tr v-for="user in details.users" :key="user.username">
-            <td class="text-mono">{{ user.username }}</td>
-            <td>{{ t(roleKeys[user.role]) }}</td>
-            <td class="text-mono">{{ show ? user.password : '••••••••••••' }}</td>
-
-            <td class="text-end">
-              <v-btn
-                :aria-label="t('card.copy')"
-                icon="mdi-content-copy"
-                size="small"
-                :title="t('card.copy')"
-                @click="copy(user.password)"
-              />
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
-
-      <v-switch
-        v-model="show"
-        :label="t('signIn.show')"
-      />
-
-      <v-alert v-if="sharing && stack.spec?.aasxFiles.length" class="my-2" :text="t('signIn.sharingHint')" type="info" />
-
-      <div class="d-flex flex-wrap ga-2">
-        <v-btn append-icon="mdi-open-in-new" :text="t('signIn.account')" @click="client.ui.openExternal(details.accountUrl)" />
-        <v-btn append-icon="mdi-open-in-new" :text="t('signIn.console')" @click="client.ui.openExternal(details.console.url)" />
-        <v-chip prepend-icon="mdi-account-cog-outline" :text="`${details.console.username} · ${show ? details.console.password : '••••••••••••'}`" />
-      </div>
-    </template>
+    </v-card-text>
   </v-card>
 </template>
 
 <script lang="ts" setup>
   import type { Stack, StackSignIn } from '@basyx/studio-sdk'
   import { computed, onMounted, ref } from 'vue'
+  import CredentialTable from './CredentialTable.vue'
   import ErrorAlert from './ErrorAlert.vue'
   import { useI18n } from './i18n'
   import { useClient } from './support'
 
   const props = defineProps<{ stack: Stack }>()
-  const emit = defineEmits<{ close: [] }>()
   const { t } = useI18n()
   const client = useClient()
 
   const details = ref<StackSignIn | null>(null)
   const error = ref<unknown | null>(null)
-  const show = ref(false)
   const sharing = computed(() => props.stack.spec?.security.mode === 'keycloak' && props.stack.spec.security.access === 'sharing')
-  const roleKeys = { admin: 'signIn.roleAdmin', viewer: 'signIn.roleViewer', user: 'signIn.roleUser' } as const
+  const consoleUsers = computed<StackSignIn['users']>(() => details.value
+    ? [{ username: details.value.console.username, password: details.value.console.password, role: 'admin' }]
+    : [])
 
   async function copy (value: string) {
     error.value = null

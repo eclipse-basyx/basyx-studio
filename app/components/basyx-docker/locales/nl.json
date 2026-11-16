@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "BaSyx Docker",
+    "title": "Lokale servers",
     "subtitle": "Draai BaSyx-servers op deze computer en open ze in Studio."
   },
   "engine": {
@@ -9,7 +9,7 @@
     "automatic": "Automatisch kiezen",
     "notRunning": "draait niet",
     "missingTitle": "Geen container-engine gevonden",
-    "missingText": "BaSyx Docker heeft Docker Desktop of Podman Desktop nodig. Installeer een van beide, start het en kom hier terug.",
+    "missingText": "Lokale servers draaien in Docker Desktop of Podman Desktop. Installeer een van beide, start het en kom hier terug.",
     "stoppedTitle": "{name} draait niet",
     "stoppedText": "Start {name} en wacht tot het klaar is. Deze pagina merkt dat vanzelf.",
     "getDocker": "Docker Desktop downloaden",
@@ -18,7 +18,11 @@
     "checking": "Zoeken naar Docker of Podman…",
     "socket": "Engine-socket",
     "useSocket": "Socket gebruiken",
-    "socketHint": "unix:///pad/engine.sock of npipe:////./pipe/name"
+    "socketHint": "unix:///pad/engine.sock of npipe:////./pipe/name",
+    "none": "Geen gevonden",
+    "setSocket": "Socket instellen",
+    "runningShort": "actief",
+    "checkingAutomatically": "Deze pagina controleert elke paar seconden opnieuw."
   },
   "list": {
     "title": "Uw BaSyx-instanties",
@@ -26,7 +30,10 @@
     "import": "Importeren",
     "emptyTitle": "Nog geen BaSyx-instantie",
     "emptyText": "Maak er een in drie stappen. Studio downloadt alles wat nodig is en voegt de instantie toe aan uw infrastructuren.",
-    "otherEngine": "Draait op een andere engine ({host})."
+    "otherEngine": "Draait op een andere engine ({host}).",
+    "heading": "Instanties",
+    "none": "Nog geen instanties.",
+    "waitingForEngine": "Uw instanties verschijnen zodra Docker of Podman draait."
   },
   "status": {
     "running": "Draait",
@@ -94,7 +101,10 @@
     "notInStudio": "Nog niet in Studio: hij wordt toegevoegd zodra de instantie gestart is.",
     "orphanText": "Deze containers horen bij een instantie die Studio niet meer kent. U kunt ze verwijderen.",
     "missingText": "De containers zijn buiten Studio verwijderd. Maak ze opnieuw aan; uw gegevens zijn er nog als u ze bewaard hebt.",
-    "exportWarning": "Dit bestand bevat wachtwoorden en alle gegevens. Deel het alleen met vertrouwde personen."
+    "exportWarning": "Dit bestand bevat wachtwoorden en alle gegevens. Deel het alleen met vertrouwde personen.",
+    "parts": "Onderdelen",
+    "noAddresses": "Geen adressen zolang de instantie niet draait.",
+    "orphanSubtitle": "Containers zonder vermelding in Studio"
   },
   "remove": {
     "title": "\"{name}\" verwijderen?",
@@ -109,12 +119,13 @@
     "user": "Gebruiker",
     "role": "Rol",
     "password": "Wachtwoord",
-    "show": "Wachtwoorden tonen",
+    "showPassword": "Wachtwoord voor {user} tonen",
+    "hidePassword": "Wachtwoord voor {user} verbergen",
+    "copyPassword": "Wachtwoord voor {user} kopiëren",
     "roleAdmin": "Beheerder",
     "roleViewer": "Kijker",
     "roleUser": "Gebruiker",
     "console": "Keycloak-beheer",
-    "account": "Eigen wachtwoord wijzigen",
     "sharingHint": "Bij delen zijn AASX-bestanden die bij de start worden geladen van niemand: alleen admin ziet ze tot admin ze deelt."
   },
   "logs": {
@@ -152,7 +163,9 @@
     "succeededCreate": "\"{name}\" draait.",
     "succeededStop": "\"{name}\" is gestopt.",
     "succeededRemove": "\"{name}\" is verwijderd.",
-    "unregisterFailed": "Studio kon de infrastructuur niet verwijderen; verwijder die zelf onder Infrastructuren."
+    "unregisterFailed": "Studio kon de infrastructuur niet verwijderen; verwijder die zelf onder Infrastructuren.",
+    "progress": "{done} van {total}",
+    "showLogs": "Logboeken tonen"
   },
   "wizard": {
     "stepWhat": "Template selecteren",
@@ -169,7 +182,6 @@
     "aasxAdd": "AASX-bestanden toevoegen",
     "aasxNone": "Geen. De server start leeg.",
     "advanced": "Geavanceerd",
-    "advancedHint": "Optionele instellingen voor diensten, gegevens, netwerk en versie.",
     "services": "Diensten",
     "servicesHint": "Opbouw en functies van de BaSyx-instantie.",
     "features": "Functies",
@@ -220,11 +232,16 @@
     "note_ports_reassigned": "Zijn poorten zijn hier bezet; in plaats daarvan worden vrije poorten gekozen.",
     "note_secrets_generated": "Het bestand bevat geen wachtwoorden; er worden nieuwe gemaakt.",
     "note_compose_ignored": "De instellingen komen uit basyx-stack.json; wijzigingen in docker-compose.yml worden niet gelezen.",
-    "note_aasx_missing": "Sommige AASX-bestanden ontbreken in het bestand en worden weggelaten."
+    "note_aasx_missing": "Sommige AASX-bestanden ontbreken in het bestand en worden weggelaten.",
+    "summary": "Samenvatting",
+    "summaryNote": "Studio voegt de instantie toe aan uw infrastructuren zodra die is gestart.",
+    "aasxRemove": "Bestand verwijderen",
+    "showSummary": "Samenvatting tonen",
+    "hideSummary": "Samenvatting verbergen"
   },
   "error": {
     "title": "De actie kon niet worden voltooid",
-    "unexpected": "Er is een onverwachte fout opgetreden in BaSyx Docker.",
+    "unexpected": "Er is een onverwachte fout opgetreden.",
     "unknownCause": "Er is geen technische oorzaak doorgegeven.",
     "nextStep": "Dit kunt u doen:",
     "technicalDetails": "Oorzaak en technische details",
@@ -248,10 +265,10 @@
     "actionSignIn": "Meld u aan bij BaSyx Studio en herhaal de actie."
   },
   "problem": {
-    "unauthenticated": "U moet zich aanmelden voordat BaSyx Docker deze actie kan voltooien.",
+    "unauthenticated": "U moet zich aanmelden voordat deze actie kan worden voltooid.",
     "forbidden": "Uw account mag deze actie niet voltooien.",
     "csrf_rejected": "BaSyx Studio heeft het verzoek geweigerd omdat de paginasessie niet meer geldig is.",
-    "invalid_request": "BaSyx Docker kon de verzonden instellingen niet gebruiken.",
+    "invalid_request": "De verzonden instellingen konden niet worden gebruikt.",
     "validation_failed": "Sommige verzonden instellingen zijn ongeldig.",
     "not_found": "De gevraagde instantie of bewerking bestaat niet meer.",
     "container_engine_unavailable": "Docker of Podman antwoordt niet. Start het en probeer het opnieuw.",
@@ -264,5 +281,38 @@
     "generic": "Er is iets misgegaan.",
     "details": "Details",
     "retry": "Opnieuw proberen"
+  },
+  "tab": {
+    "overview": "Overzicht",
+    "settings": "Instellingen"
+  },
+  "componentState": {
+    "running": "Actief",
+    "starting": "Starten",
+    "unhealthy": "Niet gezond",
+    "stopped": "Gestopt",
+    "exited": "Beëindigd",
+    "missing": "Ontbreekt",
+    "finished": "Voltooid"
+  },
+  "facts": {
+    "template": "Template",
+    "signIn": "Aanmelden",
+    "noSignIn": "Geen aanmelding",
+    "data": "Gegevens",
+    "dataKept": "Bewaard in een volume",
+    "dataEphemeral": "Start leeg",
+    "aasx": "AASX bij het starten",
+    "files": "{count} bestand(en)",
+    "network": "Netwerk",
+    "networkLocal": "Alleen deze computer",
+    "networkShared": "Andere computers in mijn netwerk",
+    "portsFrom": "Vast, vanaf {port}",
+    "imagesTested": "Getest met deze Studio",
+    "imagesLatest": "Nieuwste snapshot",
+    "restart": "Starten met Docker of Podman",
+    "restartAlways": "Ja",
+    "restartManual": "Nee, alleen vanaf hier",
+    "none": "Geen"
   }
 }

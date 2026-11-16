@@ -644,8 +644,8 @@
   "nav": {
     "targets": "AAS ターゲット",
     "targetsShort": "ターゲット",
-    "docker": "BaSyx Docker",
-    "dockerShort": "Docker",
+    "docker": "ローカルサーバー",
+    "dockerShort": "ローカル",
     "dockerDesktopOnly": "ローカル BaSyx インスタンスは BaSyx Studio デスクトップアプリでのみ利用できます。",
     "appBuilder": "アプリビルダー",
     "appBuilderShort": "ビルダー",

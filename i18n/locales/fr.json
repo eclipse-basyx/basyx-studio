@@ -644,8 +644,8 @@
   "nav": {
     "targets": "Cibles AAS",
     "targetsShort": "Cibles",
-    "docker": "BaSyx Docker",
-    "dockerShort": "Docker",
+    "docker": "Serveurs locaux",
+    "dockerShort": "Local",
     "dockerDesktopOnly": "Les instances BaSyx locales sont disponibles uniquement dans l’application de bureau BaSyx Studio.",
     "appBuilder": "Créateur d'applications",
     "appBuilderShort": "Créateur",

@@ -1,5 +1,5 @@
 import type { Translate } from './i18n'
-import type { Problem, StackComponentId, StackSpec, StudioClient } from '@basyx/studio-sdk'
+import type { Problem, Stack, StackComponentId, StackSpec, StudioClient } from '@basyx/studio-sdk'
 import type { InjectionKey } from 'vue'
 import { StudioError } from '@basyx/studio-sdk'
 import { inject } from 'vue'
@@ -106,8 +106,25 @@ export const presetIcons: Record<StackSpec['preset'], string> = {
   secured: 'mdi-shield-lock-outline',
 }
 
+/** The colour of an instance's status dot; `undefined` keeps it neutral. */
+export const statusColors: Record<Stack['status'], string | undefined> = {
+  running: 'success',
+  busy: 'info',
+  partial: 'warning',
+  stopped: undefined,
+  error: 'error',
+  missing: 'warning',
+  orphan: undefined,
+  unknown: 'warning',
+}
+
 /** Presets offered for new or changed instances. `full` remains readable for legacy stacks. */
 export const selectablePresets = ['quick', 'secured'] as const satisfies readonly StackSpec['preset'][]
+
+/** Describe the effective port policy, including ports kept while editing. */
+export function portSummary (t: Translate, basePort: number | null): string {
+  return basePort === null ? t('wizard.portsAuto') : t('facts.portsFrom', { port: basePort })
+}
 
 export type StackNameProblem = 'required' | 'duplicate'
 

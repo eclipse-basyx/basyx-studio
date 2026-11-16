@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "BaSyx Docker",
+    "title": "Local Servers",
     "subtitle": "Run BaSyx servers on this computer and open them in Studio."
   },
   "engine": {
@@ -9,7 +9,7 @@
     "automatic": "Choose automatically",
     "notRunning": "not running",
     "missingTitle": "No container engine found",
-    "missingText": "BaSyx Docker needs Docker Desktop or Podman Desktop. Install one of them, start it, and come back here.",
+    "missingText": "Local servers run in Docker Desktop or Podman Desktop. Install one of them, start it, and come back here.",
     "stoppedTitle": "{name} is not running",
     "stoppedText": "Start {name} and wait until it is ready. This page notices it on its own.",
     "getDocker": "Get Docker Desktop",
@@ -18,7 +18,11 @@
     "checking": "Looking for Docker or Podman…",
     "socket": "Engine socket",
     "useSocket": "Use socket",
-    "socketHint": "unix:///path/to/engine.sock or npipe:////./pipe/name"
+    "socketHint": "unix:///path/to/engine.sock or npipe:////./pipe/name",
+    "none": "None found",
+    "setSocket": "Set socket",
+    "runningShort": "running",
+    "checkingAutomatically": "This page checks again every few seconds."
   },
   "list": {
     "title": "Your BaSyx instances",
@@ -26,7 +30,10 @@
     "import": "Import",
     "emptyTitle": "No BaSyx instance yet",
     "emptyText": "Create one in three steps. Studio downloads everything it needs and adds the instance to your infrastructures.",
-    "otherEngine": "Runs on another engine ({host})."
+    "otherEngine": "Runs on another engine ({host}).",
+    "heading": "Instances",
+    "none": "No instances yet.",
+    "waitingForEngine": "Your instances appear once Docker or Podman runs."
   },
   "status": {
     "running": "Running",
@@ -94,7 +101,10 @@
     "notInStudio": "Not in Studio yet: it is added once the instance has started.",
     "orphanText": "These containers belong to an instance Studio no longer knows. You can delete them.",
     "missingText": "The containers were removed outside Studio. Create them again; your data is still there if you kept it.",
-    "exportWarning": "This file contains passwords and all instance data. Share it only with trusted people."
+    "exportWarning": "This file contains passwords and all instance data. Share it only with trusted people.",
+    "parts": "Parts",
+    "noAddresses": "No addresses while the instance is not running.",
+    "orphanSubtitle": "Containers without a Studio entry"
   },
   "remove": {
     "title": "Delete \"{name}\"?",
@@ -109,12 +119,13 @@
     "user": "User",
     "role": "Role",
     "password": "Password",
-    "show": "Show passwords",
+    "showPassword": "Show password for {user}",
+    "hidePassword": "Hide password for {user}",
+    "copyPassword": "Copy password for {user}",
     "roleAdmin": "Administrator",
     "roleViewer": "Viewer",
     "roleUser": "User",
     "console": "Keycloak administration",
-    "account": "Change own password",
     "sharingHint": "With sharing, AASX files loaded at startup belong to nobody: only admin sees them until admin shares them."
   },
   "logs": {
@@ -152,7 +163,9 @@
     "succeededCreate": "\"{name}\" is running.",
     "succeededStop": "\"{name}\" was stopped.",
     "succeededRemove": "\"{name}\" was deleted.",
-    "unregisterFailed": "Studio could not remove its infrastructure; remove it by hand under Infrastructures."
+    "unregisterFailed": "Studio could not remove its infrastructure; remove it by hand under Infrastructures.",
+    "progress": "{done} of {total}",
+    "showLogs": "Show logs"
   },
   "wizard": {
     "stepWhat": "Select template",
@@ -169,7 +182,6 @@
     "aasxAdd": "Add AASX files",
     "aasxNone": "None. The server starts empty.",
     "advanced": "Advanced",
-    "advancedHint": "Optional service, data, network and version settings.",
     "services": "Services",
     "servicesHint": "Structure and features of the BaSyx instance.",
     "features": "Features",
@@ -220,11 +232,16 @@
     "note_ports_reassigned": "Its ports are in use here; free ports are picked instead.",
     "note_secrets_generated": "The file has no passwords; new ones are generated.",
     "note_compose_ignored": "The settings come from basyx-stack.json; changes to docker-compose.yml are not read.",
-    "note_aasx_missing": "Some AASX files are missing in the file and are left out."
+    "note_aasx_missing": "Some AASX files are missing in the file and are left out.",
+    "summary": "Summary",
+    "summaryNote": "Studio adds the instance to your infrastructures when it has started.",
+    "aasxRemove": "Remove file",
+    "showSummary": "Show summary",
+    "hideSummary": "Hide summary"
   },
   "error": {
     "title": "The action could not be completed",
-    "unexpected": "BaSyx Docker encountered an unexpected error.",
+    "unexpected": "An unexpected error occurred.",
     "unknownCause": "No technical cause was provided.",
     "nextStep": "What you can do:",
     "technicalDetails": "Cause and technical details",
@@ -248,10 +265,10 @@
     "actionSignIn": "Sign in to BaSyx Studio, then repeat the action."
   },
   "problem": {
-    "unauthenticated": "You need to sign in before BaSyx Docker can complete this action.",
+    "unauthenticated": "You need to sign in before this action can be completed.",
     "forbidden": "Your account is not allowed to complete this action.",
     "csrf_rejected": "BaSyx Studio rejected this request because the page session is no longer valid.",
-    "invalid_request": "BaSyx Docker could not use the submitted settings.",
+    "invalid_request": "The submitted settings could not be used.",
     "validation_failed": "Some submitted settings are not valid.",
     "not_found": "The requested instance or operation no longer exists.",
     "container_engine_unavailable": "Docker or Podman does not answer. Start it and try again.",
@@ -264,5 +281,38 @@
     "generic": "Something went wrong.",
     "details": "Details",
     "retry": "Try again"
+  },
+  "tab": {
+    "overview": "Overview",
+    "settings": "Settings"
+  },
+  "componentState": {
+    "running": "Running",
+    "starting": "Starting",
+    "unhealthy": "Not healthy",
+    "stopped": "Stopped",
+    "exited": "Exited",
+    "missing": "Missing",
+    "finished": "Finished"
+  },
+  "facts": {
+    "template": "Template",
+    "signIn": "Sign-in",
+    "noSignIn": "No sign-in",
+    "data": "Data",
+    "dataKept": "Kept in a volume",
+    "dataEphemeral": "Starts empty",
+    "aasx": "AASX at startup",
+    "files": "{count} file(s)",
+    "network": "Network",
+    "networkLocal": "This computer only",
+    "networkShared": "Other computers in my network",
+    "portsFrom": "Fixed, from {port}",
+    "imagesTested": "Tested with this Studio",
+    "imagesLatest": "Newest snapshot",
+    "restart": "Start with Docker or Podman",
+    "restartAlways": "Yes",
+    "restartManual": "No, only from here",
+    "none": "None"
   }
 }

@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "BaSyx Docker",
+    "title": "ローカルサーバー",
     "subtitle": "このコンピューターで BaSyx サーバーを動かし、Studio で開きます。"
   },
   "engine": {
@@ -9,7 +9,7 @@
     "automatic": "自動で選択",
     "notRunning": "停止中",
     "missingTitle": "コンテナーエンジンが見つかりません",
-    "missingText": "BaSyx Docker には Docker Desktop または Podman Desktop が必要です。どちらかをインストールして起動し、ここに戻ってください。",
+    "missingText": "ローカルサーバーは Docker Desktop または Podman Desktop で動作します。どちらかをインストールして起動し、ここに戻ってください。",
     "stoppedTitle": "{name} が起動していません",
     "stoppedText": "{name} を起動し、準備ができるまでお待ちください。このページは自動で検出します。",
     "getDocker": "Docker Desktop を入手",
@@ -18,7 +18,11 @@
     "checking": "Docker または Podman を探しています…",
     "socket": "エンジンのソケット",
     "useSocket": "このソケットを使用",
-    "socketHint": "unix:///path/to/engine.sock または npipe:////./pipe/name"
+    "socketHint": "unix:///path/to/engine.sock または npipe:////./pipe/name",
+    "none": "見つかりません",
+    "setSocket": "ソケットを設定",
+    "runningShort": "実行中",
+    "checkingAutomatically": "このページは数秒ごとに再確認します。"
   },
   "list": {
     "title": "BaSyx インスタンス",
@@ -26,7 +30,10 @@
     "import": "インポート",
     "emptyTitle": "BaSyx インスタンスはまだありません",
     "emptyText": "3 つの手順で作成できます。Studio が必要なものをすべてダウンロードし、インスタンスをインフラストラクチャに追加します。",
-    "otherEngine": "別のエンジン ({host}) で動作しています。"
+    "otherEngine": "別のエンジン ({host}) で動作しています。",
+    "heading": "インスタンス",
+    "none": "インスタンスはまだありません。",
+    "waitingForEngine": "Docker または Podman が動作すると、インスタンスが表示されます。"
   },
   "status": {
     "running": "動作中",
@@ -94,7 +101,10 @@
     "notInStudio": "まだ Studio にありません。インスタンスの起動後に追加されます。",
     "orphanText": "これらのコンテナーは、Studio がもう把握していないインスタンスのものです。削除できます。",
     "missingText": "コンテナーが Studio の外で削除されました。再作成してください。データを保持していれば、データは残っています。",
-    "exportWarning": "このファイルにはパスワードとすべてのデータが含まれます。信頼できる人とのみ共有してください。"
+    "exportWarning": "このファイルにはパスワードとすべてのデータが含まれます。信頼できる人とのみ共有してください。",
+    "parts": "構成要素",
+    "noAddresses": "インスタンスが実行されていない間はアドレスがありません。",
+    "orphanSubtitle": "Studio に登録されていないコンテナー"
   },
   "remove": {
     "title": "「{name}」を削除しますか?",
@@ -109,12 +119,13 @@
     "user": "ユーザー",
     "role": "ロール",
     "password": "パスワード",
-    "show": "パスワードを表示",
+    "showPassword": "{user} のパスワードを表示",
+    "hidePassword": "{user} のパスワードを非表示",
+    "copyPassword": "{user} のパスワードをコピー",
     "roleAdmin": "管理者",
     "roleViewer": "閲覧者",
     "roleUser": "ユーザー",
     "console": "Keycloak 管理",
-    "account": "自分のパスワードを変更",
     "sharingHint": "共有では、起動時に読み込んだ AASX ファイルは誰のものでもありません。admin が共有するまでは admin だけが表示できます。"
   },
   "logs": {
@@ -152,7 +163,9 @@
     "succeededCreate": "「{name}」が動作しています。",
     "succeededStop": "「{name}」を停止しました。",
     "succeededRemove": "「{name}」を削除しました。",
-    "unregisterFailed": "Studio はインフラストラクチャを削除できませんでした。「インフラストラクチャ」から手動で削除してください。"
+    "unregisterFailed": "Studio はインフラストラクチャを削除できませんでした。「インフラストラクチャ」から手動で削除してください。",
+    "progress": "{done} / {total}",
+    "showLogs": "ログを表示"
   },
   "wizard": {
     "stepWhat": "テンプレートを選択",
@@ -169,7 +182,6 @@
     "aasxAdd": "AASX ファイルを追加",
     "aasxNone": "なし。サーバーは空で起動します。",
     "advanced": "詳細設定",
-    "advancedHint": "サービス、データ、ネットワーク、バージョンのオプション設定。",
     "services": "サービス",
     "servicesHint": "BaSyx インスタンスの構成と機能。",
     "features": "機能",
@@ -220,11 +232,16 @@
     "note_ports_reassigned": "ポートがここでは使用中のため、空いているポートを選びます。",
     "note_secrets_generated": "ファイルにパスワードが含まれていないため、新しいパスワードを生成します。",
     "note_compose_ignored": "設定は basyx-stack.json から読み込みます。docker-compose.yml の変更は読み込みません。",
-    "note_aasx_missing": "一部の AASX ファイルがファイル内に見つからないため、除外します。"
+    "note_aasx_missing": "一部の AASX ファイルがファイル内に見つからないため、除外します。",
+    "summary": "概要",
+    "summaryNote": "インスタンスが起動すると、Studio がインフラストラクチャに追加します。",
+    "aasxRemove": "ファイルを削除",
+    "showSummary": "概要を表示",
+    "hideSummary": "概要を非表示"
   },
   "error": {
     "title": "操作を完了できませんでした",
-    "unexpected": "BaSyx Docker で予期しないエラーが発生しました。",
+    "unexpected": "予期しないエラーが発生しました。",
     "unknownCause": "技術的な原因は提供されませんでした。",
     "nextStep": "対処方法:",
     "technicalDetails": "原因と技術的な詳細",
@@ -251,7 +268,7 @@
     "unauthenticated": "この操作を完了するには BaSyx Studio にサインインしてください。",
     "forbidden": "このアカウントには操作を完了する権限がありません。",
     "csrf_rejected": "ページのセッションが無効なため、BaSyx Studio がリクエストを拒否しました。",
-    "invalid_request": "BaSyx Docker は送信された設定を使用できませんでした。",
+    "invalid_request": "送信された設定を使用できませんでした。",
     "validation_failed": "送信された設定の一部が無効です。",
     "not_found": "要求されたインスタンスまたは操作は存在しません。",
     "container_engine_unavailable": "Docker または Podman が応答しません。起動してからもう一度お試しください。",
@@ -264,5 +281,38 @@
     "generic": "問題が発生しました。",
     "details": "詳細",
     "retry": "再試行"
+  },
+  "tab": {
+    "overview": "概要",
+    "settings": "設定"
+  },
+  "componentState": {
+    "running": "実行中",
+    "starting": "起動中",
+    "unhealthy": "異常",
+    "stopped": "停止",
+    "exited": "終了",
+    "missing": "不明",
+    "finished": "完了"
+  },
+  "facts": {
+    "template": "テンプレート",
+    "signIn": "サインイン",
+    "noSignIn": "サインインなし",
+    "data": "データ",
+    "dataKept": "ボリュームに保持",
+    "dataEphemeral": "毎回空で開始",
+    "aasx": "起動時の AASX",
+    "files": "{count} 個のファイル",
+    "network": "ネットワーク",
+    "networkLocal": "このコンピューターのみ",
+    "networkShared": "ネットワーク内の他のコンピューター",
+    "portsFrom": "固定、{port} から",
+    "imagesTested": "この Studio でテスト済み",
+    "imagesLatest": "最新のスナップショット",
+    "restart": "Docker または Podman と一緒に起動",
+    "restartAlways": "はい",
+    "restartManual": "いいえ、ここからのみ",
+    "none": "なし"
   }
 }
