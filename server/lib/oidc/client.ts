@@ -132,7 +132,7 @@ export async function startAuthorization (
   return { url: url.href, state, nonce, codeVerifier }
 }
 
-function toTokenSet (response: Awaited<ReturnType<typeof oidc.refreshTokenGrant>>): TokenSet {
+function toTokenSet (response: oidc.TokenEndpointResponse & oidc.TokenEndpointResponseHelpers): TokenSet {
   const expiresIn = response.expiresIn()
   return {
     accessToken: response.access_token,
