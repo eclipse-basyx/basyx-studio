@@ -9,8 +9,7 @@ export const aasIconPaths = [
 ]
 
 // The toggle of the side list (shells, submodels) in the desktop title bar,
-// outlined like the other title bar icons, as VS Code's "toggle primary side
-// bar": a rounded frame with the left panel marked off by a line while the
+// outlined like the other title bar icons: a rounded frame with the left panel marked off by a line while the
 // list is closed (`$sidebar`) and filled while it is open (`$sidebarOpen`).
 // Material Design Icons has it only filled (`mdi-dock-left`). The frame's
 // inner edge runs the other way, so it cuts out of the outer one.

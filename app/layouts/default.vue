@@ -1,6 +1,6 @@
 <template>
   <v-app :theme="ui.arcade ? 'arcade' : undefined">
-    <!-- In the desktop app's window the bar is its title bar (as in VS Code):
+    <!-- In the desktop app's window the bar is its title bar:
          compact, the window controls inside it and the window dragged by it
          (title-bar.css). Three parts: start, the centred search, end. -->
     <v-app-bar

@@ -1,6 +1,6 @@
 /*
  * The desktop app's title bar: Studio's app bar takes the place of the
- * native one (electron/main.ts), as in VS Code. Dragging the window and
+ * native one (electron/main.ts). Dragging the window and
  * keeping clear of the window controls are things only CSS can express
  * (`-webkit-app-region`, the Window Controls Overlay's `env(titlebar-area-*)`),
  * so they live here, like grid-layout.css; the bar itself is still built from
