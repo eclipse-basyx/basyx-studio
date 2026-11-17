@@ -12,8 +12,23 @@
   -webkit-app-region: drag;
   /* The traffic lights (macOS) take the start of the bar, the window
      controls (Windows, Linux) its end. */
-  padding-inline-start: env(titlebar-area-x, 0px);
-  padding-inline-end: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
+  --title-bar-start: env(titlebar-area-x, 0px);
+  /* Never below zero, e.g. with DevTools docked, which narrows the page
+     but not the controls' area. */
+  --title-bar-end: max(0px, calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw)));
+  padding-inline-start: var(--title-bar-start);
+  padding-inline-end: var(--title-bar-end);
+}
+
+/* The search in the middle stays at the centre of the window, not of the
+   room between the window controls: the bar's start and end take the same
+   width, so the side with the smaller inset makes up the difference. */
+.title-bar .title-bar-start {
+  padding-inline-end: max(0px, calc(var(--title-bar-end) - var(--title-bar-start)));
+}
+
+.title-bar .title-bar-end {
+  padding-inline-start: max(0px, calc(var(--title-bar-start) - var(--title-bar-end)));
 }
 
 /* The bar's controls take clicks instead of moving the window. */

@@ -396,6 +396,24 @@ function registerDesktopBridge (): void {
     await previewWindows.open(request)
   })
 
+  // The window controls drawn over the title bar (Windows, Linux) take the
+  // colours of Studio's theme, which the page sends when it changes; macOS
+  // draws its traffic lights itself.
+  ipcMain.handle('studio:set-title-bar-colors', (event, colors: unknown) => {
+    if (!isTrustedSender(event)) {
+      throw new Error('Untrusted sender.')
+    }
+    const { color, symbolColor } = (colors ?? {}) as { color?: unknown, symbolColor?: unknown }
+    const hex = /^#[0-9A-F]{6}$/i
+    if (typeof color !== 'string' || typeof symbolColor !== 'string' || !hex.test(color) || !hex.test(symbolColor)) {
+      throw new Error('Invalid title bar colours.')
+    }
+    const window = BrowserWindow.fromWebContents(event.sender)
+    if (window && process.platform !== 'darwin') {
+      window.setTitleBarOverlay({ color, symbolColor, height: 48 })
+    }
+  })
+
   // Several packages at once, each as its own target (package editing plan, M4).
   ipcMain.handle('studio:choose-aasx-files', async event => {
     if (!isTrustedSender(event)) {

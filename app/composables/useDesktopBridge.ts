@@ -12,6 +12,8 @@ export interface DesktopBridge {
   /** Opens or focuses an app's preview window. Absent in older desktop builds. */
   openAppPreview?: (request: PreviewWindowRequest) => Promise<void>
   getAppPreviewSelection?: () => Promise<PreviewSelection | null>
+  /** Colours of the window controls in the title bar (Windows, Linux). Absent in older desktop builds. */
+  setTitleBarColors?: (colors: { color: string, symbolColor: string }) => Promise<void>
 }
 
 declare global {

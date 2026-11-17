@@ -13,7 +13,7 @@
            them (56 px rail, 48 px button: 4 px either side); in the desktop
            app the traffic lights come first. Between the controls of the
            bar, 8 px each (`me-2`). -->
-      <div class="d-flex align-center flex-1-1-0 ps-1">
+      <div class="title-bar-start d-flex align-center flex-1-1-0 ps-1">
         <v-app-bar-nav-icon
           v-if="listToggleShown && !inDesktopWindow"
           :aria-label="inSubmodelBrowser ? t('app.toggleSubmodelList') : t('app.toggleShellList')"
@@ -84,7 +84,7 @@
         </v-btn>
       </div>
 
-      <div class="d-flex align-center justify-end flex-1-1-0 ms-2">
+      <div class="title-bar-end d-flex align-center justify-end flex-1-1-0 ms-2">
 
         <template v-if="!session.needsLogin && activeTargetId">
           <!-- The active target stays visible at every width (design guidelines);
@@ -562,7 +562,7 @@
   import type { PanelName } from '~/composables/usePanel'
   import type { RailMetrics } from '~/utils/navigation'
   import { useQuery, useQueryCache } from '@pinia/colada'
-  import { useDisplay, useHotkey } from 'vuetify'
+  import { useDisplay, useHotkey, useTheme } from 'vuetify'
   import { sectionOf } from '~/stores/navigation'
   import { moveKey, orderByKeys, phoneNavLayout, phoneNavSlots, railLayout, reorderShown } from '~/utils/navigation'
 
@@ -584,7 +584,16 @@
    * there), not in a browser tab opened on the desktop server: the app bar
    * is the window's title bar and the page an inset panel.
    */
-  const inDesktopWindow = useDesktopBridge() !== null
+  const desktop = useDesktopBridge()
+  const inDesktopWindow = desktop !== null
+  const theme = useTheme()
+  // The window controls in the title bar (Windows, Linux) take the frame's
+  // colours, now and whenever the theme changes.
+  watch(() => [theme.current.value.colors.frame, theme.current.value.colors['on-frame']] as const, ([color, symbolColor]) => {
+    if (typeof color === 'string' && typeof symbolColor === 'string') {
+      desktop?.setTitleBarColors?.({ color, symbolColor }).catch(() => {})
+    }
+  }, { immediate: true })
   /** The window's history around this page (Vue Router keeps it in the history state), for back and forward. */
   const historyState = computed(() => route.fullPath && import.meta.client ? window.history.state as { back?: string | null, forward?: string | null } | null : null)
   const canGoBack = computed(() => Boolean(historyState.value?.back))

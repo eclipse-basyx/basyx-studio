@@ -20,6 +20,8 @@ export interface StudioDesktopBridge {
   openAppPreview: (request: PreviewWindowRequest) => Promise<void>
   /** Initial selection of this preview window; null in the main window. */
   getAppPreviewSelection: () => Promise<PreviewSelection | null>
+  /** Colours of the window controls in the title bar (Windows, Linux), as `#RRGGBB`. */
+  setTitleBarColors: (colors: { color: string, symbolColor: string }) => Promise<void>
 }
 
 const bridge: StudioDesktopBridge = {
@@ -28,6 +30,7 @@ const bridge: StudioDesktopBridge = {
   chooseStackFiles: (kind, suggestedName) => ipcRenderer.invoke('studio:choose-stack-files', kind, String(suggestedName ?? '').slice(0, 255)),
   openAppPreview: request => ipcRenderer.invoke('studio:open-app-preview', request),
   getAppPreviewSelection: () => ipcRenderer.invoke('studio:get-app-preview-selection'),
+  setTitleBarColors: colors => ipcRenderer.invoke('studio:set-title-bar-colors', { color: String(colors.color), symbolColor: String(colors.symbolColor) }),
 }
 
 contextBridge.exposeInMainWorld('studioDesktop', bridge)
