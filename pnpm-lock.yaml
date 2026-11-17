@@ -179,8 +179,8 @@ importers:
         specifier: 2.6.0
         version: 2.6.0
       '@agentclientprotocol/sdk':
-        specifier: 2.4.0
-        version: 2.4.0(zod@4.6.7)
+        specifier: 2.7.0
+        version: 2.7.0(zod@4.6.7)
       '@electric-sql/pglite':
         specifier: ^0.5.16
         version: 0.5.16
@@ -913,6 +913,15 @@ packages:
 
   '@agentclientprotocol/sdk@2.4.0':
     resolution: {integrity: sha512-7qJ8nnyj7WesC5ve185ioTpB2/svQoeGV4HA4nLEhgDUrcmBe54/08VcXc/oL4p14tDbxxECZzdYmUYQ+4l+Wg==}
+    peerDependencies:
+      '@modelcontextprotocol/server': ^2.4.0
+      zod: ^3.25.76 || ^4.0.0
+    peerDependenciesMeta:
+      '@modelcontextprotocol/server':
+        optional: true
+
+  '@agentclientprotocol/sdk@2.7.0':
+    resolution: {integrity: sha512-oXdQq0plWv3iOg01zJghNZRSuyWeMYxOgWIaSdwg1BZe2ZAC9LRhNDi023lNYxXq1zVIpQjIp8P6AfsxpvxF6g==}
     peerDependencies:
       '@modelcontextprotocol/server': ^2.4.0
       zod: ^3.25.76 || ^4.0.0
@@ -8145,6 +8154,10 @@ snapshots:
       - '@modelcontextprotocol/server'
 
   '@agentclientprotocol/sdk@2.4.0(zod@4.6.7)':
+    dependencies:
+      zod: 4.6.7
+
+  '@agentclientprotocol/sdk@2.7.0(zod@4.6.7)':
     dependencies:
       zod: 4.6.7
 
