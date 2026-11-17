@@ -42,7 +42,7 @@ interface Tone {
 }
 
 /**
- * `neutral`, the default: ChatGPT's greys, measured in its desktop app. Dark:
+ * `neutral`, the default: plain greys. Dark:
  * a #181818 page, the sidebar and cards #1E1E1E, selected and raised controls
  * #383838, and the frame (#282828) lighter than all of them. Light: a white
  * page on a light grey frame.

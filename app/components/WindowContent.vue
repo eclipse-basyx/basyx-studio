@@ -1,6 +1,6 @@
 <template>
   <!-- In the desktop app the page is a panel inset in the window's frame,
-       rounded where it meets the frame (as in ChatGPT); a drawer beside it
+       rounded where it meets the frame; a drawer beside it
        (the side list, the details) takes over that side's corners. In the
        browser the panel is the page itself: no colour, no corner. -->
   <v-sheet-window-content :color="inDesktopWindow ? undefined : 'transparent'" :rounded="rounded">

@@ -240,7 +240,7 @@
     </v-app-bar>
 
     <!-- In the desktop app the frame's bottom edge, under the panel and the
-         side list (as in ChatGPT), and its end edge: registered right after
+         side list, and its end edge: registered right after
          the bar, so the other drawers end above and before them. -->
     <v-navigation-drawer
       v-if="inDesktopWindow"
@@ -430,7 +430,7 @@
          leaving its route (usePanel), so the rail stays as it is. -->
     <!-- In the desktop app the bar and the rail are the window's frame,
          without borders, and the page is a panel inset in it on every side
-         with rounded corners, as in ChatGPT (WindowContent). -->
+         with rounded corners (WindowContent). -->
     <v-main :class="{ 'bg-frame': inDesktopWindow }">
       <WindowContent>
         <SettingsPanel v-if="panel.current.value === 'settings'" />
