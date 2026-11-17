@@ -416,6 +416,13 @@ jobs:
         run: |
           dbus-run-session -- bash -c '
             echo -n "ci" | gnome-keyring-daemon --unlock --components=secrets >/dev/null
+            # The daemon sets up the unlocked login keyring after it returns;
+            # the app reads its data key from it before it opens a window.
+            for attempt in $(seq 1 60); do
+              dbus-send --session --print-reply --dest=org.freedesktop.secrets /org/freedesktop/secrets \
+                org.freedesktop.Secret.Service.ReadAlias string:default 2>/dev/null | grep -q "/collection/" && break
+              sleep 0.5
+            done
             STUDIO_CONTAINER_E2E=1 xvfb-run --auto-servernum pnpm test:e2e:desktop
           '
         env:

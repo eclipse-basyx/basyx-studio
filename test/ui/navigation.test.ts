@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { sectionOf } from '~~/app/stores/navigation'
-import { moveKey, orderByKeys, phoneNavLayout, railLayout, reorderShown } from '~~/app/utils/navigation'
+import { mergeOrder, moveKey, orderByKeys, phoneNavLayout, railLayout, reorderShown } from '~~/app/utils/navigation'
 
 describe('navigation sections', () => {
   it('resumes the submodel view as a section of its own', () => {
@@ -63,6 +63,16 @@ describe('the rail\'s order', () => {
     expect(moveKey(['a', 'b', 'c', 'd'], 'a', 'c')).toEqual(['b', 'c', 'a', 'd'])
     expect(moveKey(['a', 'b', 'c', 'd'], 'd', 'b')).toEqual(['a', 'd', 'b', 'c'])
     expect(moveKey(['a', 'b'], 'a', 'x')).toEqual(['a', 'b'])
+  })
+
+  it('keeps the places of items the rail does not show now', () => {
+    // A shell's app (x) was put first; on the Dashboard it is not there, and c moves up.
+    expect(mergeOrder(['x', 'a', 'b', 'c'], ['c', 'a', 'b'])).toEqual(['x', 'c', 'a', 'b'])
+    // It stays after the item it followed.
+    expect(mergeOrder(['a', 'x', 'b'], ['b', 'a'])).toEqual(['b', 'a', 'x'])
+    // Items without a saved place take the place they were moved to.
+    expect(mergeOrder(['a', 'b'], ['b', 'n', 'a'])).toEqual(['b', 'n', 'a'])
+    expect(mergeOrder([], ['b', 'a'])).toEqual(['b', 'a'])
   })
 })
 

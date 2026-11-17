@@ -564,7 +564,7 @@
   import { useQuery, useQueryCache } from '@pinia/colada'
   import { useDisplay, useHotkey, useTheme } from 'vuetify'
   import { sectionOf } from '~/stores/navigation'
-  import { moveKey, orderByKeys, phoneNavLayout, phoneNavSlots, railLayout, reorderShown } from '~/utils/navigation'
+  import { mergeOrder, moveKey, orderByKeys, phoneNavLayout, phoneNavSlots, railLayout, reorderShown } from '~/utils/navigation'
 
   type RailGroup = 'infrastructure' | 'global'
 
@@ -889,7 +889,7 @@
     return rail.value.find(group => group.name === name)?.items.map(item => item.key) ?? []
   }
   function saveOrder (name: RailGroup, order: string[]) {
-    updateRail(name, settings => ({ ...settings, order }))
+    updateRail(name, settings => ({ ...settings, order: mergeOrder(settings.order, order) }))
   }
   /** The rail's item elements in their order, of one group or of both. */
   function railElements (name?: RailGroup): HTMLElement[] {

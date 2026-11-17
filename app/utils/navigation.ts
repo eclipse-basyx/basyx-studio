@@ -40,6 +40,26 @@ export function orderByKeys<T extends { key: string }> (items: readonly T[], ord
     .map(entry => entry.item)
 }
 
+/**
+ * The shown keys in their new `arrangement`, with the saved keys the rail
+ * does not show now (apps of another shell, say) kept in the `saved` order:
+ * each right after the key it followed there, so it comes back where the
+ * user put it.
+ */
+export function mergeOrder (saved: readonly string[], arrangement: readonly string[]): string[] {
+  const shown = new Set(arrangement)
+  const merged = [...arrangement]
+  let after = -1
+  for (const key of saved) {
+    if (shown.has(key)) {
+      after = merged.indexOf(key)
+    } else if (!merged.includes(key)) {
+      merged.splice(++after, 0, key)
+    }
+  }
+  return merged
+}
+
 /** `keys` with `key` moved to the place of `target`; unchanged if either is missing. */
 export function moveKey (keys: readonly string[], key: string, target: string): string[] {
   const from = keys.indexOf(key)

@@ -40,3 +40,14 @@
 .v-overlay__content {
   -webkit-app-region: no-drag;
 }
+
+/* Full-screen dialogs fill the window below the title bar, not under it:
+   the window controls (and on macOS the traffic lights) are drawn over the
+   page, so they would cover the dialog's own Close and actions. 48 px is
+   the compact bar and the overlay height (electron/main.ts). In a browser
+   there is no title bar, so the rule does not apply. */
+:root:has(.title-bar) .v-dialog--fullscreen > .v-overlay__content {
+  top: 48px;
+  height: calc(100% - 48px);
+  max-height: calc(100% - 48px);
+}

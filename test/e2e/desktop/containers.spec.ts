@@ -142,7 +142,8 @@ test('creates, changes, exports, imports, retains and opens an instance through 
   await expect(window.locator('[data-test="new"]')).toBeVisible({ timeout: 20_000 })
   await switchToDarkTheme(window)
   await expect(window.locator('[data-test="new"]')).toBeVisible({ timeout: 20_000 })
-  await expect(card.locator('.v-card').first()).toHaveCSS('background-color', 'rgb(33, 33, 33)')
+  // The dark Neutral surface, #1E1E1E (shared/appearance.ts).
+  await expect(card.locator('.v-card').first()).toHaveCSS('background-color', 'rgb(30, 30, 30)')
   await window.screenshot({ path: test.info().outputPath('containers-dark.png'), fullPage: true })
   await card.locator('[data-test="open"]').click()
   await expect(window).toHaveURL(/\/targets\//)
