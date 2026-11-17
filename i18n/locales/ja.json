@@ -3,7 +3,6 @@
     "name": "BaSyx Studio",
     "browse": "参照",
     "infrastructures": "インフラストラクチャ",
-    "toggleTheme": "テーマを切り替え",
     "signIn": "サインイン",
     "signOut": "サインアウト",
     "localUser": "ローカルユーザー",
@@ -642,6 +641,9 @@
     }
   },
   "nav": {
+    "home": "Studio ホーム",
+    "back": "戻る",
+    "forward": "進む",
     "targets": "AAS ターゲット",
     "targetsShort": "ターゲット",
     "docker": "ローカルサーバー",
@@ -657,6 +659,10 @@
     "concepts": "コンセプト記述",
     "conceptsShort": "コンセプト",
     "more": "その他",
+    "moreInfrastructureApps": "その他のインフラストラクチャアプリ",
+    "moreGlobalApps": "その他の Studio アプリ",
+    "hideFromRail": "レールから隠す",
+    "showInRail": "レールに表示",
     "submodels": "サブモデル",
     "submodelsShort": "サブモデル"
   },

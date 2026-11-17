@@ -3,10 +3,12 @@
        Open only with something to show, and never by a change of breakpoint. -->
   <v-navigation-drawer
     :border="covering ? 0 : 's'"
+    :class="{ 'overflow-hidden': inDesktopWindow }"
     disable-resize-watcher
     disable-route-watcher
     location="end"
     :model-value="ui.detailsDrawer && hasContent"
+    :rounded="inDesktopWindow ? 'e-lg' : undefined"
     :temporary="!lgAndUp"
     :width="drawerWidth"
     @update:model-value="open => (ui.detailsDrawer = open)"
@@ -327,6 +329,9 @@
   import { decodeResourceKey, langText, modelTypeIcon } from '~/utils/aas'
   import { formActionsFooterKey } from '~/utils/editor'
   import { fileViewId } from '~/utils/visualizations'
+
+  // In the desktop app the drawer is the end of the page's panel (WindowContent).
+  const inDesktopWindow = useDesktopBridge() !== null
 
   // The details drawer (MVP-4 plan, T2): the selected submodel or element in
   // the modes of the Web UI's right pane. The mode and the app view are in the

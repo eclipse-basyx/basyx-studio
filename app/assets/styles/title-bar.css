@@ -1,0 +1,27 @@
+/*
+ * The desktop app's title bar: Studio's app bar takes the place of the
+ * native one (electron/main.ts), as in VS Code. Dragging the window and
+ * keeping clear of the window controls are things only CSS can express
+ * (`-webkit-app-region`, the Window Controls Overlay's `env(titlebar-area-*)`),
+ * so they live here, like grid-layout.css; the bar itself is still built from
+ * Vuetify components and utility classes (app/layouts/default.vue sets the
+ * class). In a browser none of it applies: the variables fall back to no
+ * inset and the app region is ignored.
+ */
+.title-bar {
+  -webkit-app-region: drag;
+  /* The traffic lights (macOS) take the start of the bar, the window
+     controls (Windows, Linux) its end. */
+  padding-inline-start: env(titlebar-area-x, 0px);
+  padding-inline-end: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
+}
+
+/* The bar's controls take clicks instead of moving the window. */
+.title-bar :is(a, button, input, [role='button'], .v-chip, .v-btn-group),
+/* Menus and dialogs opened over the bar, which would else be dragged. Only
+   their content: the app region is inherited, and each overlay's own box
+   covers the whole window, even while closed, so it would cancel the bar's
+   drag everywhere. */
+.v-overlay__content {
+  -webkit-app-region: no-drag;
+}

@@ -57,7 +57,7 @@ test('runs installed apps on a local package', async () => {
   const path = join(directory, 'motor.aasx')
   await copyFile(fixture, path)
   await chooseFiles(app, path)
-  await window.getByRole('link', { name: 'AAS targets' }).click()
+  await window.getByRole('link', { name: 'Studio home' }).click()
   await openPackage(window)
 
   // The bundled submodel view, served under studio-app:, edits the package in
@@ -125,7 +125,7 @@ test('runs each installation in its own studio-app: origin, with the pages it em
     await window.getByRole('listitem', { name: 'Apps', exact: true }).click()
     await install({ name: 'origin-probe.zip', mimeType: 'application/zip', buffer: Buffer.from(await zipDirectory(join(fixturesDirectory, 'origin-probe'))) }, 'Origin probe')
     // Leave the Apps panel, which covers the page.
-    await window.getByRole('link', { name: 'AAS targets' }).click()
+    await window.getByRole('link', { name: 'Studio home' }).click()
     await openModule('Origin probe')
     await expect(window.locator('iframe[sandbox="allow-scripts allow-same-origin"]')).toHaveCount(1)
     await expect(appFrame().locator('body[data-done="true"]')).toBeAttached({ timeout: 30_000 })

@@ -12,6 +12,13 @@ test.skip(process.env.STUDIO_CONTAINER_E2E !== '1', 'Set STUDIO_CONTAINER_E2E=1 
 
 let app: ElectronApplication | undefined
 let window: Page
+
+/** Switches Studio to the dark theme in Settings, which then closes again. */
+async function switchToDarkTheme (page: Page) {
+  await page.getByLabel('Settings', { exact: true }).click()
+  await page.getByRole('button', { name: 'Dark', exact: true }).click()
+  await page.getByLabel('Close settings', { exact: true }).click()
+}
 let directory: string
 let engine: EngineClient
 const owned = new Set<string>()
@@ -132,7 +139,7 @@ test('creates, changes, exports, imports, retains and opens an instance through 
   }
   await window.setViewportSize({ width: 1440, height: 900 })
   await expect(window.locator('[data-test="new"]')).toBeVisible({ timeout: 20_000 })
-  await window.getByRole('button', { name: 'Toggle theme', exact: true }).click()
+  await switchToDarkTheme(window)
   await expect(window.locator('[data-test="new"]')).toBeVisible({ timeout: 20_000 })
   await expect(card.locator('.v-card').first()).toHaveCSS('background-color', 'rgb(33, 33, 33)')
   await window.screenshot({ path: test.info().outputPath('containers-dark.png'), fullPage: true })
@@ -168,7 +175,7 @@ test('keeps the native page visible when Studio changes theme and viewport', asy
     await window.setViewportSize({ width, height: 900 })
     await expect(window.locator('[data-test="new"]')).toBeVisible({ timeout: 20_000 })
   }
-  await window.getByRole('button', { name: 'Toggle theme', exact: true }).click()
+  await switchToDarkTheme(window)
   await window.screenshot({ path: test.info().outputPath('theme-change.png'), fullPage: true })
   await expect(window.locator('[data-test="new"]')).toBeVisible({ timeout: 20_000 })
 })

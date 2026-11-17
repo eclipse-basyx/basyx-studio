@@ -286,6 +286,19 @@ async function createWindow (url: string, launchSecret?: string, preview?: Previ
     height: preview ? 760 : 900,
     minWidth: preview ? 480 : 1024,
     minHeight: preview ? 400 : 640,
+    // The main window has no native title bar: Studio's app bar is the
+    // title bar (as in VS Code), with the window controls inside it and the
+    // window dragged by it (title-bar.css). The overlay exposes the controls'
+    // area to the page (env(titlebar-area-*)) on every platform. Preview
+    // windows have no app bar and keep the native one.
+    ...(preview
+      ? {}
+      : {
+          titleBarStyle: 'hidden' as const,
+          // Centred in the 48 px bar (the buttons are 14 px high).
+          trafficLightPosition: { x: 16, y: 17 },
+          titleBarOverlay: process.platform === 'darwin' ? true : { height: 48 },
+        }),
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

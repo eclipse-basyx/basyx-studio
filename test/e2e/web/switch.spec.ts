@@ -21,7 +21,7 @@ test('switching targets never shows data of the previous target', async ({ page 
   await expect(page).toHaveURL(new RegExp(`/targets/${open}$`))
   await page.getByRole('link', { name: 'Open shells' }).click()
   await expect(page).toHaveURL(new RegExp(`/targets/${open}/shells$`))
-  await page.getByRole('link', { name: 'AAS targets' }).first().click()
+  await page.getByRole('link', { name: 'Studio home' }).click()
   await page.getByText('E2E switch secured').click()
   await page.getByRole('link', { name: 'Open shells' }).click()
   await expect(page).toHaveURL(new RegExp(`/targets/${secured}/shells$`))

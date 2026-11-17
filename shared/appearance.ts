@@ -28,38 +28,51 @@ export const hexColorPattern = /^#[0-9A-F]{6}$/i
 /** The BaSyx orange: the secondary colour with every accent. */
 export const secondary = { light: '#A65400', dark: '#F69222' } as const
 
-/** The colours a background sets: the page, cards, raised controls and the headers of dialogs and container cards. */
+/**
+ * The colours a background sets: the page, cards, raised controls, the headers
+ * of dialogs and container cards, and the desktop window's frame around the
+ * page (title bar, rail, edges).
+ */
 interface Tone {
   'background': string
   'surface': string
   'surface-light': string
   'card-header': string
+  'frame': string
 }
 
 /**
- * Backgrounds, each with a light and a dark tone. `neutral` keeps Vuetify's
- * own surfaces, as Studio had them.
+ * `neutral`, the default: ChatGPT's greys, measured in its desktop app. Dark:
+ * a #181818 page, the sidebar and cards #1E1E1E, selected and raised controls
+ * #383838, and the frame (#282828) lighter than all of them. Light: a white
+ * page on a light grey frame.
  */
+const neutral: { light: Tone, dark: Tone } = {
+  light: { 'background': '#FFFFFF', 'surface': '#FFFFFF', 'surface-light': '#F4F4F4', 'card-header': '#F9F9F9', 'frame': '#F9F9F9' },
+  dark: { 'background': '#181818', 'surface': '#1E1E1E', 'surface-light': '#383838', 'card-header': '#232323', 'frame': '#282828' },
+}
+
+/**
+ * A tinted background's tone: its own page colour, and every other colour
+ * lighter or darker than it by the same contrast ratio (WCAG 2) as in
+ * `neutral`, so all backgrounds share its structure.
+ */
+function tintedTone (background: string, dark: boolean): Tone {
+  const reference = dark ? neutral.dark : neutral.light
+  const at = (key: Exclude<keyof Tone, 'background'>) => atContrast(background, contrast(reference.background, reference[key]), luminance(reference[key]) >= luminance(reference.background))
+  return { background, 'surface': at('surface'), 'surface-light': at('surface-light'), 'card-header': at('card-header'), 'frame': at('frame') }
+}
+
+/** Backgrounds, each with a light and a dark tone. */
 export const backgrounds: Record<'neutral' | 'slate' | 'warm' | 'midnight' | 'contrast', { light: Tone, dark: Tone }> = {
-  neutral: {
-    light: { 'background': '#FFFFFF', 'surface': '#FFFFFF', 'surface-light': '#EEEEEE', 'card-header': '#F5F5F5' },
-    dark: { 'background': '#121212', 'surface': '#212121', 'surface-light': '#424242', 'card-header': '#282828' },
-  },
-  slate: {
-    light: { 'background': '#F4F6F9', 'surface': '#FFFFFF', 'surface-light': '#E6EAF0', 'card-header': '#EEF1F5' },
-    dark: { 'background': '#16191D', 'surface': '#1F2328', 'surface-light': '#363C44', 'card-header': '#272C32' },
-  },
-  warm: {
-    light: { 'background': '#FAF7F2', 'surface': '#FFFFFF', 'surface-light': '#EFE9E0', 'card-header': '#F5F0E8' },
-    dark: { 'background': '#1A1714', 'surface': '#24201C', 'surface-light': '#3D3730', 'card-header': '#2D2924' },
-  },
-  midnight: {
-    light: { 'background': '#F3F6FC', 'surface': '#FFFFFF', 'surface-light': '#E3E9F5', 'card-header': '#ECF0F8' },
-    dark: { 'background': '#0B1220', 'surface': '#131C2E', 'surface-light': '#2A3550', 'card-header': '#1A2438' },
-  },
+  neutral,
+  slate: { light: tintedTone('#F4F6F9', false), dark: tintedTone('#16191D', true) },
+  warm: { light: tintedTone('#FAF7F2', false), dark: tintedTone('#1A1714', true) },
+  midnight: { light: tintedTone('#F3F6FC', false), dark: tintedTone('#0B1220', true) },
+  // High contrast keeps its own, stronger steps: that is its purpose.
   contrast: {
-    light: { 'background': '#FFFFFF', 'surface': '#FFFFFF', 'surface-light': '#E0E0E0', 'card-header': '#F0F0F0' },
-    dark: { 'background': '#000000', 'surface': '#0E0E0E', 'surface-light': '#2B2B2B', 'card-header': '#1A1A1A' },
+    light: { 'background': '#FFFFFF', 'surface': '#FFFFFF', 'surface-light': '#E0E0E0', 'card-header': '#F0F0F0', 'frame': '#F0F0F0' },
+    dark: { 'background': '#000000', 'surface': '#0E0E0E', 'surface-light': '#2B2B2B', 'card-header': '#1A1A1A', 'frame': '#161616' },
   },
 }
 export const backgroundNames = ['neutral', 'slate', 'warm', 'midnight', 'contrast'] as const satisfies ReadonlyArray<keyof typeof backgrounds>
@@ -103,6 +116,21 @@ export function withOnColors (colors: Record<string, string>): Record<string, st
   return { ...colors, ...Object.fromEntries(Object.entries(colors).map(([name, hex]) => [`on-${name}`, onColor(hex)])) }
 }
 
+/** The colour lighter (or darker) than `base` by the contrast ratio `ratio`, mixed towards white (or black). */
+function atContrast (base: string, ratio: number, lighter: boolean): string {
+  let low = 0
+  let high = 1
+  for (let step = 0; step < 24; step++) {
+    const middle = (low + high) / 2
+    if (contrast(base, shade(base, lighter ? middle : -middle)) < ratio) {
+      low = middle
+    } else {
+      high = middle
+    }
+  }
+  return shade(base, lighter ? high : -high)
+}
+
 /** Mixes a colour towards black (`amount` < 0) or white (`amount` > 0). */
 function shade (hex: string, amount: number): string {
   const target = amount < 0 ? 0 : 1
@@ -139,7 +167,7 @@ export function themeColors (accent: string, background: BackgroundName, dark: b
   const mode = dark ? 'dark' : 'light'
   const tone = backgrounds[background][mode]
   return {
-    ...withOnColors({ primary: accentShade(accent, dark), secondary: secondary[mode], background: tone.background, surface: tone.surface }),
+    ...withOnColors({ primary: accentShade(accent, dark), secondary: secondary[mode], background: tone.background, surface: tone.surface, frame: tone.frame }),
     'surface-light': tone['surface-light'],
     'card-header': tone['card-header'],
   }
