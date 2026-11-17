@@ -7,3 +7,12 @@ export const aasIconPaths = [
   'M12.187 8.4c-0.16 0.64 -0.32 1.333 -0.507 1.973l-0.107 0.4h1.2l-0.107 -0.4c-0.187 -0.64 -0.347 -1.333 -0.48 -1.973',
   'M5.547 8.4c-0.16 0.64 -0.32 1.333 -0.507 1.973l-0.107 0.4h1.2l-0.107 -0.4c-0.16 -0.64 -0.347 -1.333 -0.48 -1.973',
 ]
+
+// The toggle of the side list (shells, submodels) in the desktop title bar,
+// outlined like the other title bar icons: a rounded frame with the left panel marked off by a line while the
+// list is closed (`$sidebar`) and filled while it is open (`$sidebarOpen`).
+// Material Design Icons has it only filled (`mdi-dock-left`). The frame's
+// inner edge runs the other way, so it cuts out of the outer one.
+const sidebarFrame = 'M5 4H19A3 3 0 0 1 22 7V17A3 3 0 0 1 19 20H5A3 3 0 0 1 2 17V7A3 3 0 0 1 5 4ZM5 6A1 1 0 0 0 4 7V17A1 1 0 0 0 5 18H19A1 1 0 0 0 20 17V7A1 1 0 0 0 19 6Z'
+export const sidebarIconPath = `svg:${sidebarFrame}M8 6H10V18H8Z`
+export const sidebarOpenIconPath = `svg:${sidebarFrame}M5 6A1 1 0 0 0 4 7V17A1 1 0 0 0 5 18H10V6Z`

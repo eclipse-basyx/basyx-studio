@@ -3,7 +3,6 @@
     "name": "BaSyx Studio",
     "browse": "Durchsuchen",
     "infrastructures": "Infrastrukturen",
-    "toggleTheme": "Design wechseln",
     "signIn": "Anmelden",
     "signOut": "Abmelden",
     "localUser": "Lokaler Benutzer",
@@ -732,6 +731,9 @@
     }
   },
   "nav": {
+    "home": "Studio-Startseite",
+    "back": "Zurück",
+    "forward": "Vorwärts",
     "targets": "AAS-Ziele",
     "targetsShort": "Ziele",
     "docker": "Lokale Server",
@@ -747,6 +749,10 @@
     "concepts": "Konzeptbeschreibungen",
     "conceptsShort": "Konzepte",
     "more": "Mehr",
+    "moreInfrastructureApps": "Weitere Infrastruktur-Apps",
+    "moreGlobalApps": "Weitere Studio-Apps",
+    "hideFromRail": "In der Leiste ausblenden",
+    "showInRail": "In der Leiste anzeigen",
     "submodels": "Teilmodelle",
     "submodelsShort": "Teilmodelle"
   },

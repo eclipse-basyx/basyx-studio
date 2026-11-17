@@ -3,7 +3,6 @@
     "name": "BaSyx Studio",
     "browse": "Bladeren",
     "infrastructures": "Infrastructuren",
-    "toggleTheme": "Thema wisselen",
     "signIn": "Aanmelden",
     "signOut": "Afmelden",
     "localUser": "Lokale gebruiker",
@@ -642,6 +641,9 @@
     }
   },
   "nav": {
+    "home": "Studio-start",
+    "back": "Terug",
+    "forward": "Vooruit",
     "targets": "AAS-doelen",
     "targetsShort": "Doelen",
     "docker": "Lokale servers",
@@ -657,6 +659,10 @@
     "concepts": "Conceptbeschrijvingen",
     "conceptsShort": "Concepten",
     "more": "Meer",
+    "moreInfrastructureApps": "Meer infrastructuur-apps",
+    "moreGlobalApps": "Meer Studio-apps",
+    "hideFromRail": "Verbergen in de balk",
+    "showInRail": "Tonen in de balk",
     "submodels": "Submodellen",
     "submodelsShort": "Submodellen"
   },

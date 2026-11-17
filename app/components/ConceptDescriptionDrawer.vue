@@ -3,10 +3,12 @@
        Open only with a concept description, and never by a change of breakpoint. -->
   <v-navigation-drawer
     :border="wide && lgAndUp ? 0 : 's'"
+    :class="{ 'overflow-hidden': inDesktopWindow }"
     disable-resize-watcher
     disable-route-watcher
     location="end"
     :model-value="ui.detailsDrawer && cdKey !== null"
+    :rounded="inDesktopWindow ? (wide && lgAndUp ? 'lg' : 'e-lg') : undefined"
     :temporary="!lgAndUp"
     :width="drawerWidth"
     @update:model-value="open => (ui.detailsDrawer = open)"
@@ -175,6 +177,9 @@
   import { isIec61360 } from '#shared/aas/iec61360'
   import { decodeResourceKey, langText } from '~/utils/aas'
   import { formActionsFooterKey } from '~/utils/editor'
+
+  // In the desktop app the drawer is the end of the page's panel (WindowContent).
+  const inDesktopWindow = useDesktopBridge() !== null
 
   // The details drawer of the Concepts page (MVP-6 plan, L1, L2): the
   // selected concept description in *Details*, *JSON* and *XML*, with its

@@ -71,8 +71,9 @@ export default defineNuxtConfig({
     },
   },
 
-  // Theme of the Overview's grid library (ADR 0032).
-  css: ['~/assets/styles/grid-layout.css'],
+  // Theme of the Overview's grid library (ADR 0032); the desktop title bar's
+  // drag region, which only CSS can express.
+  css: ['~/assets/styles/grid-layout.css', '~/assets/styles/title-bar.css'],
 
   app: {
     // The CSS layer order (public/layers.css) and the favicons are linked in

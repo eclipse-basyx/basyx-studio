@@ -3,7 +3,6 @@
     "name": "BaSyx Studio",
     "browse": "浏览",
     "infrastructures": "基础设施",
-    "toggleTheme": "切换主题",
     "signIn": "登录",
     "signOut": "退出登录",
     "localUser": "本地用户",
@@ -642,6 +641,9 @@
     }
   },
   "nav": {
+    "home": "Studio 首页",
+    "back": "后退",
+    "forward": "前进",
     "targets": "AAS 目标",
     "targetsShort": "目标",
     "docker": "本地服务器",
@@ -657,6 +659,10 @@
     "concepts": "概念描述",
     "conceptsShort": "概念",
     "more": "更多",
+    "moreInfrastructureApps": "更多基础设施应用",
+    "moreGlobalApps": "更多 Studio 应用",
+    "hideFromRail": "从导航栏隐藏",
+    "showInRail": "在导航栏中显示",
     "submodels": "子模型",
     "submodelsShort": "子模型"
   },

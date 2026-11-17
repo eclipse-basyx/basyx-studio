@@ -13,6 +13,20 @@ const recentShell = z.union([
 ])
 export type RecentShell = z.infer<typeof recentShell>
 
+/** A rail item: a built-in page (`shells`) or an app's module (`installation:module`). */
+const railItemKey = z.string().max(300)
+
+/**
+ * A rail group as the user arranged it: the items' order, as keys (items not
+ * listed keep their place after the listed ones), and the items hidden
+ * behind the group's More.
+ */
+const railGroupSettings = z.object({
+  order: z.array(railItemKey).max(100).default([]),
+  hidden: z.array(railItemKey).max(100).default([]),
+})
+export type RailGroupSettings = z.infer<typeof railGroupSettings>
+
 /**
  * Per-user settings, stored by Studio (PostgreSQL or PGlite). Recently
  * opened shells are kept per target, so switching targets never shows
@@ -45,6 +59,16 @@ export const preferencesSchema = z.object({
    * infrastructure lets users choose (MVP-4 plan, I5).
    */
   syncOverrides: z.record(z.string().max(100), z.enum(syncModes)).default({}),
+  /**
+   * The rail's two groups: the global one, and the infrastructure's one per
+   * infrastructure ID, as infrastructures may offer different apps. Stored
+   * that no longer validates, they start over instead of invalidating every
+   * setting.
+   */
+  rail: z.object({
+    global: railGroupSettings,
+    infrastructures: z.record(z.string().max(100), railGroupSettings).default({}),
+  }).default({ global: { order: [], hidden: [] }, infrastructures: {} }).catch({ global: { order: [], hidden: [] }, infrastructures: {} }),
   /** Desktop app: the welcome screen at startup, until the user turns it off. */
   showWelcome: z.boolean().default(true),
   /**

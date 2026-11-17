@@ -286,6 +286,19 @@ async function createWindow (url: string, launchSecret?: string, preview?: Previ
     height: preview ? 760 : 900,
     minWidth: preview ? 480 : 1024,
     minHeight: preview ? 400 : 640,
+    // The main window has no native title bar: Studio's app bar is the
+    // title bar, with the window controls inside it and the
+    // window dragged by it (title-bar.css). The overlay exposes the controls'
+    // area to the page (env(titlebar-area-*)) on every platform. Preview
+    // windows have no app bar and keep the native one.
+    ...(preview
+      ? {}
+      : {
+          titleBarStyle: 'hidden' as const,
+          // Centred in the 48 px bar (the buttons are 14 px high).
+          trafficLightPosition: { x: 16, y: 17 },
+          titleBarOverlay: process.platform === 'darwin' ? true : { height: 48 },
+        }),
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -381,6 +394,24 @@ function registerDesktopBridge (): void {
       throw new Error('Untrusted sender.')
     }
     await previewWindows.open(request)
+  })
+
+  // The window controls drawn over the title bar (Windows, Linux) take the
+  // colours of Studio's theme, which the page sends when it changes; macOS
+  // draws its traffic lights itself.
+  ipcMain.handle('studio:set-title-bar-colors', (event, colors: unknown) => {
+    if (!isTrustedSender(event)) {
+      throw new Error('Untrusted sender.')
+    }
+    const { color, symbolColor } = (colors ?? {}) as { color?: unknown, symbolColor?: unknown }
+    const hex = /^#[0-9A-F]{6}$/i
+    if (typeof color !== 'string' || typeof symbolColor !== 'string' || !hex.test(color) || !hex.test(symbolColor)) {
+      throw new Error('Invalid title bar colours.')
+    }
+    const window = BrowserWindow.fromWebContents(event.sender)
+    if (window && process.platform !== 'darwin') {
+      window.setTitleBarOverlay({ color, symbolColor, height: 48 })
+    }
   })
 
   // Several packages at once, each as its own target (package editing plan, M4).

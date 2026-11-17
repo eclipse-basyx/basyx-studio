@@ -90,3 +90,43 @@ test('lays out the shell header by the width the content area has (H2 to H4)', a
   const card = (await header.boundingBox())!
   expect((await header.getByRole('heading').boundingBox())!.width).toBeGreaterThan(card.width - 150)
 })
+
+test('hides rail items behind More, and moves there the ones that do not fit', async ({ page }) => {
+  await signIn(page, 'studio-admin')
+  const targetId = await registerOpenEnvironment(page, 'E2E rail environment')
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.goto(`/targets/${targetId}`)
+  const submodels = page.getByRole('link', { name: 'Submodels' })
+  await expect(submodels).toBeVisible()
+
+  // Hidden from the rail, the item is in More, from where it comes back.
+  await submodels.click({ button: 'right' })
+  await page.getByText('Hide from rail').click()
+  await expect(submodels).toHaveCount(0)
+  await page.getByLabel('More infrastructure apps').click()
+  await page.getByLabel('Show in rail').click()
+  await expect(submodels).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  // Home and Shells can not be hidden: they keep the browser's menu.
+  expect(await page.getByRole('link', { name: 'Home', exact: true }).evaluate(element => {
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true })
+    element.dispatchEvent(event)
+    return event.defaultPrevented
+  })).toBe(false)
+
+  // In a low window, the rail never scrolls: what does not fit is behind
+  // its group's More. Hosted Studio has no Studio group without installed
+  // global pages (Local Servers and App Builder are desktop only), so here
+  // it is the infrastructure's.
+  await page.setViewportSize({ width: 1280, height: 360 })
+  await expect(page.getByLabel('More Studio apps')).toHaveCount(0)
+  // The rail lays itself out again as the window shrinks, its items sliding
+  // in and out, so a More that slides out may still be there for a moment.
+  const more = page.getByLabel('More infrastructure apps').and(page.locator(':not(.slide-y-transition-leave-active)'))
+  await expect(more).toBeVisible()
+  await expect.poll(async () => more.evaluate(element => {
+    const content = element.closest('.v-list')?.parentElement
+    return content ? content.scrollHeight - content.clientHeight : Number.POSITIVE_INFINITY
+  }), { timeout: 10_000 }).toBeLessThanOrEqual(0)
+})

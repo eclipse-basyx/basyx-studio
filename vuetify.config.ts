@@ -76,6 +76,7 @@ export default defineVuetifyConfiguration({
           ...withOnColors({
             background: '#0B0B1A',
             surface: '#14142B',
+            frame: '#14142B',
             primary: '#39FF14',
             secondary: '#FF2BD6',
             error: '#FF3B3B',
@@ -108,10 +109,16 @@ export default defineVuetifyConfiguration({
     VBtnWidgetIcon: 'VBtn',
     // Text-sized settings under the App Builder's prompt box.
     VBtnChatSetting: 'VBtn',
+    // Back, forward and the list toggle in the desktop title bar: plain and
+    // narrow; back and forward sit closer together than the bar's controls.
+    VBtnHistory: 'VBtn',
     // Pane container of a full-height page area: fixed height, scrolling body.
     VCardPane: 'VCard',
     // The card of a full-screen dialog: edge to edge, without radius or border.
     VCardFullscreen: 'VCard',
+    // The page in the desktop window: a panel inset in the frame of the
+    // title bar, the rail, the side list and the bottom edge, with rounded corners.
+    VSheetWindowContent: 'VSheet',
     // The header of a container card (dialogs, Overview widgets, panes): a
     // tinted band that sets the title apart from the content. Value cards
     // and list rows keep their plain surface.
@@ -137,6 +144,8 @@ export default defineVuetifyConfiguration({
     // The app bar, drawers, toolbars and tabs, shared with the apps
     // (@basyx/studio-app-kit/vuetify-defaults).
     ...layoutDefaults,
+    // The app bar's icons are smaller than the page's, as in a title bar.
+    VAppBar: { ...layoutDefaults.VAppBar, VIcon: { size: 'small' } },
     VAvatar: { rounded: 'lg' },
     VBtn: { variant: 'text', rounded: 'lg', class: 'text-none' },
     VBtnPrimary: { color: 'primary', variant: 'flat', rounded: 'lg', class: 'text-none' },
@@ -146,6 +155,7 @@ export default defineVuetifyConfiguration({
     // VBtnToggle, VBtnGroup and VBtnToggleIcon, shared with the bundled apps.
     ...buttonGroupDefaults,
     VBtnWidgetIcon: { variant: 'text', rounded: 'lg', density: 'comfortable', size: 'small' },
+    VBtnHistory: { variant: 'plain', rounded: 'lg', density: 'compact' },
     VBtnChatSetting: { variant: 'text', rounded: 'lg', density: 'compact', size: 'small', minWidth: 0, class: 'text-none px-2' },
     VCard: { flat: true, border: true, rounded: 'lg' },
     // Full-screen surfaces, as in the apps: no border, no radius.
@@ -174,6 +184,14 @@ export default defineVuetifyConfiguration({
     // Compact lists throughout: more rows on screen, as in the BaSyx Web UI and shadcn.
     VList: { color: 'primary', density: 'compact', bgColor: 'transparent' },
     VListItem: { rounded: 'lg', VBtn: { size: 'small' } },
+    VSheetWindowContent: {
+      color: 'background',
+      rounded: 'lg',
+      // The window between the title bar and the bottom edge; the page
+      // scrolls inside it, so the scrollbar stays in the panel.
+      height: 'calc(100dvh - var(--v-layout-top) - var(--v-layout-bottom))',
+      class: 'overflow-y-auto',
+    },
     VSheetFullPage: {
       color: 'transparent',
       rounded: 0,

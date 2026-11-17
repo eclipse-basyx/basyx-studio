@@ -129,10 +129,19 @@ test('shows descriptions and definitions as columns where the frame is wide', as
   const widths = async () => sheet.locator('th').evaluateAll(cells => cells.map(cell => Math.round(cell.getBoundingClientRect().width)))
   await waitUntilSettled(page.locator('.v-dialog iframe[title="App: Technical Data"]'))
   const before = await widths()
-  await sheet.locator('[data-test="sheet-area"]').filter({ hasText: 'Electrical' }).locator('[data-test="sheet-toggle"]').click()
+  // A click into the frame can still land while the dialog places it, so
+  // it is repeated until the section says it is collapsed (aria-expanded
+  // changes at once, so a slow collapse is never clicked open again).
+  const electrical = sheet.locator('[data-test="sheet-area"]').filter({ hasText: 'Electrical' }).locator('[data-test="sheet-toggle"]')
+  await expect(async () => {
+    if (await electrical.getAttribute('aria-expanded') === 'true') {
+      await electrical.click({ timeout: 5000 })
+    }
+    await expect(electrical).toHaveAttribute('aria-expanded', 'false', { timeout: 1000 })
+  }).toPass({ timeout: 20_000 })
   await expect(sheetRow(sheet, 'Rated power')).toHaveCount(0)
   expect(await widths()).toEqual(before)
-  await sheet.locator('[data-test="sheet-area"]').filter({ hasText: 'Electrical' }).locator('[data-test="sheet-toggle"]').click()
+  await electrical.click()
 
   // The specific descriptions: a description of their own, and a definition through a supplemental semantic ID.
   await expect(dialog.locator('[data-test="specific-descriptions"] th')).toHaveText(['Property', 'Description', 'Definition', 'Value'])

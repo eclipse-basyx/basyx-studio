@@ -4,6 +4,7 @@ import { createServer } from 'node:http'
 import { join } from 'node:path'
 import { expect, test } from '@playwright/test'
 import { fixturesDirectory, zipDirectory } from '../../apps/support'
+import { waitUntilSettled } from '../web/support'
 import { chooseFiles, closeStudio, fixture, launchStudio, openPackage, root } from './support'
 
 // MVP-3 in the packaged desktop app: apps run in sandboxed frames on the
@@ -57,7 +58,7 @@ test('runs installed apps on a local package', async () => {
   const path = join(directory, 'motor.aasx')
   await copyFile(fixture, path)
   await chooseFiles(app, path)
-  await window.getByRole('link', { name: 'AAS targets' }).click()
+  await window.getByRole('link', { name: 'Studio home' }).click()
   await openPackage(window)
 
   // The bundled submodel view, served under studio-app:, edits the package in
@@ -68,8 +69,21 @@ test('runs installed apps on a local package', async () => {
   await expect(nameplate.getByText('Industrial Servo Motor DM-3000')).toBeVisible()
   expect(window.frames().some(frame => frame.url().startsWith('studio-app://app-'))).toBe(true)
   await window.getByRole('banner').getByRole('button', { name: 'Edit', exact: true }).click()
-  await nameplate.getByRole('button', { name: 'Edit Serial number' }).click()
-  await nameplate.getByRole('textbox', { name: 'Serial number' }).fill('SN-DESKTOP-APP')
+  // Edit mode adds the app's edit buttons, so its frame grows and the
+  // Overview places it anew: wait until it stays put, and click again should
+  // the click still land while it moved.
+  const frame = window.locator('iframe[title="App: Digital Nameplate"]')
+  const serialNumber = nameplate.getByRole('textbox', { name: 'Serial number' })
+  await expect(nameplate.getByRole('button', { name: 'Edit Serial number' })).toBeVisible()
+  await expect(async () => {
+    if (!await serialNumber.isVisible()) {
+      await waitUntilSettled(frame)
+      await nameplate.getByRole('button', { name: 'Edit Serial number' }).click({ timeout: 5000 })
+    }
+    await expect(serialNumber).toBeVisible({ timeout: 2000 })
+  }).toPass({ timeout: 45_000 })
+  await serialNumber.fill('SN-DESKTOP-APP')
+  await waitUntilSettled(frame)
   await nameplate.getByRole('button', { name: 'Save' }).click()
   await expect(nameplate.locator('[data-test="notice"]')).toContainText('Serial number saved.')
   await expect(window.getByText('Unsaved changes', { exact: true })).toBeVisible()
@@ -125,7 +139,7 @@ test('runs each installation in its own studio-app: origin, with the pages it em
     await window.getByRole('listitem', { name: 'Apps', exact: true }).click()
     await install({ name: 'origin-probe.zip', mimeType: 'application/zip', buffer: Buffer.from(await zipDirectory(join(fixturesDirectory, 'origin-probe'))) }, 'Origin probe')
     // Leave the Apps panel, which covers the page.
-    await window.getByRole('link', { name: 'AAS targets' }).click()
+    await window.getByRole('link', { name: 'Studio home' }).click()
     await openModule('Origin probe')
     await expect(window.locator('iframe[sandbox="allow-scripts allow-same-origin"]')).toHaveCount(1)
     await expect(appFrame().locator('body[data-done="true"]')).toBeAttached({ timeout: 30_000 })
