@@ -2,13 +2,13 @@
   <!-- Selecting an element changes the URL; that must not close the drawer.
        Open only with something to show, and never by a change of breakpoint. -->
   <v-navigation-drawer
-    :border="covering ? 0 : 's'"
+    :border="panel?.border ?? (covering ? 0 : 's')"
     :class="{ 'overflow-hidden': inDesktopWindow }"
     disable-resize-watcher
     disable-route-watcher
     location="end"
     :model-value="ui.detailsDrawer && hasContent"
-    :rounded="inDesktopWindow ? 'e-lg' : undefined"
+    :rounded="panel?.rounded"
     :temporary="!lgAndUp"
     :width="drawerWidth"
     @update:model-value="open => (ui.detailsDrawer = open)"
@@ -325,13 +325,14 @@
   import { useQuery, useQueryCache } from '@pinia/colada'
   import { useDisplay } from 'vuetify'
   import { isElementModelType } from '#shared/aas/defaults'
+  import { frameInset } from '#shared/window-panel'
   import { hasFileContent } from '~/composables/useElementFile'
   import { decodeResourceKey, langText, modelTypeIcon } from '~/utils/aas'
   import { formActionsFooterKey } from '~/utils/editor'
   import { fileViewId } from '~/utils/visualizations'
 
-  // In the desktop app the drawer is the end of the page's panel (WindowContent).
-  const inDesktopWindow = useDesktopBridge() !== null
+  // In the desktop app the drawer is the end of the page's panel (useWindowPanel).
+  const { inDesktopWindow, look } = useWindowPanel()
 
   // The details drawer (MVP-4 plan, T2): the selected submodel or element in
   // the modes of the Web UI's right pane. The mode and the app view are in the
@@ -416,13 +417,16 @@
       // Not remembered without storage.
     }
   })
-  // Widened, it covers the content area only: the rail (56 px) and an open
-  // shell list (340 px) stay visible beside it.
+  // Widened, it covers the content area only: the rail (56 px), an open
+  // shell list (340 px) and, in the desktop app, the frame's end edge stay
+  // visible beside it.
   const listOpen = computed(() => ui.listDrawer ?? mdAndUp.value)
   // Next to the shell list, the list's border is the only one.
   const covering = computed(() => wide.value && lgAndUp.value && listOpen.value)
+  // Widened without the list, it reaches the rail's frame.
+  const panel = computed(() => look({ start: wide.value && lgAndUp.value && !listOpen.value, end: true }, { start: !covering.value }))
   const drawerWidth = computed(() => (wide.value && lgAndUp.value
-    ? Math.max(440, width.value - 56 - (listOpen.value ? 340 : 0))
+    ? Math.max(440, width.value - 56 - (listOpen.value ? 340 : 0) - (inDesktopWindow ? frameInset : 0))
     : (smAndUp.value ? 440 : 360)))
 
   // Same key prefix as before (MVP-2/3): app writes invalidate `['targets', id, 'details']`.

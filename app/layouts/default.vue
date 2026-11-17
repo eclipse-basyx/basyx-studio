@@ -66,17 +66,22 @@
         </template>
       </div>
 
-      <div class="d-flex align-center">
+      <!-- The search takes a third of the bar, as the start and the end
+           do, up to 560 px; when they need more room (narrow windows, the
+           window controls of Windows), it gives way down to 320 px. -->
+      <div class="d-flex align-center justify-center flex-1-1-0">
         <v-btn
           v-if="!session.needsLogin && mdAndUp"
           class="text-medium-emphasis"
+          max-width="560"
           min-width="320"
           prepend-icon="mdi-magnify"
           spaced="end"
           variant="tonal"
+          width="100%"
           @click="ui.commandOpen = true"
         >
-          {{ targetId ? t('palette.searchTarget') : t('palette.search') }}
+          <span class="text-truncate">{{ targetId ? t('palette.searchTarget') : t('palette.search') }}</span>
 
           <template #append>
             <v-hotkey keys="cmd+k" />
@@ -272,9 +277,10 @@
       <!-- Home, the targets page: part of Studio itself, so above the
            groups and not reordered or hidden; a fixed control, so it never
            shows a selected state. Outside the rail's list, which measures
-           only its groups. -->
+           only its groups. The list's own 8 px above it, as beside it: the
+           icon as far below the bar as from the window's edge. -->
       <template #prepend>
-        <v-list class="pt-3 pb-0" nav>
+        <v-list class="pb-0" nav>
           <v-list-item
             v-tooltip:end="t('nav.home')"
             :active="false"
@@ -283,9 +289,9 @@
             to="/"
           />
 
-          <!-- Inside the list, as wide as the groups' divider; 4 px either
-               side, with the rail list's own top padding. -->
-          <v-divider class="mt-1" />
+          <!-- As the groups' divider, 4 px either side with the rail
+               list's own top padding. -->
+          <v-divider class="mx-auto mt-1" length="24" />
         </v-list>
       </template>
 
@@ -306,8 +312,14 @@
              own (animateReorder), so the transition stays out of it. -->
         <v-slide-y-transition :disabled="reordering" group leave-absolute>
           <template v-for="(group, index) in rail" :key="group.name">
-            <!-- 4 px either side, the items' own spacing. -->
-            <v-divider v-if="index > 0" :key="`${group.name}-divider`" class="my-1" />
+            <!-- 4 px either side, the items' own spacing; shorter than the
+                 items, centred under their icons. -->
+            <v-divider
+              v-if="index > 0"
+              :key="`${group.name}-divider`"
+              class="mx-auto my-1"
+              length="24"
+            />
 
             <v-list-item
               v-for="item in group.items"
@@ -404,12 +416,14 @@
          renders before v-main, so the server-rendered page already leaves its
          room; registered from a page, or from a component that loads data on
          the server, it came too late and the page moved on hydration. -->
-    <!-- In the desktop app the side list is the start of the page's panel:
-         the panel's start corners, and its border towards the page. -->
+    <!-- In the desktop app the side list is the start of the page's panel
+         (useWindowPanel): the panel's start corners and its border, with the
+         line towards the page. -->
     <v-navigation-drawer
       v-if="inShellBrowser && targetId && !panel.current.value && !session.needsLogin"
       v-model="listDrawerOpen"
-      :rounded="inDesktopWindow ? 's-lg' : undefined"
+      :border="sideList?.border"
+      :rounded="sideList?.rounded"
       width="340"
     >
       <ShellListDrawer :active-key="shellKey" :target-id="targetId" />
@@ -420,7 +434,8 @@
     <v-navigation-drawer
       v-else-if="inSubmodelBrowser && targetId && !panel.current.value && !session.needsLogin && routeTarget.data.value?.capabilities.submodelListSource !== null"
       v-model="listDrawerOpen"
-      :rounded="inDesktopWindow ? 's-lg' : undefined"
+      :border="sideList?.border"
+      :rounded="sideList?.rounded"
       width="340"
     >
       <SubmodelListDrawer :active-key="selectedSubmodelKey" :target-id="targetId" />
@@ -586,6 +601,9 @@
    */
   const desktop = useDesktopBridge()
   const inDesktopWindow = desktop !== null
+  /** The side list's part of the window's panel: at the rail, and divided from the page. */
+  const { look } = useWindowPanel()
+  const sideList = computed(() => look({ start: true, end: false }, { end: true }))
   const theme = useTheme()
   // The window controls in the title bar (Windows, Linux) take the frame's
   // colours, now and whenever the theme changes.
