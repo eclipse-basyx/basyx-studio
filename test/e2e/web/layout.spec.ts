@@ -116,9 +116,12 @@ test('hides rail items behind More, and moves there the ones that do not fit', a
   })).toBe(false)
 
   // In a low window, the rail never scrolls: what does not fit is behind
-  // its group's More, the Studio group's first.
+  // its group's More. Hosted Studio has no Studio group without installed
+  // global pages (Local Servers and App Builder are desktop only), so here
+  // it is the infrastructure's.
   await page.setViewportSize({ width: 1280, height: 360 })
-  const more = page.getByLabel('More Studio apps')
+  await expect(page.getByLabel('More Studio apps')).toHaveCount(0)
+  const more = page.getByLabel('More infrastructure apps')
   await expect(more).toBeVisible()
   const overflow = await more.evaluate(element => {
     const content = element.closest('.v-list')!.parentElement!

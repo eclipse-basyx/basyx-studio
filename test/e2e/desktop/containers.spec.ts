@@ -17,7 +17,8 @@ let window: Page
 async function switchToDarkTheme (page: Page) {
   await page.getByLabel('Settings', { exact: true }).click()
   await page.getByRole('button', { name: 'Dark', exact: true }).click()
-  await page.getByLabel('Close settings', { exact: true }).click()
+  // The panel's own close button; the rail's Settings item says the same while open.
+  await page.getByRole('button', { name: 'Close settings', exact: true }).click()
 }
 let directory: string
 let engine: EngineClient
