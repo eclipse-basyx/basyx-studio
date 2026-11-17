@@ -117,7 +117,8 @@ export default defineVuetifyConfiguration({
     // The card of a full-screen dialog: edge to edge, without radius or border.
     VCardFullscreen: 'VCard',
     // The page in the desktop window: a panel inset in the frame of the
-    // title bar, the rail, the side list and the bottom edge, with rounded corners.
+    // title bar, the rail, the side list and the bottom edge, with rounded
+    // corners and a thin border.
     VSheetWindowContent: 'VSheet',
     // The header of a container card (dialogs, Overview widgets, panes): a
     // tinted band that sets the title apart from the content. Value cards
@@ -184,9 +185,9 @@ export default defineVuetifyConfiguration({
     // Compact lists throughout: more rows on screen, as in the BaSyx Web UI and shadcn.
     VList: { color: 'primary', density: 'compact', bgColor: 'transparent' },
     VListItem: { rounded: 'lg', VBtn: { size: 'small' } },
+    // Its corners and border follow the window's (useWindowPanel).
     VSheetWindowContent: {
       color: 'background',
-      rounded: 'lg',
       // The window between the title bar and the bottom edge; the page
       // scrolls inside it, so the scrollbar stays in the panel.
       height: 'calc(100dvh - var(--v-layout-top) - var(--v-layout-bottom))',

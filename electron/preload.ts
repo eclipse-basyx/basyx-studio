@@ -4,6 +4,7 @@ import type { PreviewSelection, PreviewWindowRequest } from '../shared/app-previ
 // renderer never sees a native path.
 import type { FileGrantKind } from '../shared/file-grant-kinds'
 import { contextBridge, ipcRenderer } from 'electron'
+import { windowCornerRadius } from '../shared/window-panel'
 
 export interface StudioFileGrant {
   handle: string
@@ -22,6 +23,8 @@ export interface StudioDesktopBridge {
   getAppPreviewSelection: () => Promise<PreviewSelection | null>
   /** Colours of the window controls in the title bar (Windows, Linux), as `#RRGGBB`. */
   setTitleBarColors: (colors: { color: string, symbolColor: string }) => Promise<void>
+  /** Radius of the window's corners in CSS px, for the page's panel inset in it (shared/window-panel.ts). */
+  windowCornerRadius: number
 }
 
 const bridge: StudioDesktopBridge = {
@@ -31,6 +34,7 @@ const bridge: StudioDesktopBridge = {
   openAppPreview: request => ipcRenderer.invoke('studio:open-app-preview', request),
   getAppPreviewSelection: () => ipcRenderer.invoke('studio:get-app-preview-selection'),
   setTitleBarColors: colors => ipcRenderer.invoke('studio:set-title-bar-colors', { color: String(colors.color), symbolColor: String(colors.symbolColor) }),
+  windowCornerRadius: windowCornerRadius(process.platform, process.getSystemVersion()),
 }
 
 contextBridge.exposeInMainWorld('studioDesktop', bridge)

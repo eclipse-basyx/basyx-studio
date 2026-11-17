@@ -2,13 +2,13 @@
   <!-- Widened up to the rail, whose own border then separates them: no second line.
        Open only with a concept description, and never by a change of breakpoint. -->
   <v-navigation-drawer
-    :border="wide && lgAndUp ? 0 : 's'"
+    :border="panel?.border ?? (wide && lgAndUp ? 0 : 's')"
     :class="{ 'overflow-hidden': inDesktopWindow }"
     disable-resize-watcher
     disable-route-watcher
     location="end"
     :model-value="ui.detailsDrawer && cdKey !== null"
-    :rounded="inDesktopWindow ? (wide && lgAndUp ? 'lg' : 'e-lg') : undefined"
+    :rounded="panel?.rounded"
     :temporary="!lgAndUp"
     :width="drawerWidth"
     @update:model-value="open => (ui.detailsDrawer = open)"
@@ -175,11 +175,12 @@
   import { useQuery, useQueryCache } from '@pinia/colada'
   import { useDisplay } from 'vuetify'
   import { isIec61360 } from '#shared/aas/iec61360'
+  import { frameInset } from '#shared/window-panel'
   import { decodeResourceKey, langText } from '~/utils/aas'
   import { formActionsFooterKey } from '~/utils/editor'
 
-  // In the desktop app the drawer is the end of the page's panel (WindowContent).
-  const inDesktopWindow = useDesktopBridge() !== null
+  // In the desktop app the drawer is the end of the page's panel (useWindowPanel).
+  const { inDesktopWindow, look } = useWindowPanel()
 
   // The details drawer of the Concepts page (MVP-6 plan, L1, L2): the
   // selected concept description in *Details*, *JSON* and *XML*, with its
@@ -223,7 +224,10 @@
       // Not remembered without storage.
     }
   })
-  const drawerWidth = computed(() => (wide.value && lgAndUp.value ? Math.max(440, width.value - 56) : (smAndUp.value ? 440 : 360)))
+  // Widened, it reaches the rail (56 px) and, in the desktop app, the frame's end edge.
+  const drawerWidth = computed(() => (wide.value && lgAndUp.value ? Math.max(440, width.value - 56 - (inDesktopWindow ? frameInset : 0)) : (smAndUp.value ? 440 : 360)))
+  // Widened, it meets the rail's frame too; else its start borders the page.
+  const panel = computed(() => look({ start: wide.value && lgAndUp.value, end: true }, { start: true }))
 
   const detailKey = () => ['targets', props.targetId, 'concept-descriptions', props.cdKey ?? '']
   const detail = useQuery({

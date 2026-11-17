@@ -14,6 +14,8 @@ export interface DesktopBridge {
   getAppPreviewSelection?: () => Promise<PreviewSelection | null>
   /** Colours of the window controls in the title bar (Windows, Linux). Absent in older desktop builds. */
   setTitleBarColors?: (colors: { color: string, symbolColor: string }) => Promise<void>
+  /** Radius of the window's corners in CSS px (shared/window-panel.ts). Absent in older desktop builds. */
+  windowCornerRadius?: number
 }
 
 declare global {
