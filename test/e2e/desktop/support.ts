@@ -3,7 +3,7 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { _electron as electron, expect } from '@playwright/test'
+import { _electron as electron, expect, test } from '@playwright/test'
 
 export const root = fileURLToPath(new URL('../../..', import.meta.url))
 export const fixture = join(root, 'test-setup/fixtures/open/IESEDriveMotorDM3000.aasx')
@@ -25,17 +25,40 @@ function executablePath (): string {
   }
 }
 
+/**
+ * Starts the packaged app and waits for its window. A cold start on CI (the
+ * first of a job, with the display just up) can take longer than
+ * Playwright's 30 seconds, and now and then the app never opens its window:
+ * then it is killed, so it does not hold up the worker's teardown, and
+ * started once more, with the test given the time for it.
+ */
+async function startWithWindow (directory: string): Promise<{ app: ElectronApplication, window: Page }> {
+  const windowTimeout = 60_000
+  for (let attempt = 1; ; attempt++) {
+    const app = await electron.launch({
+      executablePath: executablePath(),
+      // macOS: an in-memory keychain, so test runs never prompt for Keychain access.
+      // Linux: the Secret Service (CI unlocks a gnome-keyring), never plain text.
+      args: process.platform === 'darwin' ? ['--use-mock-keychain'] : (process.platform === 'linux' ? ['--password-store=gnome-libsecret'] : []),
+      env: { ...process.env, STUDIO_USER_DATA_DIR: join(directory, 'user-data') },
+    })
+    try {
+      return { app, window: await app.firstWindow({ timeout: windowTimeout }) }
+    } catch (error) {
+      app.process().kill('SIGKILL')
+      if (attempt >= 2) {
+        throw error
+      }
+      console.warn(`The desktop app opened no window within ${windowTimeout / 1000} s; starting it again.`)
+      test.info().setTimeout(test.info().timeout + windowTimeout + 30_000)
+    }
+  }
+}
+
 /** Starts the packaged app with a throwaway data directory and waits for the start page. */
 export async function launchStudio (): Promise<{ app: ElectronApplication, window: Page, directory: string }> {
   const directory = await mkdtemp(join(tmpdir(), 'studio-e2e-'))
-  const app = await electron.launch({
-    executablePath: executablePath(),
-    // macOS: an in-memory keychain, so test runs never prompt for Keychain access.
-    // Linux: the Secret Service (CI unlocks a gnome-keyring), never plain text.
-    args: process.platform === 'darwin' ? ['--use-mock-keychain'] : (process.platform === 'linux' ? ['--password-store=gnome-libsecret'] : []),
-    env: { ...process.env, STUDIO_USER_DATA_DIR: join(directory, 'user-data') },
-  })
-  const window = await app.firstWindow()
+  const { app, window } = await startWithWindow(directory)
   // A new profile starts with the welcome screen over the app; a click skips
   // its intro, and Enter Studio closes it for this start.
   const welcome = window.getByRole('dialog')

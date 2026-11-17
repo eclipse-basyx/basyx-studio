@@ -121,11 +121,12 @@ test('hides rail items behind More, and moves there the ones that do not fit', a
   // it is the infrastructure's.
   await page.setViewportSize({ width: 1280, height: 360 })
   await expect(page.getByLabel('More Studio apps')).toHaveCount(0)
-  const more = page.getByLabel('More infrastructure apps')
+  // The rail lays itself out again as the window shrinks, its items sliding
+  // in and out, so a More that slides out may still be there for a moment.
+  const more = page.getByLabel('More infrastructure apps').and(page.locator(':not(.slide-y-transition-leave-active)'))
   await expect(more).toBeVisible()
-  const overflow = await more.evaluate(element => {
-    const content = element.closest('.v-list')!.parentElement!
-    return content.scrollHeight - content.clientHeight
-  })
-  expect(overflow).toBeLessThanOrEqual(0)
+  await expect.poll(async () => more.evaluate(element => {
+    const content = element.closest('.v-list')?.parentElement
+    return content ? content.scrollHeight - content.clientHeight : Number.POSITIVE_INFINITY
+  }), { timeout: 10_000 }).toBeLessThanOrEqual(0)
 })
