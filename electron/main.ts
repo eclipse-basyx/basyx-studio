@@ -87,6 +87,11 @@ async function waitForStudioService (
 
   child.once('error', captureSpawnError)
 
+  // The readiness probe, not the start page: rendering the page on a cold
+  // start can take longer than a probe waits, and every aborted probe left
+  // its render running, so the renders piled up and none finished in time.
+  const readyUrl = new URL('health/ready', url)
+
   try {
     while (Date.now() < deadline) {
       if (spawnError) {
@@ -97,9 +102,9 @@ async function waitForStudioService (
       }
 
       try {
-        const response = await fetch(url, {
+        const response = await fetch(readyUrl, {
           headers: { [launchSecretHeader]: launchSecret },
-          signal: AbortSignal.timeout(1000),
+          signal: AbortSignal.timeout(2000),
         })
 
         if (response.ok) {
@@ -569,6 +574,9 @@ async function start (): Promise<void> {
 
 function handleStartupError (error: unknown): void {
   const message = error instanceof Error ? error.message : 'Unknown startup error.'
+  // Also on stderr: the error box has no window behind it, and an end-to-end
+  // test waiting for one sees only what the app printed.
+  console.error(`BaSyx Studio could not start: ${message}`)
   dialog.showErrorBox('BaSyx Studio could not start', message)
   app.quit()
 }

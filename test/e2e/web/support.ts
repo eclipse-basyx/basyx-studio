@@ -31,8 +31,16 @@ export async function waitUntilSettled (locator: Locator): Promise<void> {
 /** Signs in through the test realm (users' passwords equal their names). */
 export async function signIn (page: Page, username: string): Promise<void> {
   await page.goto('/')
-  await page.getByRole('button', { name: 'Sign in' }).click()
-  await page.locator('#username').fill(username)
+  // The server renders the button before Vue hydrates it; a click before
+  // then does nothing, so it is repeated until the realm's login form opens.
+  const usernameField = page.locator('#username')
+  await expect(async () => {
+    if (!await usernameField.isVisible()) {
+      await page.getByRole('button', { name: 'Sign in' }).click({ timeout: 2000 })
+    }
+    await expect(usernameField).toBeVisible({ timeout: 5000 })
+  }).toPass({ timeout: 30_000 })
+  await usernameField.fill(username)
   await page.locator('#password').fill(username)
   await page.locator('#kc-login').click()
   await expect(page.getByRole('heading', { name: 'AAS targets' })).toBeVisible()
