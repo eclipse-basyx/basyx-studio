@@ -1,6 +1,7 @@
 import type { ElectronOptions } from 'nuxt-electron'
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
+import { resolveClaudeAdapter } from './server/lib/agents/claude-adapter'
 import { locales } from './shared/i18n/locales'
 
 // Shown in Settings; container builds pass the snapshot or release version
@@ -123,7 +124,7 @@ export default defineNuxtConfig({
       // The App Builder starts the ACP adapters as scripts (ADR 0054); nothing
       // imports them, so tracing has to be told to copy them.
       traceInclude: [
-        createRequire(import.meta.url).resolve('@agentclientprotocol/claude-agent-acp/dist/index.js'),
+        resolveClaudeAdapter(createRequire(import.meta.url).resolve),
         createRequire(import.meta.url).resolve('@agentclientprotocol/codex-acp/dist/index.js'),
       ],
     },
