@@ -140,6 +140,9 @@ jobs:
       # traced PGlite WebAssembly assets (ADR 0011).
       - name: Build
         run: pnpm exec nuxt build
+        env:
+          # The hosted SSR bundle can exceed Node's default heap on CI.
+          NODE_OPTIONS: --max-old-space-size=8192
 
       # One file, uploaded without zipping, for the end-to-end jobs.
       - name: Pack the build
