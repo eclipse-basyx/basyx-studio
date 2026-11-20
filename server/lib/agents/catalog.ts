@@ -1,5 +1,6 @@
 import type { AgentId } from '#shared/contract'
 import type { CommandResult } from './environment'
+import { resolveClaudeAdapter } from './claude-adapter'
 
 // The coding agents the App Builder runs (ADR 0054), each through the Agent
 // Client Protocol. Claude and Codex go through the ACP project's adapters,
@@ -53,9 +54,9 @@ export interface AgentDefinition {
 }
 
 export function agentCatalog (resolve: (specifier: string) => string): AgentDefinition[] {
-  const resolveAdapter = (specifier: string) => {
+  const resolveAdapter = (locate: () => string) => {
     try {
-      return resolve(specifier)
+      return locate()
     } catch {
       return null
     }
@@ -73,7 +74,7 @@ export function agentCatalog (resolve: (specifier: string) => string): AgentDefi
       denyEndsTurn: false,
       launch: {
         runner: 'adapter',
-        adapterScript: resolveAdapter('@agentclientprotocol/claude-agent-acp/dist/index.js'),
+        adapterScript: resolveAdapter(() => resolveClaudeAdapter(resolve)),
         args: [],
         env: cliPath => ({ CLAUDE_CODE_EXECUTABLE: cliPath }),
       },
@@ -103,7 +104,7 @@ export function agentCatalog (resolve: (specifier: string) => string): AgentDefi
       denyEndsTurn: false,
       launch: {
         runner: 'adapter',
-        adapterScript: resolveAdapter('@agentclientprotocol/codex-acp/dist/index.js'),
+        adapterScript: resolveAdapter(() => resolve('@agentclientprotocol/codex-acp/dist/index.js')),
         args: [],
         env: cliPath => ({ CODEX_PATH: cliPath }),
       },
