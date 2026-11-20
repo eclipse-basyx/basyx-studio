@@ -42,7 +42,11 @@ async function openModule (title: string) {
   await window.getByRole('link', { name: title }).click()
   // The overview's frames are gone once the module's route is shown.
   await expect(window).toHaveURL(/\/apps\//)
-  await expect(window.locator('iframe[sandbox^="allow-scripts"]')).toHaveCount(1)
+  const frame = window.locator('iframe[sandbox^="allow-scripts"]')
+  await expect(frame).toHaveCount(1)
+  // From a shell page the shell list closes, and the page slides over its
+  // place while the app connects: a click into the frame then can miss.
+  await waitUntilSettled(frame)
 }
 
 test('runs installed apps on a local package', async () => {
