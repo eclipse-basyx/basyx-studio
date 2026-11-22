@@ -11,7 +11,7 @@ import { sha256 } from '../crypto/cipher'
 import { StudioProblem } from '../problem'
 import { parseCsv } from './csv'
 import { checkFluxQuery, fluxWindowPeriodMs, interpolateFlux, isValueTemplate, usesWindowPeriod } from './flux'
-import { childNamed, children, parseTime, selectTimeSeries, semanticIdsOf, unitOf } from './segments'
+import { childNamed, children, externalDataOf, parseTime, selectTimeSeries, semanticIdsOf, unitOf } from './segments'
 
 // `studio.timeseries.read` (ADR 0040, time series plan K2 to K7): one shape
 // for the three segment kinds, so parsing and limits are tested once.
@@ -81,7 +81,7 @@ function columnIndex (header: string[], idShort: string): number {
 }
 
 async function externalSeries (selection: TimeSeriesSelection, sources: TimeSeriesSources, timeIdShort: string, values: string[], warnings: Warning[]): Promise<RawSeries> {
-  const data = childNamed(selection.segment, 'Data')
+  const data = externalDataOf(selection.segment)
   const dataPath = `${selection.segmentPath}.${data?.idShort as string}`
   let content: BinaryContent
   if (data?.modelType === 'Blob') {
@@ -94,12 +94,12 @@ async function externalSeries (selection: TimeSeriesSelection, sources: TimeSeri
       ? await sources.download(location)
       : await sources.attachment(dataPath)
   } else {
-    throw new StudioProblem('timeseries_invalid', `The segment ${selection.segmentIdShort} has no Data file with a path or URL.`)
+    throw new StudioProblem('timeseries_invalid', `The segment ${selection.segmentIdShort} has no File with a path or URL and no Blob.`)
   }
 
   const text = new TextDecoder().decode(content.bytes).trim()
   if (content.contentType.includes('text/html') || /^<!doctype html|^<html/i.test(text)) {
-    throw new StudioProblem('timeseries_invalid', `The Data of the segment ${selection.segmentIdShort} is HTML, not CSV.`)
+    throw new StudioProblem('timeseries_invalid', `The data of the segment ${selection.segmentIdShort} is HTML, not CSV.`)
   }
   const [header = [], ...rows] = parseCsv(text)
   const columns = header.map(name => name.trim())

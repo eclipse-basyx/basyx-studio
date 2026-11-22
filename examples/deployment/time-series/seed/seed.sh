@@ -32,7 +32,7 @@ post /shells shell.json
 encoded="$(printf '%s' "${SUBMODEL_ID}" | base64 | tr '+/' '-_' | tr -d '=\n')"
 status="$(curl -s -o /tmp/answer -w '%{http_code}' -X PUT \
   -F 'fileName=commissioning.csv' -F 'file=@/seed/commissioning.csv;type=text/csv' \
-  "${BASYX_URL}/submodels/${encoded}/submodel-elements/Segments.ExternalSegment.Data/attachment")"
+  "${BASYX_URL}/submodels/${encoded}/submodel-elements/Segments.ExternalSegment.File/attachment")"
 case "${status}" in
   200|204) echo "PUT attachment: ${status}" ;;
   *) echo "PUT attachment failed with ${status}: $(cat /tmp/answer)" >&2; exit 1 ;;
