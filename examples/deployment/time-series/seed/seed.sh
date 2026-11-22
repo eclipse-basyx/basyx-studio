@@ -30,11 +30,19 @@ post /shells shell.json
 
 # AAS identifiers in paths are base64url-encoded without padding.
 encoded="$(printf '%s' "${SUBMODEL_ID}" | base64 | tr '+/' '-_' | tr -d '=\n')"
+elements="${BASYX_URL}/submodels/${encoded}/submodel-elements"
+
+# The submodel names the CSV File as the template does. A volume seeded by an
+# older version keeps the submodel (409 above) with the File named Data.
+data=File
+if [ "$(curl -s -o /dev/null -w '%{http_code}' "${elements}/Segments.ExternalSegment.File")" != 200 ]; then
+  data=Data
+fi
 status="$(curl -s -o /tmp/answer -w '%{http_code}' -X PUT \
   -F 'fileName=commissioning.csv' -F 'file=@/seed/commissioning.csv;type=text/csv' \
-  "${BASYX_URL}/submodels/${encoded}/submodel-elements/Segments.ExternalSegment.File/attachment")"
+  "${elements}/Segments.ExternalSegment.${data}/attachment")"
 case "${status}" in
-  200|204) echo "PUT attachment: ${status}" ;;
+  200|204) echo "PUT attachment of ${data}: ${status}" ;;
   *) echo "PUT attachment failed with ${status}: $(cat /tmp/answer)" >&2; exit 1 ;;
 esac
 echo "Seeded the climate sensor"
