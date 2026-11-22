@@ -6,7 +6,15 @@ import { StudioProblem } from '../problem'
 // The parts of an IDTA 02008 Time Series Data submodel (1.1) that a read
 // needs. As in the BaSyx AAS Web UI, segments are recognized by semantic ID
 // and everything else by idShort, ignoring case: `Segments`,
-// `Metadata.Record`, `Records`, `Endpoint`, `Query` and `Data`.
+// `Metadata.Record`, `Records`, `Endpoint` and `Query`. The data of an
+// ExternalSegment is the `File` or `Blob` of the template, found by semantic
+// ID or idShort; `Data`, the idShort of earlier BaSyx examples, also counts.
+
+const externalDataSemanticIds = new Set([
+  'https://admin-shell.io/idta/TimeSeries/File/1/1',
+  'https://admin-shell.io/idta/TimeSeries/Blob/1/1',
+])
+const externalDataIdShorts = new Set(['file', 'blob', 'data'])
 
 export function children (element: JsonObject | undefined): JsonObject[] {
   const value = element?.submodelElements ?? element?.value
@@ -21,6 +29,20 @@ export function childNamed (element: JsonObject | undefined, idShort: string): J
 export function semanticIdsOf (element: JsonObject | undefined): string[] {
   const keys = (element?.semanticId as { keys?: unknown } | undefined)?.keys
   return Array.isArray(keys) ? keys.map(key => (key as { value?: unknown }).value).filter((value): value is string => typeof value === 'string') : []
+}
+
+/**
+ * The File or Blob with the data of an ExternalSegment. The template has
+ * both: a File with a path wins, then the Blob, whose value a submodel read
+ * may leave out.
+ */
+export function externalDataOf (segment: JsonObject | undefined): JsonObject | undefined {
+  const candidates = children(segment).filter(child => (child.modelType === 'File' || child.modelType === 'Blob')
+    && (semanticIdsOf(child).some(id => externalDataSemanticIds.has(id))
+      || (typeof child.idShort === 'string' && externalDataIdShorts.has(child.idShort.toLowerCase()))))
+  return candidates.find(child => child.modelType === 'File' && typeof child.value === 'string' && child.value.trim() !== '')
+    ?? candidates.find(child => child.modelType === 'Blob')
+    ?? candidates[0]
 }
 
 export function segmentKindOf (segment: JsonObject): SegmentKind | null {

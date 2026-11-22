@@ -182,7 +182,7 @@
                 "keys": [
                   {
                     "type": "GlobalReference",
-                    "value": "https://admin-shell.io/idta/TimeSeries/Segments/LinkedSegment/Endpoint/1/1"
+                    "value": "https://admin-shell.io/idta/TimeSeries/Endpoint/1/1"
                   }
                 ]
               },
@@ -197,7 +197,7 @@
                 "keys": [
                   {
                     "type": "GlobalReference",
-                    "value": "https://admin-shell.io/idta/TimeSeries/Segments/LinkedSegment/Query/1/1"
+                    "value": "https://admin-shell.io/idta/TimeSeries/Query/1/1"
                   }
                 ]
               },
@@ -1009,13 +1009,13 @@
             },
             {
               "modelType": "File",
-              "idShort": "Data",
+              "idShort": "File",
               "semanticId": {
                 "type": "ExternalReference",
                 "keys": [
                   {
                     "type": "GlobalReference",
-                    "value": "https://admin-shell.io/idta/TimeSeries/Segments/ExternalSegment/Data/1/1"
+                    "value": "https://admin-shell.io/idta/TimeSeries/File/1/1"
                   }
                 ]
               },

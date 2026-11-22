@@ -158,6 +158,33 @@ describe('ExternalSegment', () => {
     expect(attachment).toHaveBeenCalledWith('segments.ExternalSegment.Data')
   })
 
+  it('reads the File and Blob that IDTA 02008-1-1 defines for an ExternalSegment', async () => {
+    const idta = (modelType: 'File' | 'Blob', value?: string) => ({
+      modelType,
+      idShort: modelType,
+      contentType: 'text/csv',
+      semanticId: { type: 'ExternalReference', keys: [{ type: 'GlobalReference', value: `https://admin-shell.io/idta/TimeSeries/${modelType}/1/1` }] },
+      ...(value === undefined ? {} : { value }),
+    })
+    const attachment = vi.fn(async () => ({ bytes: new TextEncoder().encode(csv), contentType: 'text/csv', fileName: null }))
+    const file = timeSeriesSubmodel({ data: idta('File', '/profile.csv') })
+    expect((await readTimeSeries(params({ segment: 'ExternalSegment' }), sources({ submodel: file, attachment }))).result.series[0]!.points).toHaveLength(2)
+    expect(attachment).toHaveBeenCalledWith('Segments.ExternalSegment.File')
+
+    const renamed = timeSeriesSubmodel({ data: { ...idta('File', '/profile.csv'), idShort: 'ProfileCsv' } })
+    await readTimeSeries(params({ segment: 'ExternalSegment' }), sources({ submodel: renamed, attachment }))
+    expect(attachment).toHaveBeenLastCalledWith('Segments.ExternalSegment.ProfileCsv')
+
+    // The template has both; a File without a path leaves the Blob, whose value a submodel read leaves out.
+    const both = timeSeriesSubmodel()
+    const segment = ((both.submodelElements as JsonObject[])[1]!.value as JsonObject[])[2]!
+    segment.value = [idta('File'), idta('Blob')]
+    const element = vi.fn(async () => idta('Blob', Buffer.from('Time,AirQuality\n2026-05-13T19:15:53Z,3\n').toString('base64')))
+    const { result } = await readTimeSeries(params({ segment: 'ExternalSegment' }), sources({ submodel: both, element }))
+    expect(element).toHaveBeenCalledWith('Segments.ExternalSegment.Blob')
+    expect(result.series[0]!.points).toEqual([[Date.parse('2026-05-13T19:15:53Z'), 3]])
+  })
+
   it('warns about columns the data does not have', async () => {
     const attachment = async () => ({ bytes: new TextEncoder().encode('time,rpm\n2026-05-13T19:15:53Z,1\n'), contentType: 'text/csv', fileName: null })
     const { result } = await readTimeSeries(params({ segment: 'ExternalSegment', values: ['AirQuality', 'rpm'] }), sources({ attachment }))

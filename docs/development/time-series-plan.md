@@ -65,9 +65,9 @@ Paths are relative to `basyx-aas-web-ui/aas-web-ui/src`.
   writes it into the JavaScript bundle with `sed` and prints it to the log.
   Without the token, the user types it into a plain *API Token* field. Every
   browser user can read the token.
-- **ExternalSegment:** the browser `GET`s the `Data` file (an attachment or an
-  absolute URL) and parses it as simple CSV, with columns named after the
-  record idShorts.
+- **ExternalSegment:** the browser `GET`s the template's `File` (or `Data`,
+  the idShort of older BaSyx examples), an attachment or an absolute URL,
+  and parses it as simple CSV, with columns named after the record idShorts.
 - **InternalSegment:** the browser reads `Records` from the submodel itself.
 
 ### Studio
