@@ -63,6 +63,12 @@ export interface FailureRecorder {
    * as HTTP 500.
    */
   answer?: { status: number, payload?: unknown }
+  /**
+   * Whether the last request carried a precondition (`If-Match` and the
+   * like; set by `TargetHttp`), so a 412 answer to a request without one
+   * is not mistaken for someone else's change.
+   */
+  conditional?: boolean
 }
 
 type LookupCallback = (error: NodeJS.ErrnoException | null, address: string | LookupAddress[], family?: number) => void

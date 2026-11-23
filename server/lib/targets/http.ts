@@ -146,7 +146,10 @@ export class TargetHttp {
         return new StudioProblem('target_forbidden')
       }
       case 412: {
-        return new StudioProblem('revision_conflict')
+        // Without a precondition, nothing Studio could reload would change the answer.
+        return recorder.conditional === false
+          ? new StudioProblem('target_request_rejected', 'The target answered 412 Precondition Failed, although Studio sent no precondition (If-Match). Reloading does not help: the target server, or a proxy in front of it, rejects this request.')
+          : new StudioProblem('revision_conflict')
       }
       case 428: {
         return new StudioProblem('target_request_rejected', 'The target requires a revision (If-Match) for this write.')
@@ -192,11 +195,23 @@ export class TargetHttp {
     }
     const guarded = createGuardedFetch(this.options.policy, { recorder, headers, returnRedirects })
     return async (input, init) => {
+      recorder.conditional = isConditional(input, init)
       const response = await guarded(input, init)
       recordAnswer(recorder, response)
       return response
     }
   }
+}
+
+const preconditionHeaders = ['if-match', 'if-none-match', 'if-modified-since', 'if-unmodified-since', 'if-range']
+
+/** Whether a request carries a precondition, the only reason for a target to answer 412. */
+function isConditional (input: Parameters<typeof fetch>[0], init: Parameters<typeof fetch>[1]): boolean {
+  const headers = new Headers(input instanceof Request ? input.headers : undefined)
+  for (const [name, value] of new Headers(init?.headers)) {
+    headers.set(name, value)
+  }
+  return preconditionHeaders.some(name => headers.has(name))
 }
 
 /** Notes a 2xx answer and the JSON the SDK reads from it, and forgets it on any other answer. */
