@@ -123,9 +123,8 @@ cp .env.example .env   # then set STUDIO_DATA_KEY as the file describes
 docker compose up -d
 ```
 
-Open <http://localhost:3000> and import an AASX file, or create a shell. This
-example leaves apps off; add `STUDIO_APPS_URL` to its Studio service, as in the
-Docker command above, to turn them on. More examples in
+Open <http://localhost:3000> and import an AASX file, or create a shell; the
+bundled apps are installed and show their views. More examples in
 [examples/deployment](examples/deployment):
 
 - [production-like](examples/deployment/production-like): Keycloak login,
