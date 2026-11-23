@@ -175,6 +175,8 @@ test('closes a contact\'s dialog whose contact cannot be read', async ({ page })
   // Studio shows no close button over the frame: the app's own dialog closes it.
   const dialog = (await dialogFrame(page, 'Contacts')).locator('[data-test="dialog-unavailable"]')
   await expect(dialog).toContainText('Contact not available', { timeout: 30_000 })
+  // The app's dialog takes no clicks while it scales in (Vuetify's dialog transition).
+  await waitUntilSettled(dialog)
   await dialog.locator('[data-test="dialog-unavailable-close"]').click()
   await expect(page.locator('.v-dialog')).toBeHidden()
 })
