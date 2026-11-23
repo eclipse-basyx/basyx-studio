@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or idea to discuss
+    url: https://github.com/eclipse-basyx/basyx-studio/discussions
+    about: Ask how to use Studio or discuss an idea before it becomes an issue.
+  - name: Security vulnerability
+    url: https://github.com/eclipse-basyx/.github/blob/main/SECURITY.md
+    about: Report vulnerabilities privately, never in a public issue.
+  - name: BaSyx documentation
+    url: https://wiki.basyx.org
+    about: User and developer documentation for the whole BaSyx stack.
