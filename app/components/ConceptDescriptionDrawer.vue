@@ -3,7 +3,7 @@
        Open only with a concept description, and never by a change of breakpoint. -->
   <v-navigation-drawer
     :border="panel?.border ?? (wide && lgAndUp ? 0 : 's')"
-    :class="{ 'overflow-hidden': inDesktopWindow }"
+    :class="{ 'overflow-hidden': framed }"
     disable-resize-watcher
     disable-route-watcher
     location="end"
@@ -179,8 +179,8 @@
   import { decodeResourceKey, langText } from '~/utils/aas'
   import { formActionsFooterKey } from '~/utils/editor'
 
-  // In the desktop app the drawer is the end of the page's panel (useWindowPanel).
-  const { inDesktopWindow, look } = useWindowPanel()
+  // Framed, the drawer is the end of the page's panel (useWindowPanel).
+  const { framed, look } = useWindowPanel()
 
   // The details drawer of the Concepts page (MVP-6 plan, L1, L2): the
   // selected concept description in *Details*, *JSON* and *XML*, with its
@@ -224,8 +224,8 @@
       // Not remembered without storage.
     }
   })
-  // Widened, it reaches the rail (56 px) and, in the desktop app, the frame's end edge.
-  const drawerWidth = computed(() => (wide.value && lgAndUp.value ? Math.max(440, width.value - 56 - (inDesktopWindow ? frameInset : 0)) : (smAndUp.value ? 440 : 360)))
+  // Widened, it reaches the rail (56 px) and, framed, the frame's end edge.
+  const drawerWidth = computed(() => (wide.value && lgAndUp.value ? Math.max(440, width.value - 56 - (framed.value ? frameInset : 0)) : (smAndUp.value ? 440 : 360)))
   // Widened, it meets the rail's frame too; else its start borders the page.
   const panel = computed(() => look({ start: wide.value && lgAndUp.value, end: true }, { start: true }))
 
