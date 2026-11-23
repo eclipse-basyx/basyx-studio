@@ -1,5 +1,5 @@
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
-import { expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 export const openTargetUrl = 'http://localhost:18081'
 export const securedTargetUrl = 'http://localhost:18082'
@@ -28,14 +28,58 @@ export async function waitUntilSettled (locator: Locator): Promise<void> {
   }, { intervals: [150], timeout: 15_000 }).toBeGreaterThanOrEqual(2)
 }
 
+/**
+ * Waits until Studio's page has hydrated (app/plugins/hydrated.client.ts).
+ * A server-rendered page shows its controls before Vue listens to them, and
+ * Playwright's `load` comes before that: a click in between is lost.
+ */
+export async function waitForHydration (page: Page): Promise<void> {
+  await page.locator('html[data-hydrated]').waitFor({ state: 'attached' })
+}
+
+const hydrating = new WeakSet<Page>()
+
+/**
+ * Makes `page.goto` and `page.reload` wait for hydration when they load a
+ * Studio page, so a test acts on a page that listens. Pages of other origins
+ * (the identity provider, app origins) are left as they load.
+ */
+export function waitForHydrationOnLoad (page: Page): void {
+  if (hydrating.has(page)) {
+    return
+  }
+  hydrating.add(page)
+  const studio = new URL(test.info().project.use.baseURL ?? 'http://localhost:3000').origin
+  const settle = async () => {
+    if (new URL(page.url()).origin === studio) {
+      await waitForHydration(page)
+    }
+  }
+  const goto = page.goto.bind(page)
+  const reload = page.reload.bind(page)
+  page.goto = async (...args) => {
+    const response = await goto(...args)
+    await settle()
+    return response
+  }
+  page.reload = async (...args) => {
+    const response = await reload(...args)
+    await settle()
+    return response
+  }
+}
+
 /** Signs in through the test realm (users' passwords equal their names). */
 export async function signIn (page: Page, username: string): Promise<void> {
+  waitForHydrationOnLoad(page)
   await page.goto('/')
   await page.getByRole('button', { name: 'Sign in' }).click()
   await page.locator('#username').fill(username)
   await page.locator('#password').fill(username)
   await page.locator('#kc-login').click()
   await expect(page.getByRole('heading', { name: 'AAS targets' })).toBeVisible()
+  // The identity provider sends the browser back to a page that loads anew.
+  await waitForHydration(page)
 }
 
 /** Calls the Studio API with the page's session, as the UI does. */

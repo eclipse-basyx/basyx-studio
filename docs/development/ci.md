@@ -95,7 +95,9 @@ the test environment in the background (`.github/scripts/testenv.sh start`),
 installs dependencies and the browser, builds the example apps (`pnpm
 apps:build`), and then waits until the build job has
 uploaded its artifact (`.github/scripts/wait-for-artifact.sh`); it fails as
-soon as the build job ends without one. The desktop shards wait for the
+soon as the build job ends without one. The artifact list can name the
+artifact a moment before a download finds it, so a failed download is tried
+once more after 30 seconds. The desktop shards wait for the
 desktop build likewise and install their display and keyring packages in the
 background meanwhile. The runner image has Chromium's
 libraries, so their packages are installed only if Chromium does not start:
