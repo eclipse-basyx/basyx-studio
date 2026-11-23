@@ -309,8 +309,6 @@ jobs:
         run: pnpm test:e2e:web
         env:
           STUDIO_E2E_SHARD: ${{ matrix.shard }}
-          # TEMPORARY (PR 196): each test runs four times to catch a rare lost click.
-          STUDIO_E2E_REPEAT: "4"
 
       # One origin per installation and a shared apps origin (ADR 0045), on
       # two Studios without login; embedded views read the open BaSyx.

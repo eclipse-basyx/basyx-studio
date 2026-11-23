@@ -26,8 +26,6 @@ const others = shard === 'other' ? Object.values(shards) : []
 export default defineConfig({
   testDir: 'web',
   timeout: 60_000,
-  // TEMPORARY (PR 196): CI repeats each test to catch a rare lost click sooner.
-  repeatEach: Number(process.env.STUDIO_E2E_REPEAT ?? 1),
   workers: 1,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never', outputFolder: '../../playwright-report/web' }]] : 'list',
   outputDir: '../../test-results/web',
