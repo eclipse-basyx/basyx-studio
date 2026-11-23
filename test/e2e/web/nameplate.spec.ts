@@ -164,26 +164,6 @@ test('shows the contacts with roles, channels and search, and saves one as vCard
 })
 
 test('closes a contact\'s dialog whose contact cannot be read', async ({ page }) => {
-  // TEMPORARY diagnostics for a flaky close (PR 196): every frame logs its
-  // clicks and the bridge messages it sends and receives on a MessagePort.
-  /* eslint-disable unicorn/no-this-outside-of-class */
-  await page.addInitScript(() => {
-    const where = location.host
-    addEventListener('click', event => console.log(`[diag ${where}] click`, (event.target as Element | null)?.closest<HTMLElement>('[data-test]')?.dataset.test), true)
-    const post = MessagePort.prototype.postMessage
-    MessagePort.prototype.postMessage = function (this: MessagePort, message: unknown, ...rest: unknown[]) {
-      console.log(`[diag ${where}] port send`, JSON.stringify(message).slice(0, 120))
-      return (post as (...args: unknown[]) => void).call(this, message, ...rest)
-    }
-    const listen = MessagePort.prototype.addEventListener
-    MessagePort.prototype.addEventListener = function (this: MessagePort, type: string, listener: EventListenerOrEventListenerObject, ...rest: unknown[]) {
-      if (type === 'message') {
-        listen.call(this, 'message', event => console.log(`[diag ${where}] port receive`, JSON.stringify((event as MessageEvent).data).slice(0, 120)))
-      }
-      return (listen as (...args: unknown[]) => void).call(this, type, listener, ...rest)
-    }
-  })
-  /* eslint-enable unicorn/no-this-outside-of-class */
   const frame = await openSubmodel(page, 'Contacts', shell, contacts, '[data-test="contact"]')
 
   // The dialog's frame reads the submodel again; the repository fails then.
@@ -195,8 +175,6 @@ test('closes a contact\'s dialog whose contact cannot be read', async ({ page })
   // Studio shows no close button over the frame: the app's own dialog closes it.
   const dialog = (await dialogFrame(page, 'Contacts')).locator('[data-test="dialog-unavailable"]')
   await expect(dialog).toContainText('Contact not available', { timeout: 30_000 })
-  // The app's dialog takes no clicks while it scales in (Vuetify's dialog transition).
-  await waitUntilSettled(dialog)
   await dialog.locator('[data-test="dialog-unavailable-close"]').click()
   await expect(page.locator('.v-dialog')).toBeHidden()
 })

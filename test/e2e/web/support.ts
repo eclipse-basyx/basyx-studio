@@ -69,8 +69,39 @@ export function waitForHydrationOnLoad (page: Page): void {
   }
 }
 
+/**
+ * TEMPORARY diagnostics (PR 196): clicks into app frames in Studio's
+ * full-screen dialog are sometimes lost on CI. Every frame logs where its
+ * pointer events land, so a failed test's trace shows which document got
+ * them, if any.
+ */
+const logging = new WeakSet<Page>()
+async function logPointerEvents (page: Page): Promise<void> {
+  if (logging.has(page)) {
+    return
+  }
+  logging.add(page)
+  await page.addInitScript(() => {
+    const where = location.host + location.pathname.slice(0, 40)
+    const describe = (target: EventTarget | null) => {
+      if (!(target instanceof Element)) {
+        return String(target)
+      }
+      const tagged = target.closest<HTMLElement>('[data-test]')?.dataset.test ?? ''
+      return `${target.tagName.toLowerCase()}${target.getAttribute('title') ? `[title=${target.getAttribute('title')}]` : ''} ${tagged}`
+    }
+    for (const type of ['pointerdown', 'pointerup', 'click']) {
+      addEventListener(type, event => {
+        const { clientX, clientY } = event as MouseEvent
+        console.log(`[diag ${where}] ${type} at ${Math.round(clientX)},${Math.round(clientY)} on ${describe(event.target)} | top: ${describe(document.elementFromPoint(clientX, clientY))}`)
+      }, true)
+    }
+  })
+}
+
 /** Signs in through the test realm (users' passwords equal their names). */
 export async function signIn (page: Page, username: string): Promise<void> {
+  await logPointerEvents(page)
   waitForHydrationOnLoad(page)
   await page.goto('/')
   await page.getByRole('button', { name: 'Sign in' }).click()
