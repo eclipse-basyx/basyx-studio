@@ -18,6 +18,7 @@
   <v-divider />
 
   <AppFrame
+    v-if="shown"
     :key="`${opened.view.installationId}:${opened.view.id}:${opened.submodel.id}`"
     :contribution="contribution"
     fullscreen
@@ -40,6 +41,8 @@
   // page opens itself here with the state it passed (ADR 0051).
   const props = defineProps<{
     opened: OpenedView
+    /** Whether the dialog has scaled in: the frame is created only then (AppFrame.vue). */
+    shown: boolean
     target: Target | null
     viewState?: string
   }>()
