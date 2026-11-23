@@ -118,7 +118,8 @@ beforeEach(async () => {
   })
   vi.spyOn(engine, 'dumpDatabase').mockResolvedValue(snapshot)
   vi.spyOn(engine, 'restoreDatabase').mockResolvedValue()
-  vi.spyOn(engine, 'logs').mockResolvedValue('hello\nworld\n')
+  // An environment with AASX files counts as started once it logs their import.
+  vi.spyOn(engine, 'logs').mockResolvedValue('hello\nAAS preconfiguration completed\n')
   manager = new ContainerManager({
     deps, dataDir: directory, discovery: {} as DiscoveryEnvironment, grants: new FileGrantStore(), isPortFree: async () => true, isReady: async () => true,
     infrastructures: {
@@ -239,7 +240,7 @@ describe('container regressions', () => {
     const grants = new FileGrantStore()
     const grant = await grants.grant(path, 'stack-logs')
     await manager.saveLogs(created.stack.id, 'environment', grants.take(grant.handle, 'stack-logs'), actor, 'save-logs')
-    expect(await readFile(path, 'utf8')).toBe('hello\nworld\n')
+    expect(await readFile(path, 'utf8')).toBe('hello\nAAS preconfiguration completed\n')
     expect(() => grants.take(grant.handle, 'stack-logs')).toThrow('expired')
     await expect(grants.grant(join(directory, 'bad.zip'), 'stack-logs')).rejects.toMatchObject({ code: 'invalid_request' })
   })
@@ -367,6 +368,21 @@ describe('container files', () => {
     await writeFile(path, content)
     return (await grants.grant(path, 'stack-aasx')).handle
   }
+
+  it('reports an instance with AASX files started only once the environment has imported them', async () => {
+    // The environment answers while it still imports its AASX files.
+    let imported = false
+    vi.mocked(EngineClient.prototype.logs).mockImplementation(async () => imported ? 'msg="AAS preconfiguration completed"\n' : 'msg="importing AAS preconfiguration file"\n')
+    const grants = new FileGrantStore()
+    const local = new ContainerManager({ deps, dataDir: directory, discovery: {} as DiscoveryEnvironment, grants, isPortFree: async () => true, isReady: async () => true, infrastructures: { create: async () => 'x', remove: async () => {} }, timeouts: { pollMs: 5 } })
+    const created = await local.create({ spec: presetSpec('quick', 'Preconfigured'), aasxFiles: [await aasxGrant(grants, 'plant.aasx')] }, actor, 'create')
+    await vi.waitFor(() => expect(vi.mocked(EngineClient.prototype.logs).mock.calls.some(([, tail]) => tail === 'all')).toBe(true))
+    expect(local.job(created.job.id).state).toBe('running')
+    imported = true
+    await local.settle()
+    expect(local.job(created.job.id).state).toBe('succeeded')
+    await local.dispose()
+  })
 
   it('keeps the stored files and settings when a change cannot take its new files', async () => {
     const grants = new FileGrantStore()

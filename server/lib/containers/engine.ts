@@ -58,7 +58,7 @@ export interface ContainerDetails {
   Name: string
   Image?: string
   Config: { Image: string, Labels: Record<string, string> | null }
-  State: { Status: string, Running: boolean, ExitCode: number, Health?: { Status: string } | null }
+  State: { Status: string, Running: boolean, ExitCode: number, StartedAt?: string, Health?: { Status: string } | null }
   RestartCount: number
 }
 
@@ -276,8 +276,9 @@ export class EngineClient {
     }
   }
 
-  async logs (id: string, tail: number): Promise<string> {
-    const response = await this.#send('GET', `/containers/${encodeURIComponent(id)}/logs`, { query: { stdout: true, stderr: true, tail } })
+  /** The container's output: its last `tail` lines, or all of them, optionally only since a Unix time in seconds. */
+  async logs (id: string, tail: number | 'all', since?: number): Promise<string> {
+    const response = await this.#send('GET', `/containers/${encodeURIComponent(id)}/logs`, { query: { stdout: true, stderr: true, tail, ...(since ? { since } : {}) } })
     const bytes = new Uint8Array(await response.body.arrayBuffer())
     if (response.statusCode >= 400) {
       throw new EngineError(response.statusCode, new TextDecoder().decode(bytes))
