@@ -218,8 +218,8 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1(ajv@8.20.0)
       basyx-typescript-sdk:
-        specifier: ^2.4.2
-        version: 2.4.2(@aas-core-works/aas-core3.1-typescript@1.0.1)
+        specifier: ^2.4.3
+        version: 2.4.3(@aas-core-works/aas-core3.1-typescript@1.0.1)
       drizzle-orm:
         specifier: ^0.45.4
         version: 0.45.4(@electric-sql/pglite@0.5.16)(@opentelemetry/api@1.10.0)(@types/pg@8.23.1)(pg@8.23.1)
@@ -4110,8 +4110,8 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
-  basyx-typescript-sdk@2.4.2:
-    resolution: {integrity: sha512-qw5flgbgo4/JFXQwZKpfdi4civGLbRFbuOKcibnNzGgVqqitbyn9LSeE7BR5lKU/vZ9dufOZaKI/ZTlHaZEi9w==}
+  basyx-typescript-sdk@2.4.3:
+    resolution: {integrity: sha512-bjziR/JAzbLGvuVsOHWuECdMVMTzBfnQVYWg85XbPw++dT+b4VBfA81t5Ps5og+BCPj09LK+p4l0RGxV0gBXtA==}
     peerDependencies:
       '@aas-core-works/aas-core3.1-typescript': ^1.0.0
 
@@ -11621,7 +11621,7 @@ snapshots:
 
   baseline-browser-mapping@2.11.27: {}
 
-  basyx-typescript-sdk@2.4.2(@aas-core-works/aas-core3.1-typescript@1.0.1):
+  basyx-typescript-sdk@2.4.3(@aas-core-works/aas-core3.1-typescript@1.0.1):
     dependencies:
       '@aas-core-works/aas-core3.1-typescript': 1.0.1
       xmlsax-typescript: 1.0.0
