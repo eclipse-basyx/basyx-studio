@@ -1,16 +1,19 @@
 # Project Rules
 
 ## General
+
 - Follow the existing code style and patterns.
 - Use pnpm for running project commands.
 - Keep code in TypeScript unless migration is required.
 
 ## Stack
+
 - Framework: Nuxt 4
 - UI Library: Vuetify
 - Enabled Features: ESLint, Vuetify MCP, Pinia, Vue I18n, Client Hints
 
 ## UI and Vuetify
+
 - Build the UI from Vuetify components, their props, and Vuetify utility
   classes (spacing, flex, typography, colors, overflow). Do not write custom
   CSS: no `<style>` blocks and no inline `style` attributes or bindings.
@@ -53,6 +56,7 @@
   automatically.
 
 ## Server code
+
 - Route handlers, server middleware, and `server/utils` import their helpers
   explicitly from `nuxt/server` (Nuxt 4.6+), so the same code runs on Nuxt 4
   (Nitro v2) and Nuxt 5 (Nitro v3). Do not use h3's auto-imported helpers.
@@ -67,6 +71,7 @@
   response.
 
 ## Tooling
+
 - The Vuetify MCP server is configured in `.mcp.json` and runs the version
   pinned in `pnpm-lock.yaml` (`@vuetify/mcp`). Use it to look up Vuetify 4
   component APIs, props, slots, and breaking changes instead of guessing.

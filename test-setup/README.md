@@ -187,6 +187,7 @@ Prefer app roles over the `groups` claim: Entra replaces groups with an overage
 indicator above 200 groups.
 
 Other providers (Ory Hydra, Authentik, Auth0, …) need the same building blocks:
+
 - OIDC discovery;
 - authorization code with PKCE;
 - confidential and public clients;

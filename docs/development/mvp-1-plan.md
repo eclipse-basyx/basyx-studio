@@ -101,6 +101,7 @@ Automated checks: `pnpm lint`, `pnpm typecheck`, and `pnpm test` (unit), plus
 
 The Zod schemas in `shared/contract` are authoritative for the implemented
 routes. Deviations from the `openapi.yaml` draft:
+
 - `PUT /infrastructures/{id}` (full replacement with `If-Match`) replaces `PATCH`;
 - `GET /targets/{id}/shells/{shellKey}/submodel-refs` is added;
 - `GET /targets/{id}/submodels/{key}` returns metadata only;
@@ -112,10 +113,12 @@ Element keys are base64url-encoded locators that extend idShortPaths with
 operation variables.
 
 **BaSyx Go 1.1.0**
+
 - No `ETag` on any response, so MVP-2 conflict detection needs another mechanism.
 - A request without a token gets 403, not 401.
 
 **SDK and aas-core**
+
 - The SDK bundles its own aas-core copy, so results are converted to JSON at the
   adapter boundary.
 - `$metadata` results are plain JSON.
@@ -125,6 +128,7 @@ operation variables.
   inline it.
 
 **Tooling**
+
 - `vue-tsc` does not support TypeScript 7, so TypeScript 6 is pinned for type
   checking.
 - The guarded fetch uses the fetch of the undici package together with its
@@ -132,6 +136,7 @@ operation variables.
   of the same undici major, and Node bundles its own undici.
 
 **Nuxt 5 readiness**
+
 - Route handlers, server middleware and `server/utils` use the portable
   `nuxt/server` API (Nuxt 4.6+), so they run on Nitro v2 today and on Nuxt 5's
   Nitro v3.
@@ -143,6 +148,7 @@ operation variables.
   server middleware may only extend the context or throw.
 
 **Not done yet**
+
 - per-target authorization (every signed-in user may use every target);
 - Playwright smoke test;
 - visual check of the packaged renderer (the service itself was verified);

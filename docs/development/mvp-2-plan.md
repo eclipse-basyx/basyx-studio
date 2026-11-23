@@ -175,6 +175,7 @@ the worker process), `pnpm test:integration` (98 tests), `pnpm testenv:smoke`
 ### Findings and deviations
 
 **Concurrency**
+
 - The revision token is the hash of the element as read (`h.<hash>`). A write
   reads the element again, compares the hash, and writes with `If-Match` on
   the *fresh* BaSyx `ETag`; a 412 caused by another element of the submodel is
@@ -190,6 +191,7 @@ the worker process), `pnpm test:integration` (98 tests), `pnpm testenv:smoke`
   reloads the element to show it.
 
 **Writes**
+
 - Writes `PATCH` the whole element (`patchSubmodelElementByPath`) instead of the
   value-only representation, which would need a JSON type per `valueType`.
   The element is validated with AAS Core (including its language strings)
@@ -198,6 +200,7 @@ the worker process), `pnpm test:integration` (98 tests), `pnpm testenv:smoke`
   its own aas-core copy.
 
 **Desktop**
+
 - The Workspace Worker is a child process forked and supervised by the local
   Studio Service, not an Electron `utilityProcess`: it then runs the same way
   in `nuxt dev`, tests and the packaged app. It is bundled with esbuild
@@ -222,6 +225,7 @@ the worker process), `pnpm test:integration` (98 tests), `pnpm testenv:smoke`
 
 Deviations from the `openapi.yaml` draft (the Zod schemas in `shared/contract`
 are authoritative):
+
 - `PUT /targets/{id}/submodels/{key}/elements/{elementKey}/value` with
   `If-Match` (428 `precondition_required` without it);
 - new problem codes: `precondition_required`, `unsupported_operation`,
@@ -234,12 +238,14 @@ are authoritative):
   process only.
 
 **Test environment**
+
 - BaSyx Go runs `SNAPSHOT` images; the realm adds `basyx-editor` and the user
   `dave`; the service account is an editor.
 - `EmptyValue` comes back as `""` after a write without a value, so a cleared
   property reads as an empty string at BaSyx Go.
 
 **Not done yet**
+
 - measuring `embedded-postgres` against PGlite (gate before the first public
   desktop release);
 - Windows and macOS e2e in CI; Windows and Linux packages beyond the CI build;

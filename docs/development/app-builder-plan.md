@@ -90,7 +90,7 @@ with the plan and not discussed individually; they hold unless changed.
 | P1 | Folder | `~/Documents/BaSyx Studio/Apps/<slug>` by default, changeable in settings; a git repository per app. *Open folder* and *Open in editor* on the project. |
 | P2 | New app | Scaffolded from a template shipped with Studio (derived from `examples/apps/starter`): `@basyx/*` from npm at Studio's version, `minimumReleaseAge`, a submodel view or module chosen by the agent from the prompt, `AGENTS.md` and `CLAUDE.md`. |
 | P3 | App ID | `local.<slug>`, publisher *This computer*. The project settings allow another ID before the first signed install. *Assumption.* |
-| P4 | Copy of a bundled app | Studio ships the sources of `apps/*`. *Copy and change* on a bundled app (here and on the *Apps* page) makes a project with ID `local.<slug>`, the name "<name> (copy)" and npm versions in place of `workspace:*`. |
+| P4 | Copy of a bundled app | Studio ships the sources of `apps/*`. *Copy and change* on a bundled app (here and on the *Apps* page) makes a project with ID `local.<slug>`, the name `<name> (copy)` and npm versions in place of `workspace:*`. |
 | P5 | Existing folder | Picked with the host dialog (`app-project` grant), must contain `studio-app.json`. Registered in place; without git, Studio asks before `git init`. Its own `AGENTS.md` is kept; Studio's rules go into the first prompt instead. |
 | P6 | Removing a project | Removes it from Studio; deleting the folder and uninstalling the app are separate checkboxes, unchecked by default (UX-003). *Assumption.* |
 

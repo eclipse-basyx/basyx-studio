@@ -54,6 +54,17 @@ A pull request can still break a skipped job when it changes code that the
 job's paths do not name. The push to `main` and the nightly run catch that;
 the fix is then a path added to the job's rule.
 
+## Documentation
+
+Because `ci.yml` ignores documentation, `.github/workflows/docs.yml` checks it:
+on pull requests and pushes to `main` that change a Markdown file or the
+workflow's configuration, and once a week for links that broke on their own.
+
+| Job | What it proves |
+| --- | --- |
+| Markdown style | `pnpm lint:md`: `markdownlint-cli2` with `.markdownlint-cli2.jsonc` |
+| Markdown links | `pnpm lint:links`: relative links, anchors and external URLs of every tracked Markdown file, with `.markdown-link-check.json` |
+
 ## CI result
 
 `CI result` fails if a job failed or was cancelled, or if a job was skipped

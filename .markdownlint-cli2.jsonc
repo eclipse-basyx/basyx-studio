@@ -1,5 +1,32 @@
+// Markdown style, checked by `pnpm lint:md` and the Documentation workflow.
 {
   "config": {
-    "MD013": false
-  }
+    // Lines are wrapped for reading, not to a fixed length.
+    "MD013": false,
+    // Caddyfiles and Makefiles in code blocks are indented with tabs.
+    "MD010": { "code_blocks": false },
+    // Plans and guides use bold lines as run-in labels.
+    "MD036": false,
+    // Line breaks in table cells, and the README's centred header.
+    "MD033": {
+      "allowed_elements": ["br", "div", "p", "h1", "strong", "img", "a", "picture", "source", "details", "summary"]
+    }
+  },
+  "globs": ["**/*.md"],
+  "ignores": [
+    "**/node_modules/**",
+    ".nuxt/**",
+    ".output/**",
+    ".data/**",
+    ".claude/**",
+    "dist/**",
+    "dist-electron/**",
+    "test-results/**",
+    "playwright-report/**",
+    // Texts that are not documents: GitHub's pull request template, the
+    // release-notes template and the license.
+    ".github/pull_request_template.md",
+    ".github/release-notes.md",
+    "LICENSE.md"
+  ]
 }
