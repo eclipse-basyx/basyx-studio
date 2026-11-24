@@ -5,8 +5,8 @@
  * (`-webkit-app-region`, the Window Controls Overlay's `env(titlebar-area-*)`),
  * so they live here, like grid-layout.css; the bar itself is still built from
  * Vuetify components and utility classes (app/layouts/default.vue sets the
- * class). In a browser none of it applies: the variables fall back to no
- * inset and the app region is ignored.
+ * class). In browsers the variables fall back to no inset and the app
+ * region is ignored.
  */
 .title-bar {
   -webkit-app-region: drag;
@@ -20,15 +20,18 @@
   padding-inline-end: var(--title-bar-end);
 }
 
-/* The search in the middle stays at the centre of the window, not of the
-   room between the window controls: the bar's start and end take the same
-   width, so the side with the smaller inset makes up the difference. */
-.title-bar .title-bar-start {
+/* Balance the native insets when there is room to centre search on the window. */
+.title-bar-centered .title-bar-start {
   padding-inline-end: max(0px, calc(var(--title-bar-end) - var(--title-bar-start)));
 }
 
-.title-bar .title-bar-end {
+.title-bar-centered .title-bar-end {
   padding-inline-start: max(0px, calc(var(--title-bar-start) - var(--title-bar-end)));
+}
+
+/* Let the target name ellipsize between the two icon slots. */
+.title-bar-target > .v-btn__content {
+  min-width: 0;
 }
 
 /* The bar's controls take clicks instead of moving the window. */

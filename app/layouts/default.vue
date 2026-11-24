@@ -3,11 +3,11 @@
     <!-- Framed (useWindowPanel), the bar is the frame's top: compact, in the
          frame's colour, without a border. In the desktop app's window it is
          also the title bar, with the window controls inside it and the
-         window dragged by it (title-bar.css). Three parts: start, the
-         centred search, end. -->
+         window dragged by it (title-bar.css). Search sits between the start
+         and end controls. -->
     <v-app-bar
       :border="framed ? 0 : undefined"
-      :class="{ 'title-bar': inDesktopWindow }"
+      :class="{ 'title-bar': inDesktopWindow, 'title-bar-centered': inDesktopWindow && !activeTargetId }"
       :color="framed ? 'frame' : undefined"
       :density="framed ? 'compact' : undefined"
     >
@@ -68,28 +68,24 @@
         </template>
       </div>
 
-      <!-- The search takes a third of the bar, as the start and the end
-           do, up to 560 px; when they need more room (narrow windows, the
-           window controls of Windows), it gives way down to 320 px. -->
-      <div class="d-flex align-center justify-center flex-1-1-0">
-        <v-btn
-          v-if="!session.needsLogin && mdAndUp"
-          class="text-medium-emphasis"
-          max-width="560"
-          min-width="320"
-          prepend-icon="mdi-magnify"
-          spaced="end"
-          variant="tonal"
-          width="100%"
-          @click="ui.commandOpen = true"
-        >
-          <span class="text-truncate">{{ targetId ? t('palette.searchTarget') : t('palette.search') }}</span>
+      <!-- Search uses the available space between the two groups of controls. -->
+      <v-btn
+        v-if="!session.needsLogin && mdAndUp"
+        class="flex-1-1-100 mx-2 text-medium-emphasis"
+        max-width="720"
+        prepend-icon="mdi-magnify"
+        spaced="end"
+        variant="tonal"
+        @click="ui.commandOpen = true"
+      >
+        <span class="w-0 flex-grow-1 text-truncate">{{ searchLabel }}</span>
 
-          <template #append>
-            <v-hotkey keys="cmd+k" />
-          </template>
-        </v-btn>
-      </div>
+        <template v-if="lgAndUp" #append>
+          <!-- Text mode gives screen readers localized key names even when the visible hint uses icons. -->
+          <v-hotkey aria-hidden="true" :keys="searchShortcut" />
+          <v-hotkey class="d-sr-only" display-mode="text" :keys="searchShortcut" />
+        </template>
+      </v-btn>
 
       <div class="title-bar-end d-flex align-center justify-end flex-1-1-0 ms-2">
 
@@ -111,7 +107,8 @@
                   append-icon="mdi-chevron-down"
                   :aria-label="t('app.targetNamed', { name: target?.name ?? '' })"
                   border
-                  :max-width="mdAndUp ? 280 : 200"
+                  class="title-bar-target"
+                  :max-width="targetMenuMaxWidth"
                   :prepend-icon="target?.workspace ? 'mdi-package-variant-closed' : 'mdi-server-network'"
                 >
                   <span class="text-truncate">{{ target?.name }}</span>
@@ -166,8 +163,8 @@
             class="me-2"
             mandatory
           >
-            <v-btn prepend-icon="mdi-eye-outline" :text="t('app.view')" value="view" />
-            <v-btn prepend-icon="mdi-pencil-outline" :text="t('app.edit')" value="edit" />
+            <v-btn-toggle-icon v-tooltip="t('app.view')" :aria-label="t('app.view')" icon="mdi-eye-outline" value="view" />
+            <v-btn-toggle-icon v-tooltip="t('app.edit')" :aria-label="t('app.edit')" icon="mdi-pencil-outline" value="edit" />
           </v-btn-toggle>
 
           <v-btn
@@ -182,7 +179,7 @@
 
         <v-btn
           v-if="!session.needsLogin && !mdAndUp"
-          :aria-label="t('palette.search')"
+          :aria-label="searchLabel"
           icon="mdi-magnify"
           @click="ui.commandOpen = true"
         />
@@ -662,6 +659,8 @@
 
   const navigation = useNavigationStore()
   const targetId = computed(() => typeof route.params.targetId === 'string' ? route.params.targetId : null)
+  const searchLabel = computed(() => t(targetId.value ? 'palette.searchTarget' : 'palette.search'))
+  const searchShortcut = 'cmd+k'
   // Outside any target (the targets list, global modules) the last opened
   // target stays current, so its navigation and controls do not disappear.
   const rememberedTargetId = computed(() => targetId.value ?? navigation.currentTarget)
@@ -689,6 +688,11 @@
   // The route's own query is fresher than the list: an applied edit changes a
   // package's unsaved state there first (the package bar, H5).
   const target = computed(() => routeTarget.data.value?.id === listedTarget.value?.id ? (routeTarget.data.value ?? listedTarget.value) : listedTarget.value)
+  // Share extra room with search, allowing more space for package actions and native window controls.
+  const targetMenuMaxWidth = computed(() => {
+    const reserve = target.value?.workspace ? 1280 : 840
+    return `clamp(160px, calc(160px + (100vw - var(--title-bar-start, 0px) - var(--title-bar-end, 0px) - ${reserve}px) / 2), 280px)`
+  })
   // The list follows, so the target menu and the package groups mark it too (M1).
   const queryCache = useQueryCache()
   watch(() => JSON.stringify(routeTarget.data.value?.workspace ?? null), (state, previous) => {
@@ -1150,7 +1154,7 @@
     return displayName.value.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]!.toUpperCase()).join('')
   })
 
-  useHotkey('cmd+k', () => {
+  useHotkey(searchShortcut, () => {
     ui.commandOpen = true
   }, { inputs: true })
   useHotkey('cmd+e', () => {
