@@ -2,7 +2,7 @@ import type { LockableSetting } from '#shared/branding'
 import type { Preferences } from '#shared/contract'
 import type { PreferencePolicy } from './branding'
 import type { StudioDeps } from './deps'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { lockableSettings } from '#shared/branding'
 import { defaultPreferences, preferencesSchema } from '#shared/contract'
 import { userPreferences } from '../database/schema'
@@ -58,14 +58,15 @@ export async function savePreferences (deps: Pick<StudioDeps, 'db'>, subject: st
       violations: parsed.error.issues.map(issue => ({ path: issue.path.join('.'), message: issue.message })),
     })
   }
-  const [row] = await deps.db.select().from(userPreferences).where(eq(userPreferences.subject, subject))
-  const previous = (row?.preferences ?? {}) as Stored
+  // The schema fills in Studio defaults for missing keys. Only the fields
+  // actually sent by the client can change its stored appearance choices.
+  const preserved = lockableSettings.filter(key => policy.locked.includes(key) || !Object.hasOwn(raw as object, key))
   const keep = (key: string, value: unknown): boolean => {
     const setting = key as LockableSetting
     if (!lockableSettings.includes(setting)) {
       return true
     }
-    if (policy.locked.includes(setting)) {
+    if (preserved.includes(setting)) {
       return false
     }
     if (setting === 'uiLanguage' && policy.languages && typeof value === 'string' && !policy.languages.includes(value)) {
@@ -73,14 +74,21 @@ export async function savePreferences (deps: Pick<StudioDeps, 'db'>, subject: st
     }
     return value !== defaultOf(policy, setting)
   }
-  const stored: Stored = {
-    ...Object.fromEntries(Object.entries(parsed.data).filter(([key, value]) => keep(key, value))),
-    // Locked settings keep what was stored before.
-    ...Object.fromEntries(policy.locked.filter(key => previous[key] !== undefined).map(key => [key, previous[key]])),
-  }
-  const preferences = stored as Preferences
-  await deps.db.insert(userPreferences)
+  const preferences = Object.fromEntries(Object.entries(parsed.data).filter(([key, value]) => keep(key, value))) as Preferences
+  // Preserve the selected fields from the current row at write time, including
+  // any choices saved by a concurrent request.
+  const update = preserved.length === 0
+    ? sql`excluded.preferences`
+    : sql`
+      excluded.preferences || coalesce(
+        (select jsonb_object_agg(saved.key, saved.value)
+         from jsonb_each(${userPreferences.preferences}) as saved
+         where saved.key in (${sql.join(preserved.map(key => sql`${key}`), sql`, `)})),
+        '{}'::jsonb
+      )`
+  const [row] = await deps.db.insert(userPreferences)
     .values({ subject, preferences })
-    .onConflictDoUpdate({ target: userPreferences.subject, set: { preferences, updatedAt: new Date() } })
-  return effectivePreferences(stored, policy)
+    .onConflictDoUpdate({ target: userPreferences.subject, set: { preferences: update, updatedAt: new Date() } })
+    .returning({ preferences: userPreferences.preferences })
+  return effectivePreferences(row!.preferences, policy)
 }

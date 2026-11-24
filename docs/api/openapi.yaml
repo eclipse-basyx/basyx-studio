@@ -3726,6 +3726,7 @@ components:
             URL or a Studio path under the base path, colours, the users'
             defaults and locked settings; null keeps BaSyx's.
           properties:
+            revision: { type: string, description: Revision of the effective branding including legal text. }
             customized: { type: boolean }
             organisation: { type: [string, 'null'] }
             supportUrl: { type: [string, 'null'] }
@@ -3751,6 +3752,8 @@ components:
           type: object
           properties:
             copyrightName: { type: [string, 'null'] }
+            legalNoticeUrl: { type: [string, 'null'], description: v1 external legal notice link. }
+            privacyPolicyUrl: { type: [string, 'null'], description: v1 external privacy policy link. }
             pages:
               type: object
               description: Per page and language, an external URL or the Studio page `/legal/{page}` (ADR 0055).

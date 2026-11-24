@@ -24,6 +24,8 @@ export const studioContextSchema = z.object({
    * defaults and locks of the users' appearance. `null` keeps BaSyx's.
    */
   branding: z.object({
+    /** Changes when the effective branding, including legal text, changes. */
+    revision: z.string(),
     /** Whether anything differs from BaSyx Studio's own look. */
     customized: z.boolean(),
     organisation: z.string().nullable(),
@@ -55,6 +57,9 @@ export const studioContextSchema = z.object({
    */
   legal: z.object({
     copyrightName: z.string().nullable(),
+    /** v1 external links, retained for clients that predate localized pages. */
+    legalNoticeUrl: z.string().nullable(),
+    privacyPolicyUrl: z.string().nullable(),
     pages: z.record(z.enum(legalPages), z.record(z.string(), z.string()).nullable()),
   }),
   /** Deployment-wide switches; they only ever narrow what roles allow. */

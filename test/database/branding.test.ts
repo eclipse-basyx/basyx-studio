@@ -1,8 +1,9 @@
 import type { StudioConfig } from '~~/server/lib/config'
 import type { DatabaseHandle } from '~~/server/lib/database/client'
 import { randomBytes } from 'node:crypto'
+import { sql } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { assetContentType, brandingAdminView, deleteAdminAsset, replaceAdminBranding, resolveBranding, saveAdminAsset, saveAdminSettings } from '~~/server/lib/branding'
+import { assetContentType, brandingAdminView, deleteAdminAsset, readBrandingAsset, replaceAdminBranding, resolveBranding, resolveBrandingForExport, saveAdminAsset, saveAdminSettings } from '~~/server/lib/branding'
 import { exportBrandingArchive, importBrandingArchive } from '~~/server/lib/branding/archive'
 import { loadStudioConfig } from '~~/server/lib/config'
 import { openDatabase } from '~~/server/lib/database/client'
@@ -39,6 +40,9 @@ describe('branding set by administrators (ADR 0055)', () => {
     const resolved = await resolveBranding(deps)
     expect(resolved.settings).toMatchObject({ productName: 'Env Studio', organisation: 'ACME GmbH', locked: ['shape'] })
     expect(resolved.sources).toMatchObject({ 'productName': 'env', 'organisation': 'admin', 'asset.favicon': 'admin' })
+    expect(resolved.assets.favicon?.asset).toEqual({ contentType: 'image/png', size: 2, version: resolved.assets.favicon?.version })
+    const file = await readBrandingAsset(deps, 'favicon')
+    expect(file).toMatchObject({ bytes: new Uint8Array([0x89, 0x50]), version: resolved.assets.favicon?.version })
 
     const view = await brandingAdminView(deps)
     expect(view.admin.productName).toBe('Admin Studio')
@@ -72,10 +76,33 @@ describe('branding set by administrators (ADR 0055)', () => {
     const deps = { db: handle.db, config }
     const logoLight = { url: 'https://assets.example.org/logo.svg' }
     await replaceAdminBranding(deps, { settings: { helpUrl: 'https://acme.example/help' }, assets: { 'logo-light': logoLight } }, 'admin-2')
-    const archive = exportBrandingArchive(await resolveBranding(deps))
+    const archive = exportBrandingArchive(await resolveBrandingForExport(deps))
     const imported = importBrandingArchive(archive)
     expect(imported.assets['logo-light']).toEqual(logoLight)
     expect((await brandingAdminView(deps)).assets['logo-light']).toMatchObject({ source: 'admin', url: logoLight.url })
+  })
+
+  it('keeps URL assets imported before the metadata migration', async () => {
+    const old = await openDatabase({ kind: 'memory' })
+    try {
+      const migrations = await loadMigrationsFromDirectory(migrationsDirectory)
+      const metadataMigration = migrations.findIndex(migration => migration.tag === '0016_branding_asset_metadata')
+      expect(metadataMigration).toBeGreaterThan(0)
+      await applyMigrations(old.db, migrations.slice(0, metadataMigration))
+      const url = 'https://assets.example.org/old.svg'
+      await old.db.execute(sql`
+        insert into branding_assets (slot, content_type, content, updated_by)
+        values ('logo-light', 'text/uri-list', convert_to(${url}, 'UTF8'), 'admin-1')
+      `)
+      await applyMigrations(old.db, migrations)
+      const deps = { db: old.db, config }
+      expect((await resolveBranding(deps)).assets['logo-light']?.asset).toEqual({ url })
+      expect(await readBrandingAsset(deps, 'logo-light')).toBeNull()
+      await saveAdminAsset(deps, 'logo-light', new Uint8Array([1, 2]), 'image/png', 'admin-2')
+      expect((await readBrandingAsset(deps, 'logo-light'))?.bytes).toEqual(new Uint8Array([1, 2]))
+    } finally {
+      await old.close()
+    }
   })
 
   it('ignores and refuses administrators\' branding where the deployment fixes it', async () => {

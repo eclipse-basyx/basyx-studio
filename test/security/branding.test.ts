@@ -3,9 +3,10 @@ import { randomBytes } from 'node:crypto'
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { brandingContext, brandingWarnings, mergeBranding, preferencePolicy } from '~~/server/lib/branding'
 import { exportBrandingArchive, importBrandingArchive } from '~~/server/lib/branding/archive'
+import * as brandingFile from '~~/server/lib/branding/file'
 import { BrandingFileError, parseBrandingFile, readBrandingFile, systemBrandingFile } from '~~/server/lib/branding/file'
 import { ConfigurationError, loadStudioConfig } from '~~/server/lib/config'
 import { appBrandFontUrl, colorNotes, pickLocalized } from '#shared/branding'
@@ -122,6 +123,18 @@ describe('branding file', () => {
     expect(systemBrandingFile('linux', {})).toBe('/etc/basyx-studio/branding.yml')
     expect(systemBrandingFile('win32', { ProgramData: String.raw`C:\ProgramData` })).toContain('BaSyx Studio')
   })
+
+  it('uses the desktop system file ahead of a file chosen by the user', () => {
+    const managed = brandingFolder('version: 1\nproductName: Managed Studio\nlocked: [theme]\n')
+    const local = brandingFolder('version: 1\nproductName: Local Studio\n')
+    const system = vi.spyOn(brandingFile, 'systemBrandingFile').mockReturnValueOnce(managed)
+    try {
+      const config = loadStudioConfig({ ...env, STUDIO_BRANDING_FILE: local }, 'desktop')
+      expect(config.branding).toMatchObject({ managed: true, filePath: managed, file: { settings: { productName: 'Managed Studio' } } })
+    } finally {
+      system.mockRestore()
+    }
+  })
 })
 
 describe('branding sources', () => {
@@ -153,6 +166,31 @@ describe('branding sources', () => {
     expect(legal.pages.privacy).toBeNull()
     expect(branding.logoLight).toMatch(/^\/branding\/logo-light\?v=[0-9a-f]{12}$/)
     expect(branding.logoDark).toBe('https://cdn.example/logo.svg')
+  })
+
+  it('keeps fixed desktop locks independent of local branding values', () => {
+    const resolved = mergeBranding([
+      { source: 'file', layer: layer({ locked: ['theme', 'accent', 'uiLanguage'] }) },
+      { source: 'env', layer: layer({ accent: { light: '#00549F', dark: '#5FA8FF' } }) },
+      { source: 'admin', layer: layer({ theme: 'dark', languages: ['de'], uiLanguage: 'de' }) },
+    ], true)
+    expect(resolved.sources).toMatchObject({ theme: 'file', accent: 'file', uiLanguage: 'file', languages: 'file' })
+    expect(resolved.settings).toEqual({ locked: ['theme', 'accent', 'uiLanguage'] })
+    expect(preferencePolicy(resolved.settings)).toMatchObject({ defaults: { accent: 'basyx' }, languages: null })
+  })
+
+  it('keeps the v1 legal fields alongside localized pages', () => {
+    const imprint = 'https://example.org/imprint'
+    const privacy = 'https://example.org/privacy'
+    const config = loadStudioConfig({ ...env, STUDIO_LEGAL_NOTICE_URL: imprint, STUDIO_PRIVACY_POLICY_URL: privacy }, 'hosted')
+    const { legal } = brandingContext(mergeBranding([{ source: 'env', layer: config.branding.env }]))
+    expect(legal).toMatchObject({ legalNoticeUrl: imprint, privacyPolicyUrl: privacy, pages: { imprint: { en: imprint }, privacy: { en: privacy } } })
+  })
+
+  it('changes the revision when a hosted document changes under the same link', () => {
+    const context = (markdown: string) => brandingContext(mergeBranding([{ source: 'admin', layer: layer({ legal: { imprint: { en: { markdown } } } }) }]))
+    expect(context('Before').legal.pages).toEqual(context('After').legal.pages)
+    expect(context('Before').branding.revision).not.toBe(context('After').branding.revision)
   })
 
   it('turns locks and defaults into a preference policy', () => {

@@ -71,11 +71,12 @@ a deployment set its own name.
   screen. No setting removes them; Studio's licence still lets forks do so.
   About links to the third-party licence notices generated from the installed
   production dependency trees when Studio builds.
-- **Desktop.** Besides `STUDIO_BRANDING_FILE`, the desktop app reads a
-  branding file for the whole computer (`/Library/Application Support/BaSyx
+- **Desktop.** The desktop app prefers the system-wide file to
+  `STUDIO_BRANDING_FILE` and environment branding values (`/Library/Application Support/BaSyx
   Studio/branding.yml`, `%ProgramData%\BaSyx Studio\branding.yml`,
   `/etc/basyx-studio/branding.yml`). Its desktop user is always an
-  administrator, so only this file makes locks binding. The main process
+  administrator. A system-wide lock uses the setting from that file or,
+  when it is unset, Studio's default. The main process
   names the windows and the About panel after the brand and uses a PNG
   compact logo as the dock and window icon; installers and bundle icons stay
   BaSyx Studio's.
@@ -88,9 +89,10 @@ a deployment set its own name.
 
 - One brand per deployment; per-infrastructure or per-tenant branding would
   need another source.
-- The administrators' branding is read per request (one row and the files),
-  so changes apply on every replica without a restart; the file and the
-  variables need a restart.
+- Each replica reads the administrators' settings and asset metadata per
+  request. Serving and exporting files reads their bytes. Open clients
+  refresh their branding when the window regains focus. Changes to the
+  branding file and environment variables need a restart.
 - Legal texts are the operator's responsibility. Studio provides the slots,
   their reachability and the [guide](../deployment/branding.md), including
   the personal data Studio itself processes.

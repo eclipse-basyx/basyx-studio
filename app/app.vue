@@ -103,7 +103,13 @@
   // On phones every dialog fills the screen; DialogCard then drops its radius and border.
   const { xs } = useDisplay()
   const defaults = computed(() => ({ ...shapeDefaults.value, ...(xs.value ? { VDialog: { fullscreen: true } } : {}) }))
+  function refreshBranding () {
+    // A temporary network failure leaves the last context in place.
+    void session.reloadContext().catch(() => {})
+  }
+  onUnmounted(() => window.removeEventListener('focus', refreshBranding))
   onMounted(() => {
+    window.addEventListener('focus', refreshBranding)
     // The stored UI language (Settings), applied after hydration like the
     // theme; setLocale() also rewrites the i18n_redirected cookie, so the
     // next server render starts in it (ADR 0026).

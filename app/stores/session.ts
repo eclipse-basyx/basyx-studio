@@ -8,6 +8,8 @@ export const useSessionStore = defineStore('session', () => {
   const session = ref<StudioSession | null>(null)
   const loaded = ref(false)
   const studioUrl = useStudioUrl()
+  const invalidate = useInvalidate()
+  let contextRequest = 0
 
   const csrfToken = computed(() => session.value?.csrfToken ?? null)
   const isAdmin = computed(() => session.value?.isAdmin ?? false)
@@ -26,9 +28,18 @@ export const useSessionStore = defineStore('session', () => {
     loaded.value = true
   }
 
-  /** Reads the context again, e.g. after administrators changed the branding (ADR 0055). */
+  /** Reads the context again and updates queries that depend on the branding. */
   async function reloadContext (): Promise<void> {
-    context.value = await $fetch<StudioContext>(`${apiBasePath}/context`)
+    const request = ++contextRequest
+    const updated = await $fetch<StudioContext>(`${apiBasePath}/context`)
+    if (request !== contextRequest) {
+      return
+    }
+    const changed = context.value?.branding.revision !== updated.branding.revision
+    context.value = updated
+    if (changed) {
+      await invalidate(['me', 'preferences'], ['legal'])
+    }
   }
 
   async function login (returnTo: string): Promise<void> {

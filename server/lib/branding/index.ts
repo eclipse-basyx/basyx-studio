@@ -1,10 +1,11 @@
 import type { BrandingAdminView, BrandingAssetSlot, BrandingField, BrandingSettings, BrandingSource, LegalPage, LegalSource, LockableSetting } from '#shared/branding'
 import type { Preferences, StudioContext } from '#shared/contract'
+import type { BrandingConfig } from '../config'
 import type { StudioDeps } from '../deps'
 import type { BrandingAsset, BrandingLayer } from './file'
 import { createHash } from 'node:crypto'
-import { eq } from 'drizzle-orm'
-import { brandingAssetMaxBytes, brandingAssetSlots, brandingAssetTypes, brandingSettingsSchema, colorNotes, legalPages, lockableSettings } from '#shared/branding'
+import { and, eq } from 'drizzle-orm'
+import { brandingAssetMaxBytes, brandingAssetSlots, brandingAssetTypes, brandingSettingsSchema, colorNotes, legalPages, lockableSettings, pickLocalized } from '#shared/branding'
 import { brandingAssets, brandingSettings } from '../../database/schema'
 import { StudioProblem } from '../problem'
 
@@ -12,18 +13,22 @@ const rowId = 'deployment'
 // Exports may reference operator-configured external logos and favicons.
 const assetUrlContentType = 'text/uri-list'
 
+/** Uploaded files are represented by metadata until a consumer asks for their bytes. */
+type AssetMetadata = { contentType: string, size: number, version: string }
+type Asset = BrandingAsset | AssetMetadata
+
 /** An asset in effect, with a version that changes with its content, for caching. */
-export interface ResolvedAsset {
-  asset: BrandingAsset
+interface ResolvedAsset<T extends Asset> {
+  asset: T
   source: BrandingSource
   version: string
 }
 
 /** The branding in effect: every source merged, each value from the first that has it. */
-export interface ResolvedBranding {
+export interface ResolvedBranding<T extends Asset = Asset> {
   settings: BrandingSettings
   sources: Partial<Record<BrandingField, BrandingSource>>
-  assets: Partial<Record<BrandingAssetSlot, ResolvedAsset>>
+  assets: Partial<Record<BrandingAssetSlot, ResolvedAsset<T>>>
   /** Locks of the deployment (branding file), which administrators cannot lift. */
   fixedLocks: LockableSetting[]
   /** Whether anything differs from BaSyx Studio's own look. */
@@ -31,33 +36,40 @@ export interface ResolvedBranding {
 }
 
 /** What administrators stored, with who did it last. */
-export interface AdminBranding extends BrandingLayer {
+interface AdminBranding extends BrandingLayer<AssetMetadata | { url: string }> {
   updatedAt: Date | null
   updatedBy: string | null
 }
 
 const settingKeys = Object.keys(brandingSettingsSchema.shape).filter(key => key !== 'legal' && key !== 'locked') as Array<Exclude<keyof BrandingSettings, 'legal' | 'locked'>>
 
-function versionOf (asset: BrandingAsset): string {
+function versionOf (asset: Asset): string {
+  if ('version' in asset) {
+    return asset.version
+  }
   const hash = createHash('sha256')
   hash.update('url' in asset ? asset.url : asset.bytes)
   return hash.digest('hex').slice(0, 12)
 }
 
 /**
- * Merges the sources, highest first: environment, branding file,
- * administrators (ADR 0055). Legal pages merge per page and assets per slot;
- * locks add up.
+ * Merges the sources, highest first (ADR 0055). A fixed lock also protects
+ * the value behind it, even when the file leaves that value at its default.
  */
-export function mergeBranding (layers: Array<{ source: BrandingSource, layer: BrandingLayer | null }>): ResolvedBranding {
+export function mergeBranding<T extends Asset> (layers: Array<{ source: BrandingSource, layer: BrandingLayer<T> | null }>, managed = false): ResolvedBranding<T> {
   const settings: BrandingSettings = {}
   const sources: ResolvedBranding['sources'] = {}
-  const present = layers.filter((entry): entry is { source: BrandingSource, layer: BrandingLayer } => entry.layer !== null)
+  const present = layers.filter((entry): entry is { source: BrandingSource, layer: BrandingLayer<T> } => entry.layer !== null)
+  const fixedLocks = lockableSettings.filter(name => present.some(entry => entry.source !== 'admin' && entry.layer.settings.locked?.includes(name)))
   for (const key of settingKeys) {
-    const from = present.find(entry => entry.layer.settings[key] !== undefined)
+    const lock = fixedLocks.find(name => name === key || (name === 'uiLanguage' && key === 'languages'))
+    const from = present.find(({ source, layer }) => layer.settings[key] !== undefined
+      && (!lock || (managed ? source === 'file' : source !== 'admin')))
     if (from) {
       (settings as Record<string, unknown>)[key] = from.layer.settings[key]
       sources[key] = from.source
+    } else if (lock) {
+      sources[key] = present.find(entry => entry.source !== 'admin' && entry.layer.settings.locked?.includes(lock))?.source
     }
   }
   const legal: Partial<Record<LegalPage, LegalSource>> = {}
@@ -76,8 +88,7 @@ export function mergeBranding (layers: Array<{ source: BrandingSource, layer: Br
     settings.locked = locked
     sources.locked = present.find(entry => entry.layer.settings.locked?.length)?.source
   }
-  const fixedLocks = lockableSettings.filter(name => present.some(entry => entry.source !== 'admin' && entry.layer.settings.locked?.includes(name)))
-  const assets: ResolvedBranding['assets'] = {}
+  const assets: ResolvedBranding<T>['assets'] = {}
   for (const slot of brandingAssetSlots) {
     const from = present.find(entry => entry.layer.assets[slot] !== undefined)
     if (from) {
@@ -90,17 +101,25 @@ export function mergeBranding (layers: Array<{ source: BrandingSource, layer: Br
 }
 
 /** The administrators' branding; empty when there is none. */
-export async function loadAdminBranding (deps: Pick<StudioDeps, 'db'>): Promise<AdminBranding> {
+async function loadAdminBranding (deps: Pick<StudioDeps, 'db'>): Promise<AdminBranding> {
   const [row] = await deps.db.select().from(brandingSettings).where(eq(brandingSettings.id, rowId))
-  const assetRows = await deps.db.select().from(brandingAssets)
+  const assetRows = await deps.db.select({
+    slot: brandingAssets.slot,
+    contentType: brandingAssets.contentType,
+    url: brandingAssets.url,
+    size: brandingAssets.size,
+    version: brandingAssets.version,
+    updatedAt: brandingAssets.updatedAt,
+    updatedBy: brandingAssets.updatedBy,
+  }).from(brandingAssets)
   // Stored settings that no longer validate (an older or newer Studio) are ignored as a whole.
   const parsed = brandingSettingsSchema.safeParse(row?.settings ?? {})
-  const assets: BrandingLayer['assets'] = {}
+  const assets: AdminBranding['assets'] = {}
   for (const asset of assetRows) {
     if ((brandingAssetSlots as readonly string[]).includes(asset.slot)) {
-      assets[asset.slot] = asset.contentType === assetUrlContentType
-        ? { url: new TextDecoder().decode(asset.content) }
-        : { bytes: asset.content, contentType: asset.contentType }
+      assets[asset.slot] = asset.url === null
+        ? { contentType: asset.contentType, size: asset.size, version: asset.version }
+        : { url: asset.url }
     }
   }
   const times = [row?.updatedAt, ...assetRows.map(asset => asset.updatedAt)].filter((time): time is Date => time instanceof Date)
@@ -111,15 +130,63 @@ export async function loadAdminBranding (deps: Pick<StudioDeps, 'db'>): Promise<
   return { settings: parsed.success ? parsed.data : {}, assets, updatedAt: latest, updatedBy }
 }
 
-/** The branding in effect: environment, file and, where administrators may change it, theirs. */
+function mergeDeploymentBranding (branding: BrandingConfig, admin: AdminBranding | null): ResolvedBranding {
+  const env = { source: 'env', layer: branding.env } as const
+  const file = { source: 'file', layer: branding.file } as const
+  return mergeBranding<Asset>([
+    ...(branding.managed ? [file, env] : [env, file]),
+    { source: 'admin', layer: admin },
+  ], branding.managed)
+}
+
+/** The effective branding, with uploaded assets represented by metadata. */
 export async function resolveBranding (deps: Pick<StudioDeps, 'db' | 'config'>): Promise<ResolvedBranding> {
   const { branding } = deps.config
   const admin = branding.editable ? await loadAdminBranding(deps) : null
-  return mergeBranding([
-    { source: 'env', layer: branding.env },
-    { source: 'file', layer: branding.file },
-    { source: 'admin', layer: admin },
-  ])
+  return mergeDeploymentBranding(branding, admin)
+}
+
+async function readAssetBytes (deps: Pick<StudioDeps, 'db'>, slot: BrandingAssetSlot, entry: ResolvedAsset<Asset>): Promise<Extract<BrandingAsset, { bytes: Uint8Array }> | null> {
+  const { asset, version } = entry
+  if ('url' in asset) {
+    return null
+  }
+  if ('bytes' in asset) {
+    return asset
+  }
+  // Keep the bytes and version together if an upload replaces the file meanwhile.
+  const [row] = await deps.db
+    .select({ content: brandingAssets.content, contentType: brandingAssets.contentType })
+    .from(brandingAssets)
+    .where(and(eq(brandingAssets.slot, slot), eq(brandingAssets.version, version), eq(brandingAssets.contentType, asset.contentType)))
+  return row ? { bytes: row.content, contentType: row.contentType } : null
+}
+
+/** Loads just the file being served. */
+export async function readBrandingAsset (deps: Pick<StudioDeps, 'db' | 'config'>, slot: BrandingAssetSlot, version?: string) {
+  const entry = (await resolveBranding(deps)).assets[slot]
+  if (!entry || (version !== undefined && version !== entry.version)) {
+    return null
+  }
+  const asset = await readAssetBytes(deps, slot, entry)
+  return asset ? { ...asset, version: entry.version } : null
+}
+
+/** Includes the bytes of all effective files for an export. */
+export async function resolveBrandingForExport (deps: Pick<StudioDeps, 'db' | 'config'>): Promise<ResolvedBranding<BrandingAsset>> {
+  const resolved = await resolveBranding(deps)
+  const assets: ResolvedBranding<BrandingAsset>['assets'] = {}
+  await Promise.all(brandingAssetSlots.map(async slot => {
+    const entry = resolved.assets[slot]
+    if (entry) {
+      const asset = 'url' in entry.asset ? entry.asset : await readAssetBytes(deps, slot, entry)
+      if (!asset) {
+        throw new StudioProblem('revision_conflict', 'A branding file changed while preparing the export. Run the export again.')
+      }
+      assets[slot] = { ...entry, asset }
+    }
+  }))
+  return { ...resolved, assets }
 }
 
 function invalidBranding (issues: Array<{ path: PropertyKey[], message: string }>): StudioProblem {
@@ -169,7 +236,7 @@ export async function saveAdminAsset (deps: Pick<StudioDeps, 'db' | 'config'>, s
   }
   await deps.db.insert(brandingAssets)
     .values({ slot, contentType, content: bytes, updatedBy: subject })
-    .onConflictDoUpdate({ target: brandingAssets.slot, set: { contentType, content: bytes, updatedBy: subject, updatedAt: new Date() } })
+    .onConflictDoUpdate({ target: brandingAssets.slot, set: { contentType, content: bytes, url: null, updatedBy: subject, updatedAt: new Date() } })
 }
 
 /** Removes an uploaded file; the next source's, or BaSyx's, applies again. */
@@ -185,7 +252,7 @@ export async function replaceAdminBranding (deps: Pick<StudioDeps, 'db' | 'confi
     await tx.delete(brandingAssets)
     for (const [slot, asset] of Object.entries(layer.assets) as Array<[BrandingAssetSlot, BrandingAsset]>) {
       const file = 'url' in asset
-        ? { contentType: assetUrlContentType, content: new TextEncoder().encode(asset.url) }
+        ? { contentType: assetUrlContentType, content: new TextEncoder().encode(asset.url), url: asset.url }
         : { contentType: asset.contentType, content: asset.bytes }
       await tx.insert(brandingAssets).values({ slot, ...file, updatedBy: subject })
     }
@@ -196,7 +263,7 @@ export async function replaceAdminBranding (deps: Pick<StudioDeps, 'db' | 'confi
 }
 
 /** The Studio path of an asset, versioned so browsers fetch a replaced one; a web asset as is. */
-function assetUrl (slot: BrandingAssetSlot, resolved: ResolvedAsset | undefined): string | null {
+function assetUrl (slot: BrandingAssetSlot, resolved: ResolvedAsset<Asset> | undefined): string | null {
   if (!resolved) {
     return null
   }
@@ -214,9 +281,15 @@ function legalLinks (page: LegalPage, source: LegalSource | undefined): Record<s
 /** The branding as the client gets it with the context (public: the sign-in page needs it). */
 export function brandingContext (resolved: ResolvedBranding): Pick<StudioContext, 'branding' | 'legal'> & { productName: string | null } {
   const { settings, assets } = resolved
+  const legacyUrl = (page: 'imprint' | 'privacy'): string | null => {
+    const entry = pickLocalized(settings.legal?.[page], settings.uiLanguage ?? 'en')
+    return entry && 'url' in entry ? entry.url : null
+  }
+  const revision = createHash('sha256').update(JSON.stringify([settings, brandingAssetSlots.map(slot => assets[slot]?.version)])).digest('hex')
   return {
     productName: settings.productName ?? null,
     branding: {
+      revision,
       customized: resolved.customized,
       organisation: settings.organisation ?? null,
       supportUrl: settings.supportUrl ?? null,
@@ -241,6 +314,8 @@ export function brandingContext (resolved: ResolvedBranding): Pick<StudioContext
     },
     legal: {
       copyrightName: settings.organisation ?? null,
+      legalNoticeUrl: legacyUrl('imprint'),
+      privacyPolicyUrl: legacyUrl('privacy'),
       pages: Object.fromEntries(legalPages.map(page => [page, legalLinks(page, settings.legal?.[page])])) as Record<LegalPage, Record<string, string> | null>,
     },
   }
@@ -249,14 +324,17 @@ export function brandingContext (resolved: ResolvedBranding): Pick<StudioContext
 /** Everything administrators see on the Branding page. */
 export async function brandingAdminView (deps: Pick<StudioDeps, 'db' | 'config'>): Promise<BrandingAdminView> {
   const admin = await loadAdminBranding(deps)
-  const resolved = await resolveBranding(deps)
+  const { branding } = deps.config
+  const resolved = mergeDeploymentBranding(branding, branding.editable ? admin : null)
   const assets = Object.fromEntries(brandingAssetSlots.map(slot => {
     const entry = resolved.assets[slot]
     return [slot, {
       source: entry?.source ?? 'default',
       url: assetUrl(slot, entry),
-      contentType: entry && 'bytes' in entry.asset ? entry.asset.contentType : null,
-      size: entry && 'bytes' in entry.asset ? entry.asset.bytes.byteLength : null,
+      contentType: entry && 'contentType' in entry.asset ? entry.asset.contentType : null,
+      size: entry && 'contentType' in entry.asset
+        ? ('bytes' in entry.asset ? entry.asset.bytes.byteLength : entry.asset.size)
+        : null,
     }]
   })) as BrandingAdminView['assets']
   return {

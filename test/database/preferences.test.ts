@@ -73,6 +73,20 @@ describe('user preferences', () => {
       expect(await getPreferences(deps, 'frank', { ...policy, locked: [] })).toMatchObject({ theme: 'light', valueLanguage: 'fr' })
     })
 
+    it('keeps deployment defaults and existing choices on writes that omit appearance', async () => {
+      const deps = { db: handle.db }
+      const defaults = { theme: 'dark' as const, shape: 'rounded' as const, uiLanguage: 'de' as const }
+      const unlocked = { ...policy, defaults, locked: [] }
+      expect(await savePreferences(deps, 'heidi', { autoRefresh: true }, unlocked)).toMatchObject(defaults)
+      await savePreferences(deps, 'heidi', { theme: 'light' }, unlocked)
+      expect(await savePreferences(deps, 'heidi', { autoRefresh: false }, unlocked)).toMatchObject({ ...defaults, theme: 'light' })
+      await Promise.all([
+        savePreferences(deps, 'heidi', { theme: 'system' }, unlocked),
+        savePreferences(deps, 'heidi', { autoRefresh: true }, unlocked),
+      ])
+      expect(await getPreferences(deps, 'heidi', unlocked)).toMatchObject({ ...defaults, theme: 'system', autoRefresh: true })
+    })
+
     it('offers only the deployment\'s languages', async () => {
       const deps = { db: handle.db }
       expect(await savePreferences(deps, 'gina', { uiLanguage: 'ja' }, { ...policy, defaults: { ...policy.defaults, uiLanguage: 'de' as const } })).toMatchObject({ uiLanguage: 'de' })

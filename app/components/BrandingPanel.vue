@@ -581,8 +581,6 @@
       }
       queryCache.setQueryData(key, updated)
       await session.reloadContext()
-      // Defaults and locks change what users' preferences are in effect.
-      await queryCache.invalidateQueries({ key: ['me', 'preferences'] })
       notifications.notify({ text: message, color: 'success' })
     } catch (error_) {
       error.value = error_

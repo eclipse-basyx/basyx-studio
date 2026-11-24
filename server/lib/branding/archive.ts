@@ -1,5 +1,5 @@
 import type { BrandingAssetSlot } from '#shared/branding'
-import type { BrandingLayer } from './file'
+import type { BrandingAsset, BrandingLayer } from './file'
 import type { ResolvedBranding } from './index'
 import { posix } from 'node:path'
 import { unzipSync, zipSync } from 'fflate'
@@ -21,7 +21,7 @@ function extensionOf (slot: BrandingAssetSlot, contentType: string): string {
  * (ADR 0055) with its files beside it, to roll out with
  * STUDIO_BRANDING_FILE or to import into another Studio.
  */
-export function exportBrandingArchive (resolved: ResolvedBranding): Uint8Array {
+export function exportBrandingArchive (resolved: ResolvedBranding<BrandingAsset>): Uint8Array {
   const files: Record<string, Uint8Array> = {}
   const encoder = new TextEncoder()
   const { settings, assets } = resolved

@@ -12,9 +12,9 @@ import { brandingAssetMaxBytes, brandingAssetTypes, brandingSettingsSchema, lega
 export type BrandingAsset = { url: string } | { bytes: Uint8Array, contentType: string }
 
 /** A branding file's settings and files (ADR 0055). */
-export interface BrandingLayer {
+export interface BrandingLayer<Asset = BrandingAsset> {
   settings: BrandingSettings
-  assets: Partial<Record<BrandingAssetSlot, BrandingAsset>>
+  assets: Partial<Record<BrandingAssetSlot, Asset>>
 }
 
 export class BrandingFileError extends Error {}

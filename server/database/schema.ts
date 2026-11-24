@@ -1,6 +1,7 @@
 import type { BrandingAssetSlot, BrandingSettings } from '#shared/branding'
 import type { AgentId, AppProjectOrigin, AppSettingValues, ClientCertificateSummary, Connection, ConversationEvent, EndpointInput, InfrastructureAppSettings, InfrastructureTemplate, ListSource, Preferences, SecuritySummary, ServiceProfiles, StackComponentId, StackSpec, SyncSettings } from '#shared/contract'
 import type { AppManifest } from '@basyx/studio-sdk/protocol'
+import { sql } from 'drizzle-orm'
 import { boolean, customType, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 
 const timestamps = {
@@ -262,6 +263,9 @@ export const brandingAssets = pgTable('branding_assets', {
   slot: text('slot').$type<BrandingAssetSlot>().primaryKey(),
   contentType: text('content_type').notNull(),
   content: bytea('content').notNull(),
+  url: text('url'),
+  version: text('version').notNull().generatedAlwaysAs(sql`left(encode(sha256(content), 'hex'), 12)`),
+  size: integer('size').notNull().generatedAlwaysAs(sql`octet_length(content)`),
   updatedBy: text('updated_by').notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

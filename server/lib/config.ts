@@ -129,6 +129,8 @@ export interface BrandingConfig {
   file: BrandingLayer | null
   /** Where the branding file was read from. */
   filePath: string | null
+  /** Whether the system-wide desktop branding file is in effect. */
+  managed: boolean
   /** Whether administrators may change the branding in Studio (STUDIO_BRANDING_EDITABLE). */
   editable: boolean
 }
@@ -339,12 +341,12 @@ function envBranding (values: z.infer<typeof envSchema>, deployment: DeploymentS
 }
 
 /**
- * The branding file: STUDIO_BRANDING_FILE, or on the desktop the computer's
- * own one where IT puts it (systemBrandingFile), if there is one.
+ * On desktop, the system-wide file takes precedence over STUDIO_BRANDING_FILE.
  */
 function brandingConfig (values: z.infer<typeof envSchema>, deployment: DeploymentSettings, mode: DeploymentMode): BrandingConfig {
   const system = mode === 'desktop' ? systemBrandingFile(process.platform, process.env) : null
-  const filePath = values.STUDIO_BRANDING_FILE ?? (system && existsSync(system) ? system : null)
+  const managed = system !== null && existsSync(system)
+  const filePath = managed ? system : values.STUDIO_BRANDING_FILE ?? null
   let file: BrandingLayer | null = null
   if (filePath) {
     try {
@@ -360,6 +362,7 @@ function brandingConfig (values: z.infer<typeof envSchema>, deployment: Deployme
     env: envBranding(values, deployment),
     file,
     filePath,
+    managed,
     editable: values.STUDIO_BRANDING_EDITABLE !== 'false',
   }
 }

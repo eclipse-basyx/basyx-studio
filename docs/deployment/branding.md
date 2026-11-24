@@ -29,12 +29,14 @@ has it:
    database.
 
 A value set by a variable or the file is shown read-only in Studio, with its
-source. Locks add up: administrators can lock more settings, but cannot
-unlock what the file locks. With `STUDIO_BRANDING_EDITABLE=false`, Studio
+source. Locks add up. A lock from the file protects the deployment's value,
+or Studio's default if the deployment leaves it unset. Administrators can
+add locks in Studio. With `STUDIO_BRANDING_EDITABLE=false`, Studio
 ignores the administrators' branding and shows the page read-only.
 
-Studio reads variables and the file at startup; restart it after changing
-them. Changes in Studio apply at once, for every user.
+Studio reads variables and the file at startup. Restart it after changing
+them. Changes in Studio take effect immediately on the server. An open
+browser tab or desktop window picks them up when it regains focus or reloads.
 
 ## The branding file
 
@@ -213,9 +215,8 @@ origins or logos given as URLs.
 
 ## Desktop app
 
-The desktop app reads the same branding file. Besides `STUDIO_BRANDING_FILE`
-it looks in a place for the whole computer, which IT can manage and users
-cannot change:
+The desktop app first looks for a system-wide file, which IT can manage.
+Studio uses `STUDIO_BRANDING_FILE` when the system-wide file is absent.
 
 | System | Path |
 | --- | --- |
@@ -223,9 +224,11 @@ cannot change:
 | Windows | `%ProgramData%\BaSyx Studio\branding.yml` |
 | Linux | `/etc/basyx-studio/branding.yml` |
 
-The desktop user is always an administrator, so only this file makes locks
-binding: values and locks from it are read-only on the Branding page.
-Without the file, branding made in Studio applies to that installation only.
+The system-wide file takes precedence over environment branding values.
+For a setting it locks, any value it leaves unset falls back to Studio's
+default. The desktop user is always a Studio administrator, and settings
+managed by the system-wide file are read-only on the Branding page.
+Without a system-wide file, branding made in Studio applies to that installation only.
 
 The window title, the About panel of macOS and the welcome screen use the
 brand; a PNG compact logo (or favicon) also becomes the dock and window
