@@ -22,6 +22,9 @@
       "pattern": "^https://www\\.npmjs\\.com/"
     },
     {
+      "pattern": "^https://img\\.shields\\.io/"
+    },
+    {
       "pattern": "^mailto:"
     }
   ],
