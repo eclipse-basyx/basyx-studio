@@ -1,0 +1,101 @@
+name: Bug report
+description: Something in BaSyx Studio does not work as it should.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please do not report
+        security vulnerabilities here; follow the
+        [Eclipse BaSyx security policy](https://github.com/eclipse-basyx/.github/blob/main/SECURITY.md)
+        instead.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the problem.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the shell ...
+        2. Select the submodel ...
+        3. Click ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Studio version
+      description: >-
+        Shown under Settings → About, or the image tag, e.g. `0.2.2` or
+        `SNAPSHOT-20261123-221746-30b2acc`.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: variant
+    attributes:
+      label: How do you run Studio?
+      options:
+        - Container image (hosted web)
+        - Desktop app on Windows
+        - Desktop app on macOS
+        - Desktop app on Linux
+        - From source (pnpm dev)
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      description: For the web version, e.g. Firefox 150 or Chrome 148.
+
+  - type: input
+    id: server
+    attributes:
+      label: AAS server
+      description: >-
+        The server Studio talks to and its version, e.g. BaSyx Go
+        components 1.0.10, BaSyx Java server SDK 2.0.0, or another
+        AAS API v3 implementation.
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and error messages
+      description: >-
+        The error Studio shows (with its request ID), the browser console, or
+        the container or app log. Remove tokens and other secrets first.
+      render: text
+
+  - type: textarea
+    id: files
+    attributes:
+      label: Screenshots and AAS files
+      description: >-
+        Drop screenshots, or the AASX, JSON or XML files that show the problem.
+        Only attach files you may share publicly.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: I searched the existing issues and found none for this bug.
+          required: true

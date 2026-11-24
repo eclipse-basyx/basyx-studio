@@ -1,0 +1,39 @@
+{
+  "ignorePatterns": [
+    {
+      "pattern": "^https?://(localhost|127\\.0\\.0\\.1|\\[::1\\])([:/]|$)"
+    },
+    {
+      "pattern": "^https?://[^/]*\\.localhost([:/]|$)"
+    },
+    {
+      "pattern": "^https?://([^/]*\\.)?example(\\.[a-z]+)?([:/]|$)"
+    },
+    {
+      "pattern": "^https?://[^/]*\\.example([:/]|$)"
+    },
+    {
+      "pattern": "^https?://[^/]*\\.(test|internal|svc|local)([:/]|$)"
+    },
+    {
+      "pattern": "^https?://(studio|basyx|keycloak|postgres|caddy|influxdb|work-orders)([:/]|$)"
+    },
+    {
+      "pattern": "^https://www\\.npmjs\\.com/"
+    },
+    {
+      "pattern": "^https://img\\.shields\\.io/"
+    },
+    {
+      "pattern": "^mailto:"
+    }
+  ],
+  "timeout": "20s",
+  "retryOn429": true,
+  "retryCount": 3,
+  "fallbackRetryDelay": "30s",
+  "aliveStatusCodes": [
+    200,
+    206
+  ]
+}

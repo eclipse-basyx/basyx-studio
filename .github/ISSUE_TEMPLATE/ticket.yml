@@ -1,0 +1,43 @@
+name: Ticket
+description: Planned work for the backlog, written as a user story.
+title: "[Ticket]: "
+body:
+  - type: textarea
+    id: story
+    attributes:
+      label: User story
+      value: |
+        **As a** ...
+        **I want** ...
+        **so that** ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: The measurable conditions under which this ticket is done.
+      value: |
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: entry-points
+    attributes:
+      label: Entry points
+      description: >-
+        Where the change lives: pages, components, API routes, apps, or the
+        requirement IDs from `docs/requirements.md`.
+
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks and assumptions
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and blockers
+      description: Other issues, pull requests or decisions this ticket waits for.

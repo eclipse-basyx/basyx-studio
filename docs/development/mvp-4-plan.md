@@ -226,6 +226,8 @@ environment, and against the `large` profile where stated.
 
 **Viewer features**
 
+<!-- The numbering continues from the steps above. -->
+<!-- markdownlint-disable MD029 -->
 12. **History.** With the history profile advertised, a date in the past shows
     the submodel as it was, read-only; without it, the control is absent.
 13. **Changes.** With the event-feed profile advertised, the *Changes* tab
@@ -251,6 +253,8 @@ environment, and against the `large` profile where stated.
 21. **Parity list.** Every feature of the Web UI viewer and of the port is
     listed as done, later (with the MVP or prerequisite) or dropped, with a
     reason.
+
+<!-- markdownlint-enable MD029 -->
 
 ## Results
 

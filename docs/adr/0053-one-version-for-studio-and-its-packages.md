@@ -44,7 +44,7 @@ fixed once the Eclipse Foundation sets it up.
   `.github/workflows/release.yml` from the Actions tab on `main` with the
   release tag, e.g. `v0.2.1`, or `v0.2.1-rc.1` for a prerelease, as in the
   other BaSyx repositories (a version without `v` is accepted too). Its jobs:
-  - `prepare`: sets the version as V4 does, commits "Release <version>" to
+  - `prepare`: sets the version as V4 does, commits `Release <version>` to
     `main` as `github-actions[bot]`, tags it `v<version>` and creates a
     draft release: `.github/release-notes.md` with the version and app API,
     then GitHub's generated list of changes. It refuses a version that is not

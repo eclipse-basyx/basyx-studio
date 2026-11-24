@@ -250,6 +250,7 @@ apps) and `pnpm test:e2e:desktop` (3, of which 1 for apps).
 ### Findings and deviations
 
 **Phase 0**
+
 - Deno is installed by pnpm as a runtime (`devEngines.runtime`,
   `deno@runtime:2.9.6`): the lockfile pins the official release archive per
   platform with its integrity, so no new release-age exception or install
@@ -259,6 +260,7 @@ apps) and `pnpm test:e2e:desktop` (3, of which 1 for apps).
   on app files (module scripts are CORS requests with `Origin: null`).
 
 **Platform**
+
 - Contributions are requested with the submodel's semantic ID, which the shell
   page already has, instead of `targetId` and `submodelKey`; this saves a
   downstream read per selection. Modules are always returned; the UI shows
@@ -282,16 +284,19 @@ apps) and `pnpm test:e2e:desktop` (3, of which 1 for apps).
 - A crashing backend is started again by the next call, without backoff.
 
 **Example apps**
+
 - The example apps use Vue and Vuetify with Studio's defaults and theme. Their
   packages are about 2.4 MB, mostly icon fonts.
 
 **Desktop**
+
 - The packaged app ships Deno as an extra resource
   (`Resources/deno/deno`); its size grows accordingly.
 - Without Developer ID signing, macOS runs the bundled Deno binary ad-hoc
   signed; release builds must sign it with the app.
 
 **Not done yet**
+
 - per-user or per-group visibility, updates and rollback, marketplace,
   signatures (out of scope);
 - container isolation for hosted backend apps;

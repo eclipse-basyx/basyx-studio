@@ -39,6 +39,8 @@ ADRs are normative for architecture. If a later decision changes an accepted ADR
 
 ## Development and design
 
+- [Contributing](../CONTRIBUTING.md): issues, the Eclipse Contributor
+  Agreement, project rules and pull requests
 - [Setup guide](../setup.md): PNPM-only bootstrap, dependencies, web, Docker,
   Electron, app-platform, and supply-chain setup
 - [Design guidelines](development/design-guidelines.md): interaction and visual conventions established by the current prototypes

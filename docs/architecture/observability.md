@@ -15,8 +15,8 @@ BaSyx Go already provides an executable observability example with:
 
 Reference material:
 
-- [BaSyx Go telemetry documentation](https://github.com/eclipse-basyx/basyx-go-components/blob/main/docu/user/telemetry.md)
-- [BaSyx Go logging documentation](https://github.com/eclipse-basyx/basyx-go-components/blob/main/docu/user/logging.md)
+- [BaSyx Go telemetry documentation](https://github.com/eclipse-basyx/basyx-go-components/blob/main/docu/admin/telemetry.md)
+- [BaSyx Go logging documentation](https://github.com/eclipse-basyx/basyx-go-components/blob/main/docu/admin/logging.md)
 - [BaSyx observability example](https://github.com/eclipse-basyx/basyx-go-components/tree/main/examples/BaSyxObservabilityExample)
 
 The executable example currently uses Tempo. Any older prose mentioning Jaeger should not cause Studio to add a second trace backend.

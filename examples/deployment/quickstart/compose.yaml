@@ -19,6 +19,10 @@ services:
       - "127.0.0.1:3000:3000"
     environment:
       STUDIO_PUBLIC_URL: http://localhost:3000
+      # Each app installation runs on an origin of its own (ADR 0045), e.g.
+      # http://app-0123456789abcdef.apps.localhost:3000. The browser resolves
+      # every name below .localhost to loopback, so no DNS entry is needed.
+      STUDIO_APPS_URL: http://{installation}.apps.localhost:3000
       STUDIO_DATA_KEY: ${STUDIO_DATA_KEY:?set STUDIO_DATA_KEY in .env (see .env.example)}
       # No Studio login (ADR 0036): every visitor is the anonymous user.
       STUDIO_AUTH_MODE: none
