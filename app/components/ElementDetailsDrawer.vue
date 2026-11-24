@@ -3,7 +3,7 @@
        Open only with something to show, and never by a change of breakpoint. -->
   <v-navigation-drawer
     :border="panel?.border ?? (covering ? 0 : 's')"
-    :class="{ 'overflow-hidden': inDesktopWindow }"
+    :class="{ 'overflow-hidden': framed }"
     disable-resize-watcher
     disable-route-watcher
     location="end"
@@ -331,8 +331,8 @@
   import { formActionsFooterKey } from '~/utils/editor'
   import { fileViewId } from '~/utils/visualizations'
 
-  // In the desktop app the drawer is the end of the page's panel (useWindowPanel).
-  const { inDesktopWindow, look } = useWindowPanel()
+  // Framed, the drawer is the end of the page's panel (useWindowPanel).
+  const { framed, look } = useWindowPanel()
 
   // The details drawer (MVP-4 plan, T2): the selected submodel or element in
   // the modes of the Web UI's right pane. The mode and the app view are in the
@@ -418,7 +418,7 @@
     }
   })
   // Widened, it covers the content area only: the rail (56 px), an open
-  // shell list (340 px) and, in the desktop app, the frame's end edge stay
+  // shell list (340 px) and, framed, the frame's end edge stay
   // visible beside it.
   const listOpen = computed(() => ui.listDrawer ?? mdAndUp.value)
   // Next to the shell list, the list's border is the only one.
@@ -426,7 +426,7 @@
   // Widened without the list, it reaches the rail's frame.
   const panel = computed(() => look({ start: wide.value && lgAndUp.value && !listOpen.value, end: true }, { start: !covering.value }))
   const drawerWidth = computed(() => (wide.value && lgAndUp.value
-    ? Math.max(440, width.value - 56 - (listOpen.value ? 340 : 0) - (inDesktopWindow ? frameInset : 0))
+    ? Math.max(440, width.value - 56 - (listOpen.value ? 340 : 0) - (framed.value ? frameInset : 0))
     : (smAndUp.value ? 440 : 360)))
 
   // Same key prefix as before (MVP-2/3): app writes invalidate `['targets', id, 'details']`.

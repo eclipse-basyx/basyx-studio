@@ -1,13 +1,15 @@
 <template>
   <v-app :theme="ui.arcade ? 'arcade' : undefined">
-    <!-- In the desktop app's window the bar is its title bar:
-         compact, the window controls inside it and the window dragged by it
-         (title-bar.css). Three parts: start, the centred search, end. -->
+    <!-- Framed (useWindowPanel), the bar is the frame's top: compact, in the
+         frame's colour, without a border. In the desktop app's window it is
+         also the title bar, with the window controls inside it and the
+         window dragged by it (title-bar.css). Three parts: start, the
+         centred search, end. -->
     <v-app-bar
-      :border="inDesktopWindow ? 0 : undefined"
+      :border="framed ? 0 : undefined"
       :class="{ 'title-bar': inDesktopWindow }"
-      :color="inDesktopWindow ? 'frame' : undefined"
-      :density="inDesktopWindow ? 'compact' : undefined"
+      :color="framed ? 'frame' : undefined"
+      :density="framed ? 'compact' : undefined"
     >
       <!-- The first control is an icon like the rail's and stands right over
            them (56 px rail, 48 px button: 4 px either side); in the desktop
@@ -244,11 +246,13 @@
       </div>
     </v-app-bar>
 
-    <!-- In the desktop app the frame's bottom edge, under the panel and the
-         side list, and its end edge: registered right after
-         the bar, so the other drawers end above and before them. -->
+    <!-- Framed, the frame's bottom edge, under the panel and the side list,
+         and its end edge: registered right after the bar, so the other
+         drawers end above and before them. Decoration, hidden from screen
+         readers, which would otherwise announce an empty navigation. -->
     <v-navigation-drawer
-      v-if="inDesktopWindow"
+      v-if="framed"
+      aria-hidden="true"
       border="0"
       color="frame"
       location="end"
@@ -258,7 +262,7 @@
     />
 
     <v-footer
-      v-if="inDesktopWindow"
+      v-if="framed"
       app
       class="pa-0"
       color="frame"
@@ -268,8 +272,8 @@
     <!-- Vuetify's rail width (56 px): the icons line up with the app bar's menu icon. -->
     <v-navigation-drawer
       v-if="mdAndUp && !session.needsLogin"
-      :border="inDesktopWindow ? 0 : undefined"
-      :color="inDesktopWindow ? 'frame' : undefined"
+      :border="framed ? 0 : undefined"
+      :color="framed ? 'frame' : undefined"
       name="rail"
       permanent
       rail
@@ -416,7 +420,7 @@
          renders before v-main, so the server-rendered page already leaves its
          room; registered from a page, or from a component that loads data on
          the server, it came too late and the page moved on hydration. -->
-    <!-- In the desktop app the side list is the start of the page's panel
+    <!-- Framed, the side list is the start of the page's panel
          (useWindowPanel): the panel's start corners and its border, with the
          line towards the page. -->
     <v-navigation-drawer
@@ -443,10 +447,10 @@
 
     <!-- Settings and administration open in place of the page, without
          leaving its route (usePanel), so the rail stays as it is. -->
-    <!-- In the desktop app the bar and the rail are the window's frame,
-         without borders, and the page is a panel inset in it on every side
-         with rounded corners (WindowContent). -->
-    <v-main :class="{ 'bg-frame': inDesktopWindow }">
+    <!-- Framed, the bar and the rail are the frame, without borders, and
+         the page is a panel inset in it on every side with rounded corners
+         (WindowContent). -->
+    <v-main :class="{ 'bg-frame': framed }">
       <WindowContent>
         <SettingsPanel v-if="panel.current.value === 'settings'" />
         <InfrastructuresPanel v-else-if="panel.current.value === 'infrastructures'" />
@@ -601,8 +605,8 @@
    */
   const desktop = useDesktopBridge()
   const inDesktopWindow = desktop !== null
-  /** The side list's part of the window's panel: at the rail, and divided from the page. */
-  const { look } = useWindowPanel()
+  /** The side list's part of the panel: at the rail, and divided from the page. */
+  const { framed, look } = useWindowPanel()
   const sideList = computed(() => look({ start: true, end: false }, { end: true }))
   const theme = useTheme()
   // The window controls in the title bar (Windows, Linux) take the frame's

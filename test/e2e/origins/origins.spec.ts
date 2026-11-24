@@ -127,7 +127,7 @@ test('serves an installation\'s files on its own origin only', async ({ page, re
   expect((await request.get('http://127.0.0.1:3400/api/studio/v1/context', { headers: { Host: `${probe.installationId}.apps.localhost:3400` } })).status()).toBe(404)
 })
 
-test('shows a full-page module from the rail to the edges, without header or card', async ({ page }) => {
+test('shows a full-page module filling the page\'s panel beside the rail, without header or card', async ({ page }) => {
   await page.goto('/')
   await page.getByRole('link', { name: 'Origin probe' }).click()
   await expect(page).toHaveURL(/\/apps\/app-[\da-f]{16}\/probe$/)
@@ -135,17 +135,19 @@ test('shows a full-page module from the rail to the edges, without header or car
   await expect(element).toBeVisible()
   await expect(page.locator('main .v-breadcrumbs')).toHaveCount(0)
   await expect(page.locator('main .v-card')).toHaveCount(0)
-  const viewport = page.viewportSize()!
   const frame = (await element.boundingBox())!
   const rail = (await page.getByRole('navigation').first().boundingBox())!
   const bar = (await page.getByRole('banner').boundingBox())!
-  // Beside the navigation rail, below the app bar, to the window's edges
-  // (within the rail's and bar's 1 px borders).
+  // The page's panel, inset in the frame that the bar, the rail and the
+  // frame's 4 px end and bottom edges form (useWindowPanel).
+  const panel = (await page.getByRole('main').locator('.v-sheet').first().boundingBox())!
+  // Beside the navigation rail, below the app bar, and filling the panel to
+  // its other edges (within the panel's 1 px border).
   const near = (actual: number, expected: number) => expect(Math.abs(actual - expected)).toBeLessThanOrEqual(1)
   near(frame.x, rail.x + rail.width)
   near(frame.y, bar.y + bar.height)
-  near(frame.x + frame.width, viewport.width)
-  near(frame.y + frame.height, viewport.height)
+  near(frame.x + frame.width, panel.x + panel.width)
+  near(frame.y + frame.height, panel.y + panel.height)
 })
 
 /** The Studio API with the anonymous session's CSRF token. */
