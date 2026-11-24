@@ -1,7 +1,8 @@
 {
   "annotations": {
     "toggle": "要素に注釈を追加",
-    "picking": "プレビュー内の要素を選択してください。Esc キーでキャンセルできます。",
+    "picking": "要素をクリックするか、矢印キーで選んで Enter キーを押します。Esc キーでキャンセルします。",
+    "highlighted": "選択中の要素: {tag}",
     "title": "プレビューの注釈",
     "note": "注釈 {number}",
     "remove": "注釈を削除",

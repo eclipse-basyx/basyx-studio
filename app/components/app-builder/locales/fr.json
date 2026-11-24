@@ -1,7 +1,8 @@
 {
   "annotations": {
     "toggle": "Annoter un élément",
-    "picking": "Sélectionnez un élément dans l’aperçu. Appuyez sur Échap pour annuler.",
+    "picking": "Sélectionnez un élément à la souris ou avec les flèches et Entrée. Échap annule.",
+    "highlighted": "Élément surligné : {tag}",
     "title": "Annotations de l’aperçu",
     "note": "Annotation {number}",
     "remove": "Supprimer l’annotation",

@@ -5,8 +5,11 @@ import { previewPickerProtocol } from '../../shared/app-preview-picker'
 
 const note = {
   id: 'note-1',
+  number: 1,
+  previewName: 'Orders',
   previewKey: 'preview-1',
   contribution: 'module:orders',
+  subPath: 'orders/open',
   digest: '0123456789abcdef',
   element: { tag: 'button', path: 'body > button:nth-of-type(1)' },
   text: 'Move Export beside the filters.',
@@ -14,13 +17,15 @@ const note = {
 
 describe('App Builder annotations', () => {
   it('bundles notes in order with or without a chat message', () => {
-    const second = { ...note, id: 'note-2', element: { tag: 'h1', path: 'body > h1:nth-of-type(1)' }, text: 'Rename this heading.' }
+    const second = { ...note, id: 'note-2', number: 2, subPath: 'orders/completed', text: 'Rename this button.' }
     const plain = annotationPrompt('  Make these changes.  ', [])
     expect(plain).toBe('Make these changes.')
     const prompt = annotationPrompt('', [note, second])!
     expect(prompt).toContain('body > button:nth-of-type(1)')
     expect(prompt).toContain('module:orders')
     expect(prompt).toContain(note.digest)
+    expect(prompt).toContain(`1. ${note.text}\n   Preview contribution: module:orders (build ${note.digest})\n   Preview route: /orders/open`)
+    expect(prompt).toContain(`2. ${second.text}\n   Preview contribution: module:orders (build ${note.digest})\n   Preview route: /orders/completed`)
     expect(prompt.indexOf(note.text)).toBeLessThan(prompt.indexOf(second.text))
     expect(annotationPrompt('Revise the preview.', [note])).toBe(`Revise the preview.\n\n${annotationPrompt('', [note])}`)
     expect(annotationPrompt('Revise the preview.', [{ ...note, text: ' ' }])).toBeNull()

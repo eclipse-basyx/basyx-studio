@@ -1,7 +1,8 @@
 {
   "annotations": {
     "toggle": "Annotate element",
-    "picking": "Select an element in the preview. Press Esc to cancel.",
+    "picking": "Select an element, or use the arrow keys and Enter. Esc cancels.",
+    "highlighted": "Highlighted element: {tag}",
     "title": "Preview annotations",
     "note": "Annotation {number}",
     "remove": "Remove annotation",

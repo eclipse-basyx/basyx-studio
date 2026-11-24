@@ -148,46 +148,50 @@
         <v-btn class="mt-1 ms-n2" data-test="app-builder-unrestricted-off" :text="t('mode.back')" @click="emit('set-permission-mode', 'ask', false)" />
       </v-alert>
 
-      <v-sheet
+      <v-card
         v-if="draft.notes.length > 0"
         class="mb-2 pa-3 overflow-y-auto d-flex flex-column ga-2"
         color="surface-light"
         data-test="app-builder-annotations"
         max-height="260"
-        rounded="lg"
       >
         <div class="text-label-large">{{ t('annotations.title') }}</div>
 
-        <div v-for="(note, index) in draft.notes" :key="note.id" class="d-flex align-start ga-2" data-test="app-builder-annotation">
-          <div class="flex-grow-1 overflow-hidden">
-            <div v-tooltip="annotationDetails(note)" class="text-body-small text-medium-emphasis text-truncate" tabindex="0">{{ note.contribution }} · {{ note.element.tag }}</div>
-            <div v-if="annotationContext && note.previewKey !== annotationContext" class="text-body-small text-warning">{{ t('annotations.previousPreview') }}</div>
+        <div v-for="note in draft.notes" :key="note.id" data-test="app-builder-annotation">
+          <div class="d-flex align-center ga-2 mb-1">
+            <v-avatar aria-hidden="true" class="text-label-small" color="primary" size="20">{{ note.number }}</v-avatar>
 
+            <div v-tooltip="annotationDetails(note)" class="text-body-small text-truncate" tabindex="0">{{ note.previewName }}</div>
+          </div>
+
+          <div v-if="annotationContext && note.previewKey !== annotationContext" class="text-body-small text-warning mb-1">{{ t('annotations.previousPreview') }}</div>
+
+          <div class="d-flex align-center ga-2">
             <v-textarea
               auto-grow
               autofocus
-              class="mt-1"
+              class="flex-grow-1"
               data-test="app-builder-annotation-note"
               :disabled="draft.sending"
               hide-details
-              :label="t('annotations.note', { number: index + 1 })"
+              :label="t('annotations.note', { number: note.number })"
               :maxlength="maxAnnotationLength"
               :model-value="note.text"
               rows="1"
               @update:model-value="text => emit('edit-note', note.id, text)"
             />
-          </div>
 
-          <v-btn
-            v-tooltip="t('annotations.remove')"
-            :aria-label="t('annotations.remove')"
-            data-test="app-builder-annotation-remove"
-            :disabled="draft.sending"
-            icon="mdi-close"
-            @click="emit('remove-note', note.id)"
-          />
+            <v-btn
+              v-tooltip="t('annotations.remove')"
+              :aria-label="t('annotations.remove')"
+              data-test="app-builder-annotation-remove"
+              :disabled="draft.sending"
+              icon="mdi-close"
+              @click="emit('remove-note', note.id)"
+            />
+          </div>
         </div>
-      </v-sheet>
+      </v-card>
 
       <v-sheet-composer>
         <v-textarea

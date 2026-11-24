@@ -54,8 +54,6 @@
     <div class="d-flex flex-column ga-2 pa-2 flex-grow-1 overflow-y-auto bg-background">
       <ProblemAlert v-if="error" :error="error" />
 
-      <v-alert v-if="annotating" data-test="app-builder-picker-hint" :text="t('annotations.picking')" type="info" />
-
       <v-progress-linear v-if="!preview && !error" />
 
       <template v-else-if="preview">
@@ -154,6 +152,8 @@
                   v-model="annotating"
                   :frame="frame"
                   :load-sequence="loadSequence"
+                  :markers="annotationMarkers"
+                  :next-number="nextAnnotationNumber"
                   :origin="selected.frameOrigin"
                   @pick="addAnnotation"
                   @ready="pickerAvailability"
@@ -195,6 +195,7 @@
     detached?: boolean
     conversationId?: string
     annotationDisabled?: boolean
+    notes?: readonly PreviewAnnotation[]
   }>()
   const emit = defineEmits<{
     'close': []
@@ -387,14 +388,30 @@
   const frameKey = computed(() => JSON.stringify([selected.value?.installationId, selected.value?.digest, selectedKey.value, targetId.value, shell.value?.id, submodel.value?.id]))
   const annotationKey = computed(() => JSON.stringify([frameKey.value, subPath.value]))
   const annotationScope = computed(() => JSON.stringify([props.conversationId, annotationKey.value]))
-  watch(annotationKey, key => emit('annotation-context', key), { immediate: true })
+  const nextAnnotationNumber = computed(() => (props.notes?.at(-1)?.number ?? 0) + 1)
+  const annotationMarkers = computed(() => (props.notes ?? [])
+    .filter(note => note.previewKey === annotationKey.value)
+    .map(note => ({ number: note.number, path: note.element.path })))
+  watch(annotationKey, key => {
+    if (selected.value) {
+      emit('annotation-context', key)
+    }
+  }, { immediate: true })
   watch(() => [annotationScope.value, props.buildSeq, building.value, approving.value, props.annotationDisabled], () => {
     annotating.value = false
   }, { flush: 'sync' })
 
   function addAnnotation (element: PreviewElement) {
     if (props.conversationId && selectedKey.value && selected.value && !props.annotationDisabled) {
-      emit('annotate', { element, contribution: selectedKey.value, digest: selected.value.digest, previewKey: annotationKey.value })
+      emit('annotate', {
+        element,
+        number: nextAnnotationNumber.value,
+        previewName: label(selected.value.title),
+        contribution: selectedKey.value,
+        subPath: subPath.value,
+        digest: selected.value.digest,
+        previewKey: annotationKey.value,
+      })
     }
   }
 
@@ -410,7 +427,7 @@
       event.preventDefault()
       event.stopPropagation()
       annotating.value = false
-      annotateButton.value?.$el.focus()
+      annotateButton.value?.$el.focus({ preventScroll: true })
     }
   }
 </script>

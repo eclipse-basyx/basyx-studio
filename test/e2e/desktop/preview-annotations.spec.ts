@@ -69,6 +69,19 @@ async function screenshot (window: Page, info: TestInfo, name: string) {
   }
 }
 
+function contrastRatio ([foreground, background]: [string, string]): number {
+  const channels = (color: string) => color.match(/\d+(?:\.\d+)?/g)!.map(Number)
+  const back = channels(background)
+  const ink = channels(foreground)
+  const opacity = ink[3] ?? 1
+  const luminance = (rgb: number[]) => rgb.slice(0, 3).reduce((sum, channel, index) => {
+    const value = channel / 255
+    return sum + [0.2126, 0.7152, 0.0722][index]! * (value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4)
+  }, 0)
+  const values = [luminance(ink.slice(0, 3).map((value, index) => value * opacity + back[index]! * (1 - opacity))), luminance(back)]
+  return (Math.max(...values) + 0.05) / (Math.min(...values) + 0.05)
+}
+
 test.use({ actionTimeout: 15_000 })
 
 test('picks app elements and sends the reviewed notes to the current coding agent', async () => {
@@ -83,6 +96,9 @@ test('picks app elements and sends the reviewed notes to the current coding agen
     const { window, directory } = launched
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setSize(1440, 900))
     await window.emulateMedia({ colorScheme: 'light' })
+    await window.getByRole('listitem', { name: 'Settings', exact: true }).click()
+    await window.getByRole('button', { name: 'More rounded', exact: true }).click()
+    await window.getByRole('listitem', { name: 'Close settings', exact: true }).click()
     const workspace = join(directory, 'Antrieb.aasx')
     await copyFile(fixture, workspace)
     await chooseFiles(app, workspace)
@@ -111,8 +127,16 @@ test('picks app elements and sends the reviewed notes to the current coding agen
     await expect(overview).toHaveAttribute('aria-selected', 'true')
     await screenshot(window, info, 'preview-light')
 
+    const originalBounds = await frame.owner().boundingBox()
     await annotate.click()
     await expect(window.locator('[data-test="app-builder-picker-surface"]')).toBeVisible()
+    expect(await frame.owner().boundingBox()).toEqual(originalBounds)
+    const hint = window.locator('[data-test="app-builder-picker-hint"]')
+    const hintContrast = async () => contrastRatio(await hint.evaluate(element => {
+      const { color, backgroundColor } = getComputedStyle(element)
+      return [color, backgroundColor]
+    }))
+    expect(await hintContrast()).toBeGreaterThanOrEqual(4.5)
     await window.keyboard.press('Shift+Tab')
     await window.keyboard.press('Escape')
     await expect(annotate).toHaveAttribute('aria-pressed', 'false')
@@ -135,6 +159,60 @@ test('picks app elements and sends the reviewed notes to the current coding agen
     await expect(notes).toHaveCount(1)
     await notes.nth(0).fill('Rename this tab to Assets so it fits our terminology.')
 
+    const firstNote = window.locator('[data-test="app-builder-annotation"]').first()
+    await expect(firstNote).toContainText('Inventory')
+    await expect(window.locator('[data-test="app-builder-annotations"]')).toHaveCSS('border-top-left-radius', '24px')
+    const markers = window.locator('[data-test="app-builder-annotation-marker"]')
+    await expect(markers).toHaveText('1')
+    const firstMarkerContrast = async () => contrastRatio(await markers.first().evaluate(element => [
+      getComputedStyle(element.querySelector('text')!).fill,
+      getComputedStyle(element.querySelector('circle')!).fill,
+    ]))
+    expect(await firstMarkerContrast()).toBeGreaterThanOrEqual(4.5)
+    const field = (await firstNote.locator('[data-test="app-builder-annotation-note"]').boundingBox())!
+    const remove = (await firstNote.getByRole('button', { name: 'Remove annotation' }).boundingBox())!
+    expect(Math.abs(field.y + field.height / 2 - (remove.y + remove.height / 2))).toBeLessThan(3)
+
+    // Make both the document and a nested panel scrollable in the fixture.
+    await frame.locator('body').evaluate(body => {
+      const scroller = document.createElement('div')
+      const content = document.createElement('div')
+      scroller.id = 'annotation-scroll-probe'
+      scroller.style.cssText = 'height: 64px; overflow: auto'
+      content.style.height = '1000px'
+      scroller.append(content)
+      body.querySelector('main')!.append(scroller, content.cloneNode())
+    })
+    await annotate.click()
+    const scroller = frame.locator('#annotation-scroll-probe')
+    const scrollBox = (await scroller.boundingBox())!
+    await window.mouse.move(scrollBox.x + scrollBox.width / 2, scrollBox.y + scrollBox.height / 2)
+    await window.mouse.wheel(0, 100)
+    await expect.poll(() => scroller.evaluate(element => element.scrollTop)).toBeGreaterThan(0)
+    const frameBox = (await frame.owner().boundingBox())!
+    await window.mouse.move(frameBox.x + 20, frameBox.y + 20)
+    await window.mouse.wheel(0, 100)
+    await expect.poll(() => scroller.evaluate(() => window.scrollY)).toBeGreaterThan(0)
+    await window.keyboard.press('ArrowDown')
+    await expect(window.locator('[data-test="app-builder-picker-highlight"]')).toBeVisible()
+    await window.keyboard.press('Enter')
+    await expect(notes).toHaveCount(2)
+    await expect(overview).toHaveAttribute('aria-selected', 'true')
+    await window.locator('[data-test="app-builder-annotation"]').last().getByRole('button', { name: 'Remove annotation' }).click()
+    await expect(notes).toHaveCount(1)
+    await annotate.click()
+    await window.keyboard.press('ArrowRight')
+    await expect(window.locator('[data-test="app-builder-picker-highlight"]')).toBeVisible()
+    await window.keyboard.press('Space')
+    await expect(notes).toHaveCount(2)
+    await window.locator('[data-test="app-builder-annotation"]').last().getByRole('button', { name: 'Remove annotation' }).click()
+    await expect(notes).toHaveCount(1)
+    await scroller.evaluate(element => {
+      element.nextElementSibling?.remove()
+      element.remove()
+      window.scrollTo(0, 0)
+    })
+
     await annotate.click()
     const counts = await pointAt(frame.locator('[data-test="counts"]').getByText('Instances', { exact: true }))
     await window.mouse.click(counts.x, counts.y)
@@ -144,10 +222,13 @@ test('picks app elements and sends the reviewed notes to the current coding agen
     await screenshot(window, info, 'review-annotations-light')
     await window.emulateMedia({ colorScheme: 'dark' })
     await expect(window.locator('.v-theme--claude-dark').first()).toBeVisible()
+    await expect(markers).toHaveText(['1', '2'])
+    expect(await firstMarkerContrast()).toBeGreaterThanOrEqual(4.5)
     await screenshot(window, info, 'review-annotations-dark')
 
     // A new package invalidates the selection, but retains the user's notes.
     await annotate.click()
+    expect(await hintContrast()).toBeGreaterThanOrEqual(4.5)
     await appendFile(join(project, 'dist/ui/index.html'), '\n<!-- next preview build -->\n')
     await window.locator('[data-test="app-builder-rebuild"]').click()
     await expect(window.getByText('From an earlier preview')).toHaveCount(2)
@@ -156,12 +237,14 @@ test('picks app elements and sends the reviewed notes to the current coding agen
     await expect(notes.nth(0)).toHaveValue(/Rename this tab/)
     await shells.click()
     await expect(shells).toHaveAttribute('aria-selected', 'true')
+    await window.getByRole('button', { name: 'Hide the preview', exact: true }).click()
+    await expect(window.getByText('From an earlier preview')).toHaveCount(2)
 
     await window.getByRole('button', { name: 'Send', exact: true }).click()
     await expect(window.getByText('I received the preview annotations.')).toBeVisible({ timeout: 20_000 })
     await expect(notes).toHaveCount(0)
     const blocks = JSON.parse(await readFile(prompt, 'utf8'))
-    expect(blocks).toEqual([{ type: 'text', text: expect.stringMatching(/Make these changes[\s\S]+Rename this tab[\s\S]+module:inventory[\s\S]+Element: [\s\S]+Add a short explanation[\s\S]+module:inventory[\s\S]+Element: /) }])
+    expect(blocks).toEqual([{ type: 'text', text: expect.stringMatching(/Make these changes[\s\S]+Rename this tab[\s\S]+module:inventory[\s\S]+Preview route: \/\n\s+Element: [\s\S]+Add a short explanation[\s\S]+module:inventory[\s\S]+Preview route: \/\n\s+Element: /) }])
   } finally {
     await closeStudio(app)
     await rm(project, { recursive: true, force: true })

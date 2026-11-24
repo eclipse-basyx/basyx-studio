@@ -1,7 +1,8 @@
 {
   "annotations": {
     "toggle": "Element annoteren",
-    "picking": "Selecteer een element in het voorbeeld. Druk op Esc om te annuleren.",
+    "picking": "Selecteer een element met de muis of met de pijltjestoetsen en Enter. Druk op Esc om te annuleren.",
+    "highlighted": "Gemarkeerd element: {tag}",
     "title": "Voorbeeldannotaties",
     "note": "Annotatie {number}",
     "remove": "Annotatie verwijderen",

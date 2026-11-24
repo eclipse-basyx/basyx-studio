@@ -1,7 +1,8 @@
 {
   "annotations": {
     "toggle": "Anotar elemento",
-    "picking": "Selecciona un elemento en la vista previa. Pulsa Esc para cancelar.",
+    "picking": "Selecciona un elemento con el ratón o con las flechas y Entrar. Pulsa Esc para cancelar.",
+    "highlighted": "Elemento resaltado: {tag}",
     "title": "Anotaciones de la vista previa",
     "note": "Anotación {number}",
     "remove": "Eliminar anotación",

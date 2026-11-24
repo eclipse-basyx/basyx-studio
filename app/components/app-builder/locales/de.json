@@ -1,7 +1,8 @@
 {
   "annotations": {
     "toggle": "Element annotieren",
-    "picking": "Wähle ein Element in der Vorschau. Drücke Esc zum Abbrechen.",
+    "picking": "Wähle ein Element mit der Maus oder mit den Pfeiltasten und Enter. Esc bricht ab.",
+    "highlighted": "Hervorgehobenes Element: {tag}",
     "title": "Vorschau-Anmerkungen",
     "note": "Anmerkung {number}",
     "remove": "Anmerkung entfernen",

@@ -1,7 +1,8 @@
 {
   "annotations": {
     "toggle": "标注元素",
-    "picking": "在预览中选择一个元素。按 Esc 取消。",
+    "picking": "点击元素，或用方向键移动后按 Enter 选择。按 Esc 取消。",
+    "highlighted": "已突出显示的元素：{tag}",
     "title": "预览标注",
     "note": "标注 {number}",
     "remove": "移除标注",

@@ -2,8 +2,11 @@ import type { PreviewElement } from '#shared/app-preview-picker'
 
 export interface PreviewAnnotation {
   id: string
+  number: number
+  previewName: string
   previewKey: string
   contribution: string
+  subPath: string
   digest: string | null
   element: PreviewElement
   text: string
@@ -15,11 +18,10 @@ export interface ChatDraft {
   sending: boolean
 }
 
-export const maxAnnotations = 10
 export const maxAnnotationLength = 2000
 
 export function annotationDetails (note: PreviewAnnotation): string {
-  return `Preview contribution: ${note.contribution}${note.digest ? ` (build ${note.digest})` : ''}\nElement: ${note.element.path}`
+  return `Preview contribution: ${note.contribution}${note.digest ? ` (build ${note.digest})` : ''}\nPreview route: /${note.subPath}\nElement: ${note.element.path}`
 }
 
 export function annotationPrompt (text: string, notes: readonly PreviewAnnotation[]): string | null {
@@ -28,7 +30,7 @@ export function annotationPrompt (text: string, notes: readonly PreviewAnnotatio
   }
   const sections = [text.trim()]
   if (notes.length > 0) {
-    const annotations = notes.map((note, index) => `${index + 1}. ${note.text.trim()}\n   ${annotationDetails(note).replaceAll('\n', '\n   ')}`)
+    const annotations = notes.map(note => `${note.number}. ${note.text.trim()}\n   ${annotationDetails(note).replaceAll('\n', '\n   ')}`)
     sections.push(`Preview annotations\n\n${annotations.join('\n\n')}`)
   }
   return sections.filter(Boolean).join('\n\n') || null

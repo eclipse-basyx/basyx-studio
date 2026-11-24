@@ -118,14 +118,15 @@ open. Use the chat's preview toggle to show the inline preview again.
 ### Annotating elements
 
 Choose **Annotate element** in the inline preview. Hover to highlight an
-element, then select it to add a note to the current chat. Press **Esc** to
-leave picking mode. While you pick, Studio handles the clicks so they do not
-activate the app underneath.
+element and click it, or move between elements with the **arrow keys** and
+press **Enter** or **Space**. The preview stays scrollable while you pick.
+Press **Esc** to cancel. Each selected element gets a number that matches
+its note in the chat.
 
 You can add several notes, edit or remove them, and send them with an optional
-chat message. The agent receives each note with the app view, build, and an
-element path. If the preview changes, Studio marks older notes in the draft
-so you can decide whether to update them before sending.
+chat message. The agent receives each note with the app view, route, build,
+and element path. If the preview changes, Studio marks older notes in the
+draft so you can review them before sending, even with the preview closed.
 
 ## Installing
 

@@ -141,7 +141,7 @@
             v-if="active && activeTranscript && activeDraft"
             :key="active.conversation.id"
             :agent-name="agentName(active.conversation.agentId)"
-            :annotation-context="rightPane === 'preview' ? annotationContext : null"
+            :annotation-context="annotationContexts.get(active.project.id) ?? null"
             :answering="answering"
             :connected="connected.get(active.conversation.id) ?? true"
             :conversation="active.conversation"
@@ -179,13 +179,14 @@
         <v-sheet v-if="rightPane === 'preview' && active" class="flex-shrink-0 border-s" width="42%">
           <PreviewPane
             :key="active.project.id"
-            :annotation-disabled="activeDraft?.sending || (activeDraft?.notes.length ?? 0) >= maxAnnotations"
+            :annotation-disabled="activeDraft?.sending || (activeDraft?.notes.length ?? 0) >= previewAnnotationLimit"
             :build-seq="buildSeq"
             :conversation-id="active.conversation.id"
             :default-target-id="active.project.previewTargetId"
+            :notes="activeDraft?.notes"
             :project-id="active.project.id"
             @annotate="addNote"
-            @annotation-context="annotationContext = $event"
+            @annotation-context="annotationContexts.set(active.project.id, $event)"
             @close="rightPane = null"
           />
         </v-sheet>
@@ -262,9 +263,10 @@
   import type { NewAppRequest } from './NewAppDialog.vue'
   import type { Transcript } from './transcript'
   import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowReactive, watch } from 'vue'
+  import { previewAnnotationLimit } from '#shared/app-preview-picker'
   import { StudioApiError } from '~/composables/useStudioApi'
   import AgentStatusList from './AgentStatusList.vue'
-  import { maxAnnotationLength, maxAnnotations, submitChatDraft } from './annotation-draft'
+  import { maxAnnotationLength, submitChatDraft } from './annotation-draft'
   import ChangesDialog from './ChangesDialog.vue'
   import { chatStreamIds } from './chat-streams'
   import ChatView from './ChatView.vue'
@@ -297,7 +299,7 @@
   const activeId = ref<string | null>(null)
   const drafts = reactive(new Map<string, ChatDraft>())
   const activeDraft = computed(() => activeId.value ? drafts.get(activeId.value) : undefined)
-  const annotationContext = ref<string | null>(null)
+  const annotationContexts = reactive(new Map<string, string>())
   const newApp = ref(false)
   const rightPane = ref<'preview' | 'files' | null>('preview')
   const installing = ref<AppProject | null>(null)
@@ -494,7 +496,7 @@
 
   function addNote (annotation: Omit<PreviewAnnotation, 'id' | 'text'>) {
     const draft = activeDraft.value
-    if (draft && !draft.sending && draft.notes.length < maxAnnotations) {
+    if (draft && !draft.sending && draft.notes.length < previewAnnotationLimit) {
       draft.notes.push({ ...annotation, id: crypto.randomUUID(), text: '' })
     }
   }
@@ -586,6 +588,7 @@
       for (const conversation of target.project.conversations) {
         forget(conversation.id)
       }
+      annotationContexts.delete(target.project.id)
       projects.value = projects.value.filter(entry => entry.id !== target.project.id)
     }
   }

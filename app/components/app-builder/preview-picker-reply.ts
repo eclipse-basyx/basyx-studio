@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { previewElementPath, previewElementTag, previewPickerPathLimit, previewPickerProtocol } from '#shared/app-preview-picker'
+import { previewAnnotationLimit, previewElementPath, previewElementTag, previewPickerPathLimit, previewPickerProtocol } from '#shared/app-preview-picker'
 
 const rect = z.strictObject({
   x: z.number().min(-1e6).max(1e6),
@@ -9,13 +9,15 @@ const rect = z.strictObject({
 })
 const envelope = { protocol: z.literal(previewPickerProtocol), session: z.string() }
 const request = z.number().int().positive()
+const tag = z.string().regex(previewElementTag)
 const replySchema = z.discriminatedUnion('type', [
   z.strictObject({ ...envelope, type: z.literal('ready') }),
-  z.strictObject({ ...envelope, type: z.literal('hover'), request, rect: rect.nullable() }),
+  z.strictObject({ ...envelope, type: z.literal('hover'), request, rect: rect.nullable(), tag: tag.nullable() }),
   z.strictObject({ ...envelope, type: z.literal('pick'), request, element: z.strictObject({
-    tag: z.string().regex(previewElementTag),
+    tag,
     path: z.string().max(previewPickerPathLimit).regex(previewElementPath),
   }).nullable() }),
+  z.strictObject({ ...envelope, type: z.literal('markers'), request, markers: z.array(z.strictObject({ number: request, rect })).max(previewAnnotationLimit) }),
 ])
 
 export function previewPickerReply (event: Pick<MessageEvent, 'source' | 'origin' | 'data'>, source: Window, origin: string, session: string) {
