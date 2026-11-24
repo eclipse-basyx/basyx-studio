@@ -210,6 +210,7 @@ test('adds module routes, nested routes and shell modules that follow the active
   await expect(frame.locator('[data-test="heading"]')).toHaveText('Shells of E2E apps open target')
   // Shell summaries carry the asset type (external apps follow-up plan R1).
   await expect(frame.locator('[data-test="shells"]')).toContainText('https://fraunhofer.de/iese/dte/products/DriveMotorDM3000')
+  await waitUntilSettled(page.locator('iframe[sandbox^="allow-scripts"]'))
   // The frame stays loaded while the module's sub-path changes.
   const loaded = await (await page.locator('iframe[sandbox^="allow-scripts"]').elementHandle())!.contentFrame()
   await loaded!.evaluate(() => Object.assign(globalThis, { e2eLoaded: true }))
@@ -235,6 +236,8 @@ test('adds module routes, nested routes and shell modules that follow the active
   await page.goBack()
   await expect(page).toHaveURL(explorerUrl)
   await expect(frame.locator('[data-test="heading"]')).toHaveText(motorShell)
+  // Back on the app's page, its frame loads anew and grows once it connects.
+  await waitUntilSettled(page.locator('iframe[sandbox^="allow-scripts"]'))
 
   // studio.ui.openView (ADR 0051): the submodel in the bundled Digital
   // Nameplate view, in Studio's dialog over the app, as its own frame; closing

@@ -103,14 +103,12 @@ when nothing they are built from changed (`.github/actions/bundled-apps`): the
 apps, the packages, the dependency set and the build script. The cache has no
 fallback keys, so any change to these builds them again.
 
-The shards start together with the build job, not after it. Each one starts
-the test environment in the background (`.github/scripts/testenv.sh start`),
+The shards start after the build job (`needs: build`). Each one starts the
+test environment in the background (`.github/scripts/testenv.sh start`),
 installs dependencies and the browser, builds the example apps (`pnpm
-apps:build`), and then waits until the build job has
-uploaded its artifact (`.github/scripts/wait-for-artifact.sh`); it fails as
-soon as the build job ends without one. The desktop shards wait for the
-desktop build likewise and install their display and keyring packages in the
-background meanwhile. The runner image has Chromium's
+apps:build`), and then downloads the build artifact. The desktop shards start
+after the desktop build likewise and install their display and keyring
+packages in the background meanwhile. The runner image has Chromium's
 libraries, so their packages are installed only if Chromium does not start:
 apt mirrors sometimes take minutes for them.
 

@@ -368,6 +368,35 @@ describe('container files', () => {
     return (await grants.grant(path, 'stack-aasx')).handle
   }
 
+  it('waits for an AASX-backed environment to become healthy before reporting it started', async () => {
+    const filename = 'AAS preconfiguration completed.aasx'
+    vi.mocked(EngineClient.prototype.logs).mockResolvedValue(`level=INFO msg="importing AAS preconfiguration file" file="/app/preconfiguration/${filename}"\n`)
+    let healthStatus = 503
+    let healthChecks = 0
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async input => {
+      if (new URL(String(input)).pathname === '/health') {
+        healthChecks++
+        return new Response(null, { status: healthStatus })
+      }
+      // /description is already available while the import runs.
+      return new Response(null, { status: 200 })
+    })
+    const grants = new FileGrantStore()
+    const local = new ContainerManager({ deps, dataDir: directory, discovery: {} as DiscoveryEnvironment, grants, isPortFree: async () => true, infrastructures: { create: async () => 'x', remove: async () => {} }, timeouts: { pollMs: 5 } })
+    const created = await local.create({ spec: presetSpec('quick', 'Preconfigured'), aasxFiles: [await aasxGrant(grants, filename)] }, actor, 'create')
+    try {
+      await vi.waitFor(() => {
+        expect(local.job(created.job.id).state).toBe('running')
+        expect(healthChecks).toBeGreaterThan(1)
+      })
+    } finally {
+      healthStatus = 200
+      await local.settle()
+      await local.dispose()
+    }
+    expect(local.job(created.job.id).state).toBe('succeeded')
+  })
+
   it('keeps the stored files and settings when a change cannot take its new files', async () => {
     const grants = new FileGrantStore()
     const local = new ContainerManager({ deps, dataDir: directory, discovery: {} as DiscoveryEnvironment, grants, isPortFree: async () => true, isReady: async () => true, infrastructures: { create: async () => 'x', remove: async () => {} } })

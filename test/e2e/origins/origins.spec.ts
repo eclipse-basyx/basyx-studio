@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { expect, test } from '@playwright/test'
 import { strToU8, zipSync } from 'fflate'
 import { fixturesDirectory, zipDirectory } from '../../apps/support'
-import { waitUntilSettled } from '../web/support'
+import { waitForHydrationOnLoad, waitUntilSettled } from '../web/support'
 
 // One origin per installation, declared third-party origins and full-page
 // modules (ADR 0045), and views of other apps embedded in an app's page
@@ -14,6 +14,10 @@ import { waitUntilSettled } from '../web/support'
 // a shared apps origin (origins.config.ts).
 
 test.describe.configure({ mode: 'serial' })
+
+test.beforeEach(({ page }) => {
+  waitForHydrationOnLoad(page)
+})
 
 /** The "third party": embed.localhost and undeclared.localhost on one port. */
 let thirdParty: Server

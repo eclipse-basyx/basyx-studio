@@ -39,12 +39,18 @@
     <!-- The same view again, filling the window (studio.ui.openFullscreen):
          a second frame, so the embedded one keeps its size and state. Without
          Studio's header, the frame alone shows over the dimmed page, e.g. a
-         file preview, and closes itself (studio.ui.closeFullscreen). -->
+         file preview, and closes itself (studio.ui.closeFullscreen). The
+         frame is created once the dialog has scaled in: Chromium may keep
+         a cross-origin frame created while the dialog is still hidden
+         (visibility: hidden) throttled, and then hit-tests clicks only to
+         the iframe element, never into the app. -->
     <v-dialog
       v-if="!nested"
       v-model="fullscreenOpen"
       fullscreen
       :opacity="fullscreenHeader ? undefined : 0.84"
+      @after-enter="fullscreenShown = true"
+      @after-leave="fullscreenShown = false"
     >
       <v-card-fullscreen class="d-flex flex-column" :color="fullscreenHeader ? undefined : 'transparent'" data-test="app-fullscreen" height="100%">
         <template v-if="fullscreenHeader">
@@ -58,6 +64,7 @@
         </template>
 
         <app-frame
+          v-if="fullscreenShown"
           :contribution="contribution"
           fullscreen
           :nested="fullscreen"
@@ -74,10 +81,23 @@
     <!-- Another app's view of a submodel (studio.ui.openView, ADR 0051): a
          frame with its own contribution, permissions and origin over this
          one, which stays as it is underneath until the dialog closes. A
-         view embedded in this frame's page opens itself here as well. -->
-    <v-dialog v-if="!fullscreen" v-model="viewOpen" fullscreen>
+         view embedded in this frame's page opens itself here as well. Its
+         frame, too, is created once the dialog has scaled in. -->
+    <v-dialog
+      v-if="!fullscreen"
+      v-model="viewOpen"
+      fullscreen
+      @after-enter="viewShown = true"
+      @after-leave="viewShown = false"
+    >
       <v-card-fullscreen v-if="openedView" class="d-flex flex-column" data-test="app-view-dialog" height="100%">
-        <AppOpenedView :opened="openedView" :target="target" :view-state="openedViewState" @close="viewOpen = false" />
+        <AppOpenedView
+          :opened="openedView"
+          :shown="viewShown"
+          :target="target"
+          :view-state="openedViewState"
+          @close="viewOpen = false"
+        />
       </v-card-fullscreen>
     </v-dialog>
   </div>
@@ -170,11 +190,15 @@
 
   const mounted = ref(false)
   const fullscreenOpen = ref(false)
+  /** Whether the full-screen dialog has scaled in, so its frame may be created. */
+  const fullscreenShown = ref(false)
   /** Another app's view this frame opened (`studio.ui.openView`), shown until the user closes it. */
   const openedView = shallowRef<OpenedView | null>(null)
   /** The state a view embedded in this frame's page opens itself with (ADR 0051). */
   const openedViewState = ref('')
   const viewOpen = ref(false)
+  /** Whether the dialog of another app's view has scaled in, so its frame may be created. */
+  const viewShown = ref(false)
   function openView (view: OpenedView, state = '') {
     openedView.value = view
     openedViewState.value = state

@@ -238,16 +238,14 @@ jobs:
           STUDIO_CONTAINER_TESTS: "1"
           STUDIO_CONTAINER_COMPOSE_TESTS: "1"
 
-  # Starts with the build, not after it: it prepares the test environment,
-  # dependencies and browser meanwhile and then waits for the build artifact.
+  # Starts after the build job and downloads its artifact.
   e2e-web:
     name: End-to-end tests, hosted web (${{ matrix.shard }})
-    needs: changes
+    needs: [changes, build]
     if: needs.changes.outputs.e2e-web == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
-      actions: read
       contents: read
     strategy:
       fail-fast: false
@@ -269,14 +267,9 @@ jobs:
       - uses: ./.github/actions/playwright
 
       # Installable packages of the example apps, used by the app tests
-      # (MVP-3); built here while the build job still runs.
+      # (MVP-3).
       - name: Build example apps
         run: pnpm apps:build
-
-      - name: Wait for the build
-        run: bash .github/scripts/wait-for-artifact.sh studio-build.tar.zst "Build hosted Studio"
-        env:
-          GH_TOKEN: ${{ github.token }}
 
       - name: Download the build
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -363,15 +356,14 @@ jobs:
           archive: false
           retention-days: 1
 
-  # Starts with the desktop build and waits for its artifact, as e2e-web does.
+  # Starts after the desktop build and downloads its artifact, as e2e-web does.
   desktop-e2e:
     name: End-to-end tests of the packaged desktop app (Linux, ${{ matrix.shard }})
-    needs: changes
+    needs: [changes, desktop-build]
     if: needs.changes.outputs.desktop-e2e == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
-      actions: read
       contents: read
     strategy:
       fail-fast: false
@@ -397,11 +389,6 @@ jobs:
 
       - name: Build example apps
         run: pnpm apps:build
-
-      - name: Wait for the desktop app
-        run: bash .github/scripts/wait-for-artifact.sh studio-desktop.tar.zst "Build the unpacked desktop app (Linux)"
-        env:
-          GH_TOKEN: ${{ github.token }}
 
       - name: Download the desktop app
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2

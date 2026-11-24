@@ -28,6 +28,7 @@ import { presetSpec } from '#shared/contract'
 const enabled = process.env.STUDIO_CONTAINER_TESTS === '1'
 const migrationsDirectory = new URL('../../server/database/migrations', import.meta.url).pathname
 const fixture = new URL('../../test-setup/fixtures/open/IESEDriveMotorDM3000.aasx', import.meta.url).pathname
+const aasxFilename = 'AAS preconfiguration completed.aasx'
 const actor: Actor = { subject: 'desktop', name: 'Desktop', roles: [], isAdmin: true, sessionId: 's1' }
 
 describe.runIf(enabled)('local BaSyx instances on the container engine', () => {
@@ -130,7 +131,7 @@ describe.runIf(enabled)('local BaSyx instances on the container engine', () => {
   })
 
   it('starts a quick-start instance with an AASX file, keeps its data across stop and start, and registers it', async () => {
-    const copy = join(directory, 'nameplate.aasx')
+    const copy = join(directory, aasxFilename)
     await copyFile(fixture, copy)
     const { handle: aasx } = await grants.grant(copy, 'stack-aasx')
     const spec: StackSpec = { ...presetSpec('quick', 'Integration quick'), persistence: 'keep' }
@@ -148,13 +149,16 @@ describe.runIf(enabled)('local BaSyx instances on the container engine', () => {
     const stack = await manager.get(created.stack.id)
     expect(stack.status).toBe('running')
     expect(stack.infrastructureId).toBe('infra-1')
-    expect(stack.spec?.aasxFiles).toEqual(['nameplate.aasx'])
+    expect(stack.spec?.aasxFiles).toEqual([aasxFilename])
     const loaded = await shells(stack.urls.environment!)
     expect(loaded.ids.length).toBeGreaterThan(0)
 
     expect((await finished(await manager.stop(stack.id, actor, 'r2'))).state).toBe('succeeded')
     expect((await manager.get(stack.id)).status).toBe('stopped')
     expect((await finished(await manager.start(stack.id, actor, 'r3'))).state).toBe('succeeded')
+    const health = await fetch(`${stack.urls.environment!}/health`)
+    await health.body?.cancel()
+    expect(health.status).toBe(200)
     expect((await shells(stack.urls.environment!)).ids).toEqual(loaded.ids)
 
     const logs = await manager.logs(stack.id, 'environment', 50)
@@ -171,7 +175,7 @@ describe.runIf(enabled)('local BaSyx instances on the container engine', () => {
     await manager.export(stack!.id, grants.take(exportHandle, 'stack-export'), actor, 'r4')
     const imported = await manager.import(target, actor, 'r5')
     expect(imported.spec.name).toBe('Integration quick')
-    expect(imported.aasxFiles).toEqual(['nameplate.aasx'])
+    expect(imported.aasxFiles).toEqual([aasxFilename])
     // The exported ports belong to the running instance.
     expect(imported.notes).toContain('ports_reassigned')
     expect(imported.notes).toContain('compose_ignored')

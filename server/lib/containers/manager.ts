@@ -958,7 +958,10 @@ export class ContainerManager {
   }
 
   async #waitForService (engine: EngineClient, id: string, container: PlannedContainer, record: StackRecord): Promise<void> {
-    const url = `http://127.0.0.1:${portOf(record.spec, container.component)}/description`
+    // /description can answer while AASX import is in progress. /health waits for it to finish.
+    const requiresPreconfiguration = container.component === 'environment' && record.spec.aasxFiles.length > 0
+    const path = requiresPreconfiguration ? 'health' : 'description'
+    const url = `http://127.0.0.1:${portOf(record.spec, container.component)}/${path}`
     const deadline = Date.now() + this.#timeouts.serviceMs
     while (Date.now() < deadline) {
       if (await this.#isReady(url)) {
