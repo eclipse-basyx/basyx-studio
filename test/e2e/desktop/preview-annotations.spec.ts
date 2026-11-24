@@ -125,6 +125,15 @@ test('picks app elements and sends the reviewed notes to the current coding agen
     const notes = window.locator('[data-test="app-builder-annotation-note"]').getByRole('textbox')
     await expect(annotate).toBeEnabled()
     await expect(overview).toHaveAttribute('aria-selected', 'true')
+    const preview = window.locator('[data-test="app-builder-preview"]')
+    const toolbarButtons = preview.getByRole('button', { name: /^(?:Annotate element|Open preview in a separate window|Build again|Hide the preview)$/ })
+    await expect(toolbarButtons).toHaveCount(4)
+    for (const button of await toolbarButtons.all()) {
+      const target = (await button.boundingBox())!
+      const icon = (await button.locator('.v-icon').boundingBox())!
+      expect(target.height).toBe(28)
+      expect(icon.height).toBe(20)
+    }
     await screenshot(window, info, 'preview-light')
 
     const originalBounds = await frame.owner().boundingBox()

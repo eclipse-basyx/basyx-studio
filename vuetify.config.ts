@@ -139,6 +139,8 @@ export default defineVuetifyConfiguration({
     VSheetComposer: 'VSheet',
     // The App Builder's page (ADR 0054): a full page with dense defaults.
     VSheetAppBuilder: 'VSheet',
+    // The inline and detached App Builder preview headers.
+    VSheetPreviewToolbar: 'VSheet',
   },
 
   defaults: {
@@ -238,6 +240,11 @@ export default defineVuetifyConfiguration({
       VTextarea: { density: 'compact' },
       VRadioGroup: { density: 'compact' },
       VRadio: { density: 'compact' },
+    },
+    VSheetPreviewToolbar: {
+      color: 'transparent',
+      class: 'd-flex align-center ga-2 ps-4 pe-2 py-1 border-b',
+      VBtn: { VIcon: { size: 'small' } },
     },
     VSheetComposer: {
       color: 'surface',

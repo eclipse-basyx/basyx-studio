@@ -1,6 +1,6 @@
 <template>
   <div class="d-flex flex-column fill-height overflow-hidden" data-test="app-builder-preview">
-    <div class="d-flex align-center ga-2 ps-4 pe-2 py-1 border-b">
+    <v-sheet-preview-toolbar>
       <div class="text-title-small flex-grow-1">{{ t('preview.title') }}</div>
 
       <v-chip
@@ -49,7 +49,7 @@
         icon="mdi-close"
         @click="emit('close')"
       />
-    </div>
+    </v-sheet-preview-toolbar>
 
     <div class="d-flex flex-column ga-2 pa-2 flex-grow-1 overflow-y-auto bg-background">
       <ProblemAlert v-if="error" :error="error" />
