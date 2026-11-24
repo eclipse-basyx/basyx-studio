@@ -9,7 +9,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { join } from 'node:path'
 
-import { app, BrowserWindow, dialog, ipcMain, protocol, safeStorage, session, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, nativeImage, protocol, safeStorage, session, shell } from 'electron'
 import packageJson from '../package.json'
 import { previewWindowUrl } from '../shared/app-preview-window'
 import { fileGrantExtensions, isFileGrantKind, isFolderKind, isSaveKind } from '../shared/file-grant-kinds'
@@ -276,10 +276,11 @@ async function createWindow (url: string, launchSecret?: string, preview?: Previ
 
   const win = new BrowserWindow({
     show: false,
-    title: preview ? 'Preview — BaSyx Studio' : 'BaSyx Studio',
+    title: preview ? `Preview — ${brand.name}` : brand.name,
     // Packaged builds take the icon from electron-builder (build/icon.*);
-    // the development window runs the stock Electron and needs it here.
-    ...(app.isPackaged ? {} : { icon: developmentIcon() }),
+    // the development window runs the stock Electron and needs it here. A
+    // deployment's own PNG icon replaces both (ADR 0055).
+    ...(brand.icon ? { icon: brand.icon } : (app.isPackaged ? {} : { icon: developmentIcon() })),
     // Room for the navigation rail, the shell list and the shell page; below
     // 960 px Studio switches to its phone layout.
     width: preview ? 1000 : 1440,
@@ -529,6 +530,58 @@ function guardUnsavedWorkspaces (win: BrowserWindow): void {
   })
 }
 
+/** The deployment's name and icon (ADR 0055); BaSyx Studio's until the Studio Service tells. */
+const brand: { name: string, icon: Electron.NativeImage | null } = { name: 'BaSyx Studio', icon: null }
+
+interface BrandingContext {
+  product: { name: string }
+  branding: { customized: boolean, organisation: string | null, logoCompact: string | null, favicon: string | null }
+}
+
+/**
+ * Names the About panel and the windows after the deployment's branding
+ * (branding file or administrators, ADR 0055), and gives the dock and the
+ * windows its icon when that is a PNG: native icons take no SVG. The
+ * installer and the app bundle keep BaSyx Studio's.
+ */
+async function applyBranding (): Promise<void> {
+  if (!rendererUrl) {
+    return
+  }
+  try {
+    const context = await callService<BrandingContext>('context')
+    if (!context.branding.customized) {
+      return
+    }
+    brand.name = context.product.name
+    app.setAboutPanelOptions({
+      applicationName: context.product.name,
+      applicationVersion: app.getVersion(),
+      version: '',
+      copyright: [context.branding.organisation ? `© ${context.branding.organisation}` : null, `Powered by Eclipse BaSyx · ${packageJson.build.copyright}`].filter(Boolean).join('\n'),
+    })
+    const iconPath = context.branding.logoCompact ?? context.branding.favicon
+    if (iconPath?.startsWith('/')) {
+      const response = await fetch(new URL(iconPath.slice(1), rendererUrl), {
+        headers: rendererLaunchSecret ? { [launchSecretHeader]: rendererLaunchSecret } : {},
+        signal: AbortSignal.timeout(10_000),
+      })
+      if (response.ok && response.headers.get('content-type') === 'image/png') {
+        const image = nativeImage.createFromBuffer(Buffer.from(await response.arrayBuffer()))
+        if (!image.isEmpty()) {
+          brand.icon = image
+          app.dock?.setIcon(image)
+          for (const window of BrowserWindow.getAllWindows()) {
+            window.setIcon(image)
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.warn(`[studio] the branding could not be applied: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
 /** Studio's icon for the development window, which runs the stock Electron. */
 function developmentIcon (): string {
   return join(app.getAppPath(), 'build', 'icon.png')
@@ -557,6 +610,7 @@ async function start (): Promise<void> {
     }
 
     rendererUrl = validateDevServerUrl(devServerUrl)
+    await applyBranding()
     await createWindow(rendererUrl)
     return
   }
@@ -564,6 +618,7 @@ async function start (): Promise<void> {
   const production = await startStudioService()
   rendererUrl = production.url
   rendererLaunchSecret = production.launchSecret
+  await applyBranding()
   await createWindow(rendererUrl, rendererLaunchSecret)
 }
 

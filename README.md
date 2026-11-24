@@ -136,6 +136,8 @@ bundled apps are installed and show their views. More examples in
   user
 - [signed-app](examples/deployment/signed-app): a trust store and app
   packages signed with Cosign
+- [branding](examples/deployment/branding): a company's name, logos,
+  colours, locked settings and legal pages from a branding file
 
 ## Develop Studio
 

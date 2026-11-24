@@ -26,6 +26,11 @@ export const useSessionStore = defineStore('session', () => {
     loaded.value = true
   }
 
+  /** Reads the context again, e.g. after administrators changed the branding (ADR 0055). */
+  async function reloadContext (): Promise<void> {
+    context.value = await $fetch<StudioContext>(`${apiBasePath}/context`)
+  }
+
   async function login (returnTo: string): Promise<void> {
     const start = await $fetch<AuthorizationStart>(`${apiBasePath}/auth/login`, { method: 'POST', body: { returnTo } })
     window.location.assign(start.authorizationUrl)
@@ -40,5 +45,5 @@ export const useSessionStore = defineStore('session', () => {
     window.location.assign(result.logoutUrl ?? studioUrl.page('/'))
   }
 
-  return { context, session, loaded, csrfToken, isAdmin, canEditInfrastructures, isDesktop, needsLogin, ensureLoaded, login, logout }
+  return { context, session, loaded, csrfToken, isAdmin, canEditInfrastructures, isDesktop, needsLogin, ensureLoaded, reloadContext, login, logout }
 })

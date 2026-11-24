@@ -9,6 +9,7 @@ Compose and Kubernetes.
 - [Quick start](#quick-start)
 - [Image tags and verification](#image-tags-and-verification)
 - [Configuration reference](#configuration-reference)
+- [Branding and legal pages](branding.md)
 - [Base path and reverse proxy](#base-path-and-reverse-proxy)
 - [Declared infrastructures](#declared-infrastructures)
 - [Without login](#without-login)
@@ -134,13 +135,20 @@ Register `<public URL>/api/studio/v1/auth/callback` as redirect URI and
 
 ### Branding, legal links and switches
 
+Name, logos, colours, font, legal pages and locked appearance settings: see
+[Branding and legal pages](branding.md) for the branding file and *Settings →
+Branding* ([ADR 0055](../adr/0055-corporate-design.md)). The variables below
+take precedence over both.
+
 | Variable | Default | Description |
 | --- | --- | --- |
+| `STUDIO_BRANDING_FILE` | none | A YAML [branding file](branding.md#the-branding-file) with logos, colours, legal texts and locks. On the desktop, Studio also looks in a [place for the whole computer](branding.md#desktop-app). |
+| `STUDIO_BRANDING_EDITABLE` | `true` | `false` keeps administrators from changing the branding in Studio, and ignores what they set there. |
 | `STUDIO_PRODUCT_NAME` | `BaSyx Studio` | Window title and app bar. |
 | `STUDIO_LOGO`, `STUDIO_LOGO_LIGHT`, `STUDIO_LOGO_DARK` | BaSyx logo | An `http(s)` URL, or an absolute path to a mounted SVG, PNG, WebP or JPEG file that Studio serves at `<base>/branding/logo-light` and `-dark`. |
 | `STUDIO_PRIMARY_COLOR`, `…_LIGHT`, `…_DARK` | BaSyx blue | Default accent as `#RRGGBB` for users who keep the default; Studio picks a readable shade per theme. |
-| `STUDIO_COPYRIGHT_NAME` | none | Shown in Settings → About. |
-| `STUDIO_LEGAL_NOTICE_URL`, `STUDIO_PRIVACY_POLICY_URL` | none | Links on the sign-in page and in Settings → About. |
+| `STUDIO_COPYRIGHT_NAME` | none | The organisation: the copyright line in Settings and on the About page. |
+| `STUDIO_LEGAL_NOTICE_URL`, `STUDIO_PRIVACY_POLICY_URL` | none | The imprint and the privacy policy, linked on the sign-in page, in the account menu, in Settings and on the About page. |
 | `STUDIO_READ_ONLY` | `false` | `true` refuses every change to any target and hides editing. |
 | `STUDIO_ALLOW_UPLOADS` | `true` | `false` turns off file uploads to targets. |
 

@@ -94,6 +94,154 @@ paths:
               schema: { $ref: '#/components/schemas/StudioContext' }
         default: { $ref: '#/components/responses/Problem' }
 
+  /legal/{page}:
+    get:
+      tags: [Context]
+      operationId: getLegalPage
+      summary: Get a legal page the deployment hosts as Markdown
+      description: |
+        Public: the imprint and the privacy policy must be readable without
+        signing in (ADR 0055). The page in `language`, else the closest one;
+        `url` instead of `markdown` where that language's page is elsewhere.
+      security: []
+      x-requirements: [BRAND-003, BRAND-004]
+      parameters:
+        - name: page
+          in: path
+          required: true
+          schema: { type: string, enum: [imprint, privacy, accessibility, terms] }
+        - name: language
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: The page
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [page, markdown, url]
+                properties:
+                  page: { type: string }
+                  markdown: { type: [string, 'null'] }
+                  url: { type: [string, 'null'] }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /branding:
+    get:
+      tags: [Context]
+      operationId: getBranding
+      summary: Get the branding administrators set, what is in effect, and where each value comes from
+      description: Administrators only (ADR 0055).
+      x-requirements: [BRAND-001, BRAND-002]
+      responses:
+        '200':
+          description: The branding
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BrandingAdminView' }
+        default: { $ref: '#/components/responses/Problem' }
+    put:
+      tags: [Context]
+      operationId: putBranding
+      summary: Replace the branding settings administrators set
+      description: |
+        Administrators only, unless `STUDIO_BRANDING_EDITABLE=false`. Values
+        the environment or the branding file set still take precedence.
+      x-requirements: [BRAND-001, BRAND-002, BRAND-003]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BrandingSettings' }
+      responses:
+        '200':
+          description: The branding after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BrandingAdminView' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /branding/assets/{slot}:
+    parameters:
+      - name: slot
+        in: path
+        required: true
+        schema: { type: string, enum: [logo-light, logo-dark, logo-compact, favicon, font] }
+    put:
+      tags: [Context]
+      operationId: putBrandingAsset
+      summary: Upload a logo, the favicon or the font
+      description: The body is the file, up to 2 MB; `Content-Type` is its type (ADR 0055).
+      x-requirements: [BRAND-001, BRAND-009]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          image/svg+xml: { schema: { type: string, format: binary } }
+          image/png: { schema: { type: string, format: binary } }
+          image/webp: { schema: { type: string, format: binary } }
+          image/jpeg: { schema: { type: string, format: binary } }
+          image/x-icon: { schema: { type: string, format: binary } }
+          font/woff2: { schema: { type: string, format: binary } }
+      responses:
+        '200':
+          description: The branding after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BrandingAdminView' }
+        default: { $ref: '#/components/responses/Problem' }
+    delete:
+      tags: [Context]
+      operationId: deleteBrandingAsset
+      summary: Remove an uploaded file; the deployment's or BaSyx's applies again
+      x-requirements: [BRAND-001]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      responses:
+        '200':
+          description: The branding after the change
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BrandingAdminView' }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /branding/export:
+    get:
+      tags: [Context]
+      operationId: exportBranding
+      summary: Export the branding in effect as a branding file with its files (ZIP)
+      x-requirements: [BRAND-006]
+      responses:
+        '200':
+          description: '`branding.zip`: `branding.yml` and its files'
+          content:
+            application/zip: { schema: { type: string, format: binary } }
+        default: { $ref: '#/components/responses/Problem' }
+
+  /branding/import:
+    post:
+      tags: [Context]
+      operationId: importBranding
+      summary: Replace the administrators' branding with an exported archive
+      x-requirements: [BRAND-006]
+      parameters:
+        - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/zip: { schema: { type: string, format: binary } }
+      responses:
+        '200':
+          description: The branding after the import
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BrandingAdminView' }
+        default: { $ref: '#/components/responses/Problem' }
+
   /session:
     get:
       tags: [Authentication]
@@ -3488,6 +3636,61 @@ components:
         - automaticUpdates
         - serverSentEvents
         - viewSharing
+    LockableSetting:
+      type: string
+      enum: [theme, accent, background, shape, uiLanguage, valueLanguage]
+    BrandingSettings:
+      type: object
+      description: One source's branding (shared/branding.ts, ADR 0055); every field optional.
+      additionalProperties: false
+      properties:
+        productName: { type: string, maxLength: 80 }
+        organisation: { type: string, maxLength: 200 }
+        supportUrl: { type: string, description: 'http(s) URL or mailto:' }
+        helpUrl: { type: string, format: uri }
+        accent: { type: object, properties: { light: { type: string }, dark: { type: string } } }
+        secondary: { type: object, properties: { light: { type: string }, dark: { type: string } } }
+        theme: { type: string, enum: [system, light, dark] }
+        background: { type: string, enum: [neutral, slate, warm, midnight, contrast] }
+        shape: { type: string, enum: [normal, rounded] }
+        uiLanguage: { type: string }
+        languages: { type: array, items: { type: string } }
+        valueLanguage: { type: string }
+        signInMessage: { type: object, additionalProperties: { type: string } }
+        legal:
+          type: object
+          description: Per page, per language `{ url }` or `{ markdown }`.
+          additionalProperties:
+            type: object
+            additionalProperties:
+              oneOf:
+                - { type: object, required: [url], properties: { url: { type: string, format: uri } } }
+                - { type: object, required: [markdown], properties: { markdown: { type: string } } }
+        locked: { type: array, items: { $ref: '#/components/schemas/LockableSetting' } }
+    BrandingAdminView:
+      type: object
+      required: [editable, admin, effective, sources, fixedLocks, assets, notes]
+      properties:
+        editable: { type: boolean }
+        admin: { $ref: '#/components/schemas/BrandingSettings' }
+        effective: { $ref: '#/components/schemas/BrandingSettings' }
+        sources:
+          type: object
+          description: Per field (`productName`, `legal.imprint`, `asset.favicon`, …) `env`, `file` or `admin`.
+          additionalProperties: { type: string, enum: [env, file, admin, default] }
+        fixedLocks: { type: array, items: { $ref: '#/components/schemas/LockableSetting' } }
+        assets:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              source: { type: string, enum: [env, file, admin, default] }
+              url: { type: [string, 'null'] }
+              contentType: { type: [string, 'null'] }
+              size: { type: [integer, 'null'] }
+        notes: { type: array, items: { type: string } }
+        updatedAt: { type: [string, 'null'], format: date-time }
+        updatedBy: { type: [string, 'null'] }
     StudioContext:
       type: object
       additionalProperties: false
@@ -3517,18 +3720,40 @@ components:
             buildDate: { type: [string, 'null'] }
         branding:
           type: object
-          description: Logos (absolute URL or Studio path under the base path) and default accent; null keeps BaSyx's.
+          description: |
+            The deployment's corporate design (ADR 0055): files as an absolute
+            URL or a Studio path under the base path, colours, the users'
+            defaults and locked settings; null keeps BaSyx's.
           properties:
+            customized: { type: boolean }
+            organisation: { type: [string, 'null'] }
+            supportUrl: { type: [string, 'null'] }
+            helpUrl: { type: [string, 'null'] }
             logoLight: { type: [string, 'null'] }
             logoDark: { type: [string, 'null'] }
+            logoCompact: { type: [string, 'null'] }
+            favicon: { type: [string, 'null'] }
+            font: { type: [string, 'null'] }
             accentLight: { type: [string, 'null'] }
             accentDark: { type: [string, 'null'] }
+            secondaryLight: { type: [string, 'null'] }
+            secondaryDark: { type: [string, 'null'] }
+            theme: { type: [string, 'null'], enum: [system, light, dark, null] }
+            background: { type: [string, 'null'] }
+            shape: { type: [string, 'null'], enum: [normal, rounded, null] }
+            uiLanguage: { type: [string, 'null'] }
+            languages: { type: [array, 'null'], items: { type: string } }
+            valueLanguage: { type: [string, 'null'] }
+            signInMessage: { type: [object, 'null'], additionalProperties: { type: string } }
+            locked: { type: array, items: { $ref: '#/components/schemas/LockableSetting' } }
         legal:
           type: object
           properties:
             copyrightName: { type: [string, 'null'] }
-            legalNoticeUrl: { type: [string, 'null'] }
-            privacyPolicyUrl: { type: [string, 'null'] }
+            pages:
+              type: object
+              description: Per page and language, an external URL or the Studio page `/legal/{page}` (ADR 0055).
+              additionalProperties: { type: [object, 'null'], additionalProperties: { type: string } }
         features:
           type: object
           description: Deployment switches; they only narrow what roles allow.

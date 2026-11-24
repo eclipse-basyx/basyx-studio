@@ -15,6 +15,7 @@ import { BackendRunner } from '../lib/apps/runner'
 import { installBundledApp, listInstallations, removeBundledApp } from '../lib/apps/store'
 import { capabilityTokenKey } from '../lib/apps/tokens'
 import { installationTrust, revocationReason } from '../lib/apps/trust'
+import { brandingWarnings, resolveBranding } from '../lib/branding'
 import { configurationWarnings, loadStudioConfig } from '../lib/config'
 import { systemDiscoveryEnvironment } from '../lib/containers/discovery'
 import { infrastructureInputOf } from '../lib/containers/infrastructure'
@@ -141,6 +142,9 @@ async function initialize (): Promise<StudioRuntime> {
       console.info(`[studio] applied database migrations: ${applied.join(', ')}`)
     }
     const deps: StudioDeps = { config, db: handle.db, cipher: new SecretCipher(config.dataKey) }
+    for (const warning of brandingWarnings(deps, await resolveBranding(deps))) {
+      console.warn(`[studio] ${warning}`)
+    }
     if (config.apps.baseUrl) {
       // Managed packages first: they take precedence over bundled apps with the same ID.
       // Apps before infrastructures: declared settings values are checked against them (ADR 0048).

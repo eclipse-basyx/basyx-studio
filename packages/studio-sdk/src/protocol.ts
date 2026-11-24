@@ -6,7 +6,7 @@
 export const protocolVersion = 'studio-sdk/0'
 
 /** Version of the Studio app API that manifests name in `studioApi`. */
-export const studioAppApiVersion = '0.1.15'
+export const studioAppApiVersion = '0.1.16'
 
 /** The largest file `studio.ui.readFile` hands to an app (200 MiB). */
 export const readFileMaxBytes = 200 * 1024 * 1024
@@ -202,6 +202,12 @@ export interface ThemeTokens {
   dark: boolean
   /** Vuetify theme colors as CSS color values, e.g. `primary`, `surface`, `on-surface`. */
   colors: Record<string, string>
+  /**
+   * The shape of Studio's appearance settings: `rounded` for large radii and
+   * pill-shaped buttons and chips (Studio app API 0.1.16, ADR 0055; absent
+   * before, which means `normal`).
+   */
+  shape?: 'normal' | 'rounded'
 }
 
 /** Where the frame runs. Sent on connect and again with every change. */

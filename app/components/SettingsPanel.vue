@@ -19,10 +19,11 @@
           </v-card-item>
 
           <v-card-text>
-            <div class="text-label-large mb-2">{{ t('settings.theme') }}</div>
+            <SettingLabel :locked="branding.locked('theme')" :text="t('settings.theme')" />
 
             <v-btn-toggle
               class="d-flex mb-6"
+              :disabled="branding.locked('theme')"
               mandatory
               :model-value="preferences.theme"
               @update:model-value="value => save({ theme: value })"
@@ -34,20 +35,21 @@
 
             <!-- Accent and background are chosen apart from the mode, as in
                  Slack (shared/appearance.ts); the swatches show the mode in use. -->
-            <div class="text-label-large mb-2">{{ t('settings.accent') }}</div>
+            <SettingLabel :locked="branding.locked('accent')" :text="t('settings.accent')" />
 
             <div class="d-flex flex-wrap align-center ga-2 mb-6">
               <v-btn
                 v-for="name in accentNames"
                 :key="name"
-                v-tooltip="t(`settings.accents.${name}`)"
-                :aria-label="t(`settings.accents.${name}`)"
+                v-tooltip="accentLabel(name)"
+                :aria-label="accentLabel(name)"
                 :aria-pressed="preferences.accent === name"
+                :disabled="branding.locked('accent')"
                 icon
                 rounded="circle"
                 @click="save({ accent: name })"
               >
-                <v-avatar :color="accents[name][mode]" rounded="circle" size="32">
+                <v-avatar :color="swatchColor(name)" rounded="circle" size="32">
                   <v-icon v-if="preferences.accent === name" icon="mdi-check" size="small" />
                 </v-avatar>
               </v-btn>
@@ -60,6 +62,7 @@
                     v-bind="activator"
                     :aria-label="t('settings.customAccent')"
                     :aria-pressed="customSelected"
+                    :disabled="branding.locked('accent')"
                     icon
                     rounded="circle"
                   >
@@ -85,10 +88,11 @@
               </v-menu>
             </div>
 
-            <div class="text-label-large mb-2">{{ t('settings.background') }}</div>
+            <SettingLabel :locked="branding.locked('background')" :text="t('settings.background')" />
 
             <v-item-group
               class="d-flex flex-wrap ga-2 mb-6"
+              :disabled="branding.locked('background')"
               mandatory
               :model-value="preferences.background"
               @update:model-value="value => save({ background: value })"
@@ -99,6 +103,7 @@
                   :aria-pressed="isSelected"
                   :border="isSelected ? 'primary md opacity-100' : true"
                   :color="backgrounds[name][mode].background"
+                  :disabled="branding.locked('background')"
                   width="104"
                   @click="toggle"
                 >
@@ -108,7 +113,7 @@
                     :color="backgrounds[name][mode].surface"
                     rounded
                   >
-                    <v-avatar :color="accentShade(preferences.accent, dark)" size="10" />
+                    <v-avatar :color="swatchColor(preferences.accent)" size="10" />
                     <v-sheet class="flex-grow-1" :color="backgrounds[name][mode]['surface-light']" height="6" rounded />
                   </v-sheet>
 
@@ -117,10 +122,11 @@
               </v-item>
             </v-item-group>
 
-            <div class="text-label-large mb-2">{{ t('settings.shape') }}</div>
+            <SettingLabel :locked="branding.locked('shape')" :text="t('settings.shape')" />
 
             <v-btn-toggle
               class="d-flex mb-6"
+              :disabled="branding.locked('shape')"
               mandatory
               :model-value="preferences.shape"
               @update:model-value="value => save({ shape: value })"
@@ -130,17 +136,23 @@
             </v-btn-toggle>
 
             <v-select
+              :append-inner-icon="branding.locked('uiLanguage') ? 'mdi-lock-outline' : undefined"
               class="mb-4"
+              :disabled="branding.locked('uiLanguage')"
               :items="uiLanguages"
               :label="t('settings.uiLanguage')"
+              :messages="branding.locked('uiLanguage') ? t('settings.locked') : undefined"
               :model-value="preferences.uiLanguage"
               prepend-inner-icon="mdi-earth"
               @update:model-value="(value: LocaleCode | null) => saveUiLanguage(value)"
             />
 
             <v-select
+              :append-inner-icon="branding.locked('valueLanguage') ? 'mdi-lock-outline' : undefined"
+              :disabled="branding.locked('valueLanguage')"
               :items="languages"
               :label="t('settings.valueLanguage')"
+              :messages="branding.locked('valueLanguage') ? t('settings.locked') : undefined"
               :model-value="preferences.valueLanguage"
               prepend-inner-icon="mdi-translate"
               @update:model-value="value => save({ valueLanguage: value })"
@@ -216,7 +228,7 @@
         </v-card>
       </v-col>
 
-      <v-col v-if="session.isAdmin" cols="12">
+      <v-col v-if="session.isAdmin" cols="12" :md="brandingShown ? 6 : 12">
         <v-card :subtitle="t('settings.infrastructuresSubtitle')" :title="t('app.infrastructures')" @click="panel.open('infrastructures')">
           <template #prepend>
             <v-icon icon="mdi-server-network" />
@@ -228,7 +240,19 @@
         </v-card>
       </v-col>
 
-      <!-- Version, the deployment's legal links and its switches (ADR 0035). -->
+      <v-col v-if="brandingShown" cols="12" md="6">
+        <v-card :subtitle="t('branding.subtitle')" :title="t('branding.title')" @click="panel.open('branding')">
+          <template #prepend>
+            <v-icon icon="mdi-palette-swatch-outline" />
+          </template>
+
+          <template #append>
+            <v-icon icon="mdi-chevron-right" />
+          </template>
+        </v-card>
+      </v-col>
+
+      <!-- Version, the deployment's legal pages, About (ADR 0035, ADR 0055). -->
       <v-col v-if="product" cols="12">
         <v-card :subtitle="t('settings.version', { version: product.version })" :title="t('settings.about', { name: product.name })">
           <v-card-text class="d-flex flex-column ga-1 text-body-small text-medium-emphasis">
@@ -240,8 +264,10 @@
             <span v-if="legal?.copyrightName">© {{ legal.copyrightName }}</span>
           </v-card-text>
 
-          <v-card-actions v-if="legal?.legalNoticeUrl || legal?.privacyPolicyUrl">
-            <LegalLinks />
+          <v-card-actions class="flex-wrap">
+            <LegalLinks about />
+            <v-spacer />
+            <PoweredByBasyx />
           </v-card-actions>
         </v-card>
       </v-col>
@@ -259,6 +285,9 @@
 
   const { t, locale, localeCodes, setLocale } = useI18n()
   const session = useSessionStore()
+  const branding = useBranding()
+  /** Administrators see the Branding page; read-only when the deployment fixes the branding. */
+  const brandingShown = computed(() => session.isAdmin)
   const product = computed(() => session.context?.product)
   const legal = computed(() => session.context?.legal)
   const features = computed(() => session.context?.features)
@@ -270,6 +299,15 @@
   const theme = useTheme()
   const dark = computed(() => theme.current.value.dark)
   const mode = computed(() => dark.value ? 'dark' : 'light')
+
+  // The first swatch, `basyx`, stands for the deployment's accent where it has one (ADR 0055).
+  const organisationAccent = computed(() => (dark.value ? session.context?.branding.accentDark : session.context?.branding.accentLight) ?? null)
+  function swatchColor (accent: string): string {
+    return accent === 'basyx' && organisationAccent.value ? accentShade(organisationAccent.value, dark.value) : accentShade(accent, dark.value)
+  }
+  function accentLabel (name: string): string {
+    return name === 'basyx' && organisationAccent.value ? t('settings.organisationAccent') : t(`settings.accents.${name}`)
+  }
 
   // A custom accent is saved once the picker rests, not on every move.
   const customSelected = computed(() => hexColorPattern.test(preferences.value.accent))
@@ -297,11 +335,14 @@
     }
   })
 
+  const offeredLanguages = computed(() => session.context?.branding.languages ?? null)
   // A hidden locale stays listed while it is chosen, so the select can show it.
   const uiLanguages = computed(() => [
     { title: t('settings.browserLanguage'), value: null },
     ...locales
       .filter(entry => entry.available && (!entry.hidden || dialectsRevealed.value || entry.code === locale.value || entry.code === preferences.value.uiLanguage))
+      // Only the languages the deployment offers (ADR 0055); a dialect with its base language.
+      .filter(entry => !offeredLanguages.value || offeredLanguages.value.some(code => code === entry.code || code === entry.base))
       .map(entry => ({ title: entry.name, value: entry.code })),
   ])
   const browserLocale = useBrowserLocale()

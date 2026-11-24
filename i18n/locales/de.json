@@ -66,7 +66,7 @@
       "ready": "Bereit",
       "required": "Autorisierung nötig"
     },
-    "signInTitle": "Bei BaSyx Studio anmelden",
+    "signInTitle": "Bei {name} anmelden",
     "signInText": "Studio greift in Ihrem Auftrag auf Ihre AAS-Infrastrukturen zu. Melden Sie sich mit dem Konto Ihrer Organisation an, um fortzufahren.",
     "noTargets": "Es sind noch keine Infrastrukturen konfiguriert.",
     "noTargetsAdmin": "Fügen Sie eine Infrastruktur hinzu, um zu beginnen.",
@@ -1173,6 +1173,7 @@
       "pink": "Pink",
       "graphite": "Graphit"
     },
+    "organisationAccent": "Farbe Ihrer Organisation",
     "customAccent": "Eigene Farbe",
     "background": "Hintergrund",
     "backgrounds": {
@@ -1191,7 +1192,8 @@
     "version": "Version {version}",
     "commit": "Commit {commit}",
     "built": "Erstellt am {date}",
-    "readOnly": "Dieses Deployment ist schreibgeschützt: An seinen Infrastrukturen lässt sich nichts ändern."
+    "readOnly": "Dieses Deployment ist schreibgeschützt: An seinen Infrastrukturen lässt sich nichts ändern.",
+    "locked": "Von Ihrer Organisation festgelegt"
   },
   "invite": {
     "title": "Einladung annehmen",
@@ -1526,5 +1528,124 @@
       "conceptDescriptions": "Konzeptbeschreibungen",
       "files": "Dateien"
     }
+  },
+  "legal": {
+    "pages": {
+      "imprint": "Impressum",
+      "privacy": "Datenschutzerklärung",
+      "accessibility": "Erklärung zur Barrierefreiheit",
+      "terms": "Nutzungsbedingungen"
+    }
+  },
+  "about": {
+    "link": "Über",
+    "title": "Über {name}",
+    "subtitle": "Wer dieses Studio betreibt, und das Projekt dahinter",
+    "runBy": "Bereitgestellt von {organisation}",
+    "support": "Support",
+    "help": "Hilfe",
+    "basyxTitle": "Eclipse BaSyx",
+    "poweredBy": "Powered by Eclipse BaSyx",
+    "poweredByLabel": "Powered by Eclipse BaSyx: über das Projekt",
+    "basyxText": "Eclipse BaSyx ist ein Open-Source-Projekt der Eclipse Foundation für Industrie 4.0: Komponenten und SDKs für die Verwaltungsschale, den standardisierten digitalen Zwilling der IDTA.",
+    "studioText": "BaSyx Studio ist seine Umgebung für die Arbeit mit Verwaltungsschalen im Web und auf dem Desktop, erweiterbar mit Apps.",
+    "links": {
+      "website": "Projektwebsite",
+      "basyxOrg": "basyx.org",
+      "go": "BaSyx Go Components",
+      "wiki": "Dokumentation (Wiki)",
+      "github": "Quellcode auf GitHub",
+      "docker": "Container-Images auf Docker Hub",
+      "mail": "Mailingliste der Entwickler",
+      "openHour": "BaSyx Open Hour"
+    },
+    "license": "Lizenz",
+    "licenseText": "BaSyx Studio ist Open Source unter der MIT-Lizenz",
+    "team": "Entwicklungsteam",
+    "teamSubtitle": "Die Menschen, die BaSyx Studio und die BaSyx-Komponenten entwickeln",
+    "github": "{name} auf GitHub",
+    "linkedin": "{name} auf LinkedIn",
+    "organisations": "Beteiligte Organisationen"
+  },
+  "branding": {
+    "title": "Branding",
+    "subtitle": "Name, Logos, Farben, rechtliche Seiten und gesperrte Einstellungen dieses Studios",
+    "close": "Branding schließen",
+    "export": "Exportieren",
+    "import": "Importieren",
+    "notEditable": "Diese Installation legt ihr Branding selbst fest (STUDIO_BRANDING_EDITABLE=false); hier wird es nur angezeigt.",
+    "preview": "Vorschau",
+    "previewButton": "Hauptaktion",
+    "previewChip": "Sekundär",
+    "identity": "Name und Links",
+    "fields": {
+      "productName": "Produktname",
+      "organisation": "Organisation",
+      "supportUrl": "Support (Webseite oder mailto:)",
+      "helpUrl": "Hilfe (Webseite)",
+      "theme": "Standard-Design",
+      "background": "Standard-Hintergrund",
+      "shape": "Standard-Form",
+      "uiLanguage": "Standardsprache",
+      "valueLanguage": "Standardsprache der Werte",
+      "languages": "Angebotene Sprachen",
+      "signInMessage": "Hinweis auf der Anmeldeseite"
+    },
+    "files": "Logos und Dateien",
+    "filesSubtitle": "Logos als SVG, PNG, WebP oder JPEG, ein Favicon als SVG, PNG oder ICO und eine Schrift als woff2, je bis 2 MB",
+    "assets": {
+      "logo-light": "Logo, helles Design",
+      "logo-dark": "Logo, dunkles Design",
+      "logo-compact": "Kompaktes Logo (quadratisch)",
+      "favicon": "Favicon",
+      "font": "Schrift (woff2)"
+    },
+    "upload": "Hochladen",
+    "remove": "Entfernen",
+    "colours": "Farben",
+    "coloursSubtitle": "Schwer lesbare Farben dunkelt oder hellt Studio ab bzw. auf",
+    "color": {
+      "accent": {
+        "light": "Akzent, helles Design",
+        "dark": "Akzent, dunkles Design"
+      },
+      "secondary": {
+        "light": "Sekundär, helles Design",
+        "dark": "Sekundär, dunkles Design"
+      }
+    },
+    "lockAccent": "Nutzer behalten diese Akzentfarbe",
+    "defaults": "Vorgaben und Sperren",
+    "defaultsSubtitle": "Womit Nutzer beginnen; ein geschlossenes Schloss verhindert Änderungen",
+    "lock": "Sperren: {setting}",
+    "languagesHint": "Leer: alle Sprachen",
+    "studioDefault": "Studio-Standard",
+    "texts": "Texte und rechtliche Seiten",
+    "textsSubtitle": "Je Sprache; Nutzer sehen ihre, sonst die Standardsprache",
+    "legal": {
+      "none": "Keine",
+      "url": "Link",
+      "markdown": "Text",
+      "urlLabel": "Adresse der Seite",
+      "markdownLabel": "Text (Markdown)",
+      "markdownHint": "Überschriften, Listen und Links; kein HTML, keine Bilder",
+      "notice": "Studio zeigt diese Seiten allen, auch vor der Anmeldung. Für ihren Inhalt ist Ihre Organisation verantwortlich."
+    },
+    "fixed": "Von der Installation festgelegt ({source})",
+    "sources": {
+      "env": "Umgebungsvariable",
+      "file": "Branding-Datei",
+      "admin": "hier festgelegt",
+      "default": "Studio-Standard"
+    },
+    "invalidUrl": "Geben Sie eine http(s)-Adresse ein",
+    "invalidColor": "Geben Sie eine Farbe als #RRGGBB ein",
+    "assetDefault": "Das von BaSyx Studio",
+    "updated": "Zuletzt geändert am {date} von {name}",
+    "save": "Speichern",
+    "saved": "Branding gespeichert",
+    "uploaded": "Datei hochgeladen",
+    "removed": "Datei entfernt",
+    "imported": "Branding importiert"
   }
 }

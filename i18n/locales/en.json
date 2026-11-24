@@ -66,7 +66,7 @@
       "ready": "Ready",
       "required": "Needs authorization"
     },
-    "signInTitle": "Sign in to BaSyx Studio",
+    "signInTitle": "Sign in to {name}",
     "signInText": "Studio accesses your AAS infrastructures on your behalf. Sign in with your organization's account to continue.",
     "noTargets": "No infrastructures are configured yet.",
     "noTargetsAdmin": "Add an infrastructure to get started.",
@@ -1173,6 +1173,7 @@
       "pink": "Pink",
       "graphite": "Graphite"
     },
+    "organisationAccent": "Your organisation's colour",
     "customAccent": "Custom colour",
     "background": "Background",
     "backgrounds": {
@@ -1191,7 +1192,8 @@
     "version": "Version {version}",
     "commit": "Commit {commit}",
     "built": "Built {date}",
-    "readOnly": "This deployment is read-only: nothing on its infrastructures can be changed."
+    "readOnly": "This deployment is read-only: nothing on its infrastructures can be changed.",
+    "locked": "Set by your organisation"
   },
   "invite": {
     "title": "Accept invitation",
@@ -1526,5 +1528,124 @@
       "conceptDescriptions": "Concept descriptions",
       "files": "Files"
     }
+  },
+  "legal": {
+    "pages": {
+      "imprint": "Legal notice",
+      "privacy": "Privacy policy",
+      "accessibility": "Accessibility statement",
+      "terms": "Terms of use"
+    }
+  },
+  "about": {
+    "link": "About",
+    "title": "About {name}",
+    "subtitle": "Who runs this Studio, and the project behind it",
+    "runBy": "Provided by {organisation}",
+    "support": "Support",
+    "help": "Help",
+    "basyxTitle": "Eclipse BaSyx",
+    "poweredBy": "Powered by Eclipse BaSyx",
+    "poweredByLabel": "Powered by Eclipse BaSyx: about the project",
+    "basyxText": "Eclipse BaSyx is an open-source project of the Eclipse Foundation for Industry 4.0: components and SDKs for the Asset Administration Shell, the standardised digital twin of the IDTA.",
+    "studioText": "BaSyx Studio is its environment for working with Asset Administration Shells on the web and the desktop, extensible with apps.",
+    "links": {
+      "website": "Project website",
+      "basyxOrg": "basyx.org",
+      "go": "BaSyx Go Components",
+      "wiki": "Documentation (wiki)",
+      "github": "Source code on GitHub",
+      "docker": "Container images on Docker Hub",
+      "mail": "Developer mailing list",
+      "openHour": "BaSyx Open Hour"
+    },
+    "license": "Licence",
+    "licenseText": "BaSyx Studio is open source under the MIT licence",
+    "team": "Developer team",
+    "teamSubtitle": "The people who build BaSyx Studio and the BaSyx components",
+    "github": "{name} on GitHub",
+    "linkedin": "{name} on LinkedIn",
+    "organisations": "Organisations involved"
+  },
+  "branding": {
+    "title": "Branding",
+    "subtitle": "Name, logos, colours, legal pages and locked settings of this Studio",
+    "close": "Close branding",
+    "export": "Export",
+    "import": "Import",
+    "notEditable": "This deployment sets its branding (STUDIO_BRANDING_EDITABLE=false); it is shown here read-only.",
+    "preview": "Preview",
+    "previewButton": "Primary action",
+    "previewChip": "Secondary",
+    "identity": "Name and links",
+    "fields": {
+      "productName": "Product name",
+      "organisation": "Organisation",
+      "supportUrl": "Support (web page or mailto:)",
+      "helpUrl": "Help (web page)",
+      "theme": "Default theme",
+      "background": "Default background",
+      "shape": "Default shape",
+      "uiLanguage": "Default language",
+      "valueLanguage": "Default language of values",
+      "languages": "Offered languages",
+      "signInMessage": "Message on the sign-in page"
+    },
+    "files": "Logos and files",
+    "filesSubtitle": "SVG, PNG, WebP or JPEG logos, an SVG, PNG or ICO favicon and a woff2 font, up to 2 MB each",
+    "assets": {
+      "logo-light": "Logo, light theme",
+      "logo-dark": "Logo, dark theme",
+      "logo-compact": "Compact logo (square)",
+      "favicon": "Favicon",
+      "font": "Font (woff2)"
+    },
+    "upload": "Upload",
+    "remove": "Remove",
+    "colours": "Colours",
+    "coloursSubtitle": "Studio darkens or lightens colours that would be hard to read",
+    "color": {
+      "accent": {
+        "light": "Accent, light theme",
+        "dark": "Accent, dark theme"
+      },
+      "secondary": {
+        "light": "Secondary, light theme",
+        "dark": "Secondary, dark theme"
+      }
+    },
+    "lockAccent": "Users keep this accent colour",
+    "defaults": "Defaults and locks",
+    "defaultsSubtitle": "What users start with; a closed lock keeps them from changing it",
+    "lock": "Lock: {setting}",
+    "languagesHint": "All languages when empty",
+    "studioDefault": "Studio default",
+    "texts": "Texts and legal pages",
+    "textsSubtitle": "Per language; users see their own, else the default language",
+    "legal": {
+      "none": "None",
+      "url": "Link",
+      "markdown": "Text",
+      "urlLabel": "Address of the page",
+      "markdownLabel": "Text (Markdown)",
+      "markdownHint": "Headings, lists and links; no HTML or images",
+      "notice": "Studio shows these pages to everyone, also before signing in. Their content is your organisation's responsibility."
+    },
+    "fixed": "Set by the deployment ({source})",
+    "sources": {
+      "env": "environment variable",
+      "file": "branding file",
+      "admin": "set here",
+      "default": "Studio default"
+    },
+    "invalidUrl": "Enter an http(s) address",
+    "invalidColor": "Enter a colour as #RRGGBB",
+    "assetDefault": "BaSyx Studio's",
+    "updated": "Last changed {date} by {name}",
+    "save": "Save",
+    "saved": "Branding saved",
+    "uploaded": "File uploaded",
+    "removed": "File removed",
+    "imported": "Branding imported"
   }
 }

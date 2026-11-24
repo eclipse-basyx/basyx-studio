@@ -1,8 +1,8 @@
 import type { LocationQuery } from 'vue-router'
 
-export type PanelName = 'settings' | 'infrastructures' | 'apps'
+export type PanelName = 'settings' | 'infrastructures' | 'apps' | 'branding'
 
-const adminPanels = new Set<PanelName>(['infrastructures', 'apps'])
+const adminPanels = new Set<PanelName>(['infrastructures', 'apps', 'branding'])
 
 /**
  * Settings and the administration views open in place of the current page, in the
@@ -16,7 +16,7 @@ export function usePanel () {
 
   const current = computed<PanelName | null>(() => {
     const name = route.query.panel
-    if (session.needsLogin || (name !== 'settings' && name !== 'infrastructures' && name !== 'apps')) {
+    if (session.needsLogin || (name !== 'settings' && name !== 'infrastructures' && name !== 'apps' && name !== 'branding')) {
       return null
     }
     return adminPanels.has(name) && !session.isAdmin ? null : name

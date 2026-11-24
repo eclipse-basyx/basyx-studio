@@ -1,3 +1,5 @@
+import { roundedShapeDefaults } from '@basyx/studio-app-kit/vuetify-defaults'
+
 // Appearance choices of Settings, chosen one by one as in Slack: the mode
 // (light, dark or system), an accent colour (a preset or the user's own), a
 // background and a shape. vuetify.config.ts builds Studio's light and dark
@@ -162,43 +164,30 @@ export function accentShade (accent: string, dark: boolean): string {
   return hexColorPattern.test(accent) ? readableShade(accent, dark) : (dark ? accents.basyx.dark : accents.basyx.light)
 }
 
-/** The colours an accent and a background give a light or dark theme, with their `on-` colours. */
-export function themeColors (accent: string, background: BackgroundName, dark: boolean): Record<string, string> {
+/**
+ * The colours an accent and a background give a light or dark theme, with
+ * their `on-` colours; `secondaryColor` is a deployment's own secondary
+ * colour (ADR 0055) instead of the BaSyx orange, in its readable shade.
+ */
+export function themeColors (accent: string, background: BackgroundName, dark: boolean, secondaryColor?: string): Record<string, string> {
   const mode = dark ? 'dark' : 'light'
   const tone = backgrounds[background][mode]
+  const second = secondaryColor && hexColorPattern.test(secondaryColor) ? readableShade(secondaryColor, dark) : secondary[mode]
   return {
-    ...withOnColors({ primary: accentShade(accent, dark), secondary: secondary[mode], background: tone.background, surface: tone.surface, frame: tone.frame }),
+    ...withOnColors({ primary: accentShade(accent, dark), secondary: second, background: tone.background, surface: tone.surface, frame: tone.frame }),
     'surface-light': tone['surface-light'],
     'card-header': tone['card-header'],
   }
 }
 
-const roundedField = { rounded: 'xl' } as const
-
 /**
  * Component defaults of the `rounded` shape, laid over vuetify.config.ts
- * with a defaults provider (app.vue): only radii change, so every other
- * default stays where it is.
+ * with a defaults provider (app.vue): the radii apps share
+ * (@basyx/studio-app-kit, ADR 0055), and Studio's own aliases. Only radii
+ * change, so every other default stays where it is.
  */
 export const roundedDefaults = {
-  VBtn: { rounded: 'pill' },
-  VBtnPrimary: { rounded: 'pill' },
-  VBtnSecondary: { rounded: 'pill' },
-  VBtnToggle: { rounded: 'pill' },
+  ...roundedShapeDefaults,
   VBtnWidgetIcon: { rounded: 'pill' },
-  VCard: { rounded: 'xl' },
   VCardPane: { rounded: 'xl' },
-  VAvatar: { rounded: 'xl' },
-  VListItem: { rounded: 'xl' },
-  VChip: { label: false },
-  VAlert: { rounded: 'xl' },
-  VTextField: roundedField,
-  VSelect: roundedField,
-  VAutocomplete: roundedField,
-  VCombobox: roundedField,
-  VFileInput: roundedField,
-  VTextarea: roundedField,
-  VDialog: { VCard: { rounded: 'xl' } },
-  // Menu items stay a step smaller than their menu, as in the normal shape.
-  VMenu: { VCard: { rounded: 'xl' }, VList: { rounded: 'xl' }, VListItem: { rounded: 'lg' } },
 }

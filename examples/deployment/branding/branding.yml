@@ -1,0 +1,43 @@
+# BaSyx Studio branding (docs/deployment/branding.md, ADR 0055).
+# Paths are relative to this file. Mount the folder and point
+# STUDIO_BRANDING_FILE at this file; restart Studio after changes.
+version: 1
+
+productName: Example Twin Studio
+organisation: Example GmbH
+supportUrl: mailto:studio-support@example.com
+helpUrl: https://example.com/docs/twin-studio
+
+logo:
+  light: ./logo-light.svg
+  dark: ./logo-dark.svg
+  compact: ./logo-mark.svg
+favicon: ./logo-mark.svg
+
+appearance:
+  theme: system
+  accent: { light: "#00549F", dark: "#5FA8FF" }
+  secondary: { light: "#8A4B00", dark: "#F6A04D" }
+  background: slate
+  shape: rounded
+
+languages:
+  default: de
+  available: [de, en]
+  values: de
+
+signInMessage:
+  de: Willkommen im Digital-Twin-Portal der Example GmbH. Melden Sie sich mit Ihrem Firmenkonto an.
+  en: Welcome to the Example GmbH digital twin portal. Sign in with your company account.
+
+legal:
+  imprint:
+    de: ./legal/impressum.de.md
+    en: ./legal/imprint.en.md
+  privacy:
+    de: ./legal/datenschutz.de.md
+    en: https://example.com/en/privacy
+  accessibility: https://example.com/accessibility
+
+# Users cannot change these in Settings.
+locked: [accent, shape]

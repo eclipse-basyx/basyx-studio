@@ -65,7 +65,7 @@
       "ready": "就绪",
       "required": "需要授权"
     },
-    "signInTitle": "登录 BaSyx Studio",
+    "signInTitle": "登录 {name}",
     "signInText": "Studio 代表你访问 AAS 基础设施。请使用你所在组织的账户登录以继续。",
     "noTargets": "尚未配置任何基础设施。",
     "noTargetsAdmin": "添加一个基础设施即可开始。",
@@ -1075,6 +1075,7 @@
       "pink": "粉色",
       "graphite": "石墨"
     },
+    "organisationAccent": "您组织的颜色",
     "customAccent": "自定义颜色",
     "background": "背景",
     "backgrounds": {
@@ -1093,7 +1094,8 @@
     "version": "版本 {version}",
     "commit": "提交 {commit}",
     "built": "构建于 {date}",
-    "readOnly": "此部署为只读：无法更改其基础设施上的任何内容。"
+    "readOnly": "此部署为只读：无法更改其基础设施上的任何内容。",
+    "locked": "由您的组织设置"
   },
   "invite": {
     "title": "接受邀请",
@@ -1345,5 +1347,124 @@
       "conceptDescriptions": "概念描述",
       "files": "文件"
     }
+  },
+  "legal": {
+    "pages": {
+      "imprint": "法律声明",
+      "privacy": "隐私政策",
+      "accessibility": "无障碍声明",
+      "terms": "使用条款"
+    }
+  },
+  "about": {
+    "link": "关于",
+    "title": "关于 {name}",
+    "subtitle": "谁在运营此 Studio，以及其背后的项目",
+    "runBy": "由 {organisation} 提供",
+    "support": "支持",
+    "help": "帮助",
+    "basyxTitle": "Eclipse BaSyx",
+    "poweredBy": "由 Eclipse BaSyx 提供技术支持",
+    "poweredByLabel": "由 Eclipse BaSyx 提供技术支持：关于该项目",
+    "basyxText": "Eclipse BaSyx 是 Eclipse 基金会面向工业 4.0 的开源项目：为资产管理壳（IDTA 的标准化数字孪生）提供组件和 SDK。",
+    "studioText": "BaSyx Studio 是它在网页和桌面上处理资产管理壳的环境，可通过应用扩展。",
+    "links": {
+      "website": "项目网站",
+      "basyxOrg": "basyx.org",
+      "go": "BaSyx Go Components",
+      "wiki": "文档（Wiki）",
+      "github": "GitHub 上的源代码",
+      "docker": "Docker Hub 上的容器镜像",
+      "mail": "开发者邮件列表",
+      "openHour": "BaSyx Open Hour"
+    },
+    "license": "许可证",
+    "licenseText": "BaSyx Studio 以 MIT 许可证开源",
+    "team": "开发团队",
+    "teamSubtitle": "开发 BaSyx Studio 和 BaSyx 组件的人",
+    "github": "{name} 的 GitHub",
+    "linkedin": "{name} 的 LinkedIn",
+    "organisations": "参与的组织"
+  },
+  "branding": {
+    "title": "品牌",
+    "subtitle": "此 Studio 的名称、徽标、颜色、法律页面和锁定的设置",
+    "close": "关闭品牌",
+    "export": "导出",
+    "import": "导入",
+    "notEditable": "此部署自行设置品牌（STUDIO_BRANDING_EDITABLE=false）；此处仅供查看。",
+    "preview": "预览",
+    "previewButton": "主要操作",
+    "previewChip": "次要",
+    "identity": "名称和链接",
+    "fields": {
+      "productName": "产品名称",
+      "organisation": "组织",
+      "supportUrl": "支持（网页或 mailto:）",
+      "helpUrl": "帮助（网页）",
+      "theme": "默认主题",
+      "background": "默认背景",
+      "shape": "默认形状",
+      "uiLanguage": "默认语言",
+      "valueLanguage": "值的默认语言",
+      "languages": "提供的语言",
+      "signInMessage": "登录页面上的消息"
+    },
+    "files": "徽标和文件",
+    "filesSubtitle": "SVG、PNG、WebP 或 JPEG 徽标，SVG、PNG 或 ICO 网站图标，以及 woff2 字体，每个最大 2 MB",
+    "assets": {
+      "logo-light": "徽标，浅色主题",
+      "logo-dark": "徽标，深色主题",
+      "logo-compact": "紧凑徽标（方形）",
+      "favicon": "网站图标",
+      "font": "字体（woff2）"
+    },
+    "upload": "上传",
+    "remove": "移除",
+    "colours": "颜色",
+    "coloursSubtitle": "难以阅读的颜色会被 Studio 调暗或调亮",
+    "color": {
+      "accent": {
+        "light": "强调色，浅色主题",
+        "dark": "强调色，深色主题"
+      },
+      "secondary": {
+        "light": "次要色，浅色主题",
+        "dark": "次要色，深色主题"
+      }
+    },
+    "lockAccent": "用户保持此强调色",
+    "defaults": "默认值和锁定",
+    "defaultsSubtitle": "用户的初始设置；锁定后用户无法更改",
+    "lock": "锁定：{setting}",
+    "languagesHint": "留空表示所有语言",
+    "studioDefault": "Studio 默认",
+    "texts": "文本和法律页面",
+    "textsSubtitle": "按语言设置；用户看到自己的语言，否则看到默认语言",
+    "legal": {
+      "none": "无",
+      "url": "链接",
+      "markdown": "文本",
+      "urlLabel": "页面地址",
+      "markdownLabel": "文本（Markdown）",
+      "markdownHint": "标题、列表和链接；不支持 HTML 或图片",
+      "notice": "Studio 向所有人显示这些页面，包括登录前。其内容由您的组织负责。"
+    },
+    "fixed": "由部署设置（{source}）",
+    "sources": {
+      "env": "环境变量",
+      "file": "品牌文件",
+      "admin": "在此设置",
+      "default": "Studio 默认"
+    },
+    "invalidUrl": "请输入 http(s) 地址",
+    "invalidColor": "请以 #RRGGBB 格式输入颜色",
+    "assetDefault": "BaSyx Studio 的",
+    "updated": "最后由 {name} 于 {date} 更改",
+    "save": "保存",
+    "saved": "品牌已保存",
+    "uploaded": "文件已上传",
+    "removed": "文件已移除",
+    "imported": "品牌已导入"
   }
 }

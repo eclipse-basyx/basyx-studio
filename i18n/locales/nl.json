@@ -65,7 +65,7 @@
       "ready": "Gereed",
       "required": "Autorisatie nodig"
     },
-    "signInTitle": "Aanmelden bij BaSyx Studio",
+    "signInTitle": "Aanmelden bij {name}",
     "signInText": "Studio benadert je AAS-infrastructuren namens jou. Meld je aan met het account van je organisatie om verder te gaan.",
     "noTargets": "Er zijn nog geen infrastructuren geconfigureerd.",
     "noTargetsAdmin": "Voeg een infrastructuur toe om te beginnen.",
@@ -1075,6 +1075,7 @@
       "pink": "Roze",
       "graphite": "Grafiet"
     },
+    "organisationAccent": "Kleur van uw organisatie",
     "customAccent": "Eigen kleur",
     "background": "Achtergrond",
     "backgrounds": {
@@ -1093,7 +1094,8 @@
     "version": "Versie {version}",
     "commit": "Commit {commit}",
     "built": "Gebouwd op {date}",
-    "readOnly": "Deze deployment is alleen-lezen: op de infrastructuren kan niets worden gewijzigd."
+    "readOnly": "Deze deployment is alleen-lezen: op de infrastructuren kan niets worden gewijzigd.",
+    "locked": "Ingesteld door uw organisatie"
   },
   "invite": {
     "title": "Uitnodiging accepteren",
@@ -1345,5 +1347,124 @@
       "conceptDescriptions": "Conceptbeschrijvingen",
       "files": "Bestanden"
     }
+  },
+  "legal": {
+    "pages": {
+      "imprint": "Colofon",
+      "privacy": "Privacyverklaring",
+      "accessibility": "Toegankelijkheidsverklaring",
+      "terms": "Gebruiksvoorwaarden"
+    }
+  },
+  "about": {
+    "link": "Over",
+    "title": "Over {name}",
+    "subtitle": "Wie deze Studio beheert, en het project erachter",
+    "runBy": "Aangeboden door {organisation}",
+    "support": "Ondersteuning",
+    "help": "Help",
+    "basyxTitle": "Eclipse BaSyx",
+    "poweredBy": "Powered by Eclipse BaSyx",
+    "poweredByLabel": "Powered by Eclipse BaSyx: over het project",
+    "basyxText": "Eclipse BaSyx is een opensourceproject van de Eclipse Foundation voor Industrie 4.0: componenten en SDK's voor de Asset Administration Shell, de gestandaardiseerde digitale tweeling van de IDTA.",
+    "studioText": "BaSyx Studio is de omgeving om met Asset Administration Shells te werken op het web en op de desktop, uitbreidbaar met apps.",
+    "links": {
+      "website": "Projectwebsite",
+      "basyxOrg": "basyx.org",
+      "go": "BaSyx Go Components",
+      "wiki": "Documentatie (wiki)",
+      "github": "Broncode op GitHub",
+      "docker": "Container-images op Docker Hub",
+      "mail": "Mailinglijst voor ontwikkelaars",
+      "openHour": "BaSyx Open Hour"
+    },
+    "license": "Licentie",
+    "licenseText": "BaSyx Studio is open source onder de MIT-licentie",
+    "team": "Ontwikkelteam",
+    "teamSubtitle": "De mensen die BaSyx Studio en de BaSyx-componenten bouwen",
+    "github": "{name} op GitHub",
+    "linkedin": "{name} op LinkedIn",
+    "organisations": "Betrokken organisaties"
+  },
+  "branding": {
+    "title": "Huisstijl",
+    "subtitle": "Naam, logo's, kleuren, juridische pagina's en vergrendelde instellingen van deze Studio",
+    "close": "Huisstijl sluiten",
+    "export": "Exporteren",
+    "import": "Importeren",
+    "notEditable": "Deze installatie stelt haar huisstijl zelf in (STUDIO_BRANDING_EDITABLE=false); hier wordt die alleen getoond.",
+    "preview": "Voorbeeld",
+    "previewButton": "Hoofdactie",
+    "previewChip": "Secundair",
+    "identity": "Naam en links",
+    "fields": {
+      "productName": "Productnaam",
+      "organisation": "Organisatie",
+      "supportUrl": "Ondersteuning (webpagina of mailto:)",
+      "helpUrl": "Help (webpagina)",
+      "theme": "Standaardthema",
+      "background": "Standaardachtergrond",
+      "shape": "Standaardvorm",
+      "uiLanguage": "Standaardtaal",
+      "valueLanguage": "Standaardtaal van waarden",
+      "languages": "Aangeboden talen",
+      "signInMessage": "Bericht op de aanmeldpagina"
+    },
+    "files": "Logo's en bestanden",
+    "filesSubtitle": "Logo's als SVG, PNG, WebP of JPEG, een favicon als SVG, PNG of ICO en een lettertype als woff2, elk tot 2 MB",
+    "assets": {
+      "logo-light": "Logo, licht thema",
+      "logo-dark": "Logo, donker thema",
+      "logo-compact": "Compact logo (vierkant)",
+      "favicon": "Favicon",
+      "font": "Lettertype (woff2)"
+    },
+    "upload": "Uploaden",
+    "remove": "Verwijderen",
+    "colours": "Kleuren",
+    "coloursSubtitle": "Studio maakt slecht leesbare kleuren donkerder of lichter",
+    "color": {
+      "accent": {
+        "light": "Accent, licht thema",
+        "dark": "Accent, donker thema"
+      },
+      "secondary": {
+        "light": "Secundair, licht thema",
+        "dark": "Secundair, donker thema"
+      }
+    },
+    "lockAccent": "Gebruikers houden deze accentkleur",
+    "defaults": "Standaarden en vergrendelingen",
+    "defaultsSubtitle": "Waarmee gebruikers beginnen; een gesloten slot voorkomt dat ze het wijzigen",
+    "lock": "Vergrendelen: {setting}",
+    "languagesHint": "Alle talen als leeg",
+    "studioDefault": "Studio-standaard",
+    "texts": "Teksten en juridische pagina's",
+    "textsSubtitle": "Per taal; gebruikers zien de hunne, anders de standaardtaal",
+    "legal": {
+      "none": "Geen",
+      "url": "Link",
+      "markdown": "Tekst",
+      "urlLabel": "Adres van de pagina",
+      "markdownLabel": "Tekst (Markdown)",
+      "markdownHint": "Koppen, lijsten en links; geen HTML of afbeeldingen",
+      "notice": "Studio toont deze pagina's aan iedereen, ook voor het aanmelden. Uw organisatie is verantwoordelijk voor de inhoud."
+    },
+    "fixed": "Ingesteld door de installatie ({source})",
+    "sources": {
+      "env": "omgevingsvariabele",
+      "file": "huisstijlbestand",
+      "admin": "hier ingesteld",
+      "default": "Studio-standaard"
+    },
+    "invalidUrl": "Voer een http(s)-adres in",
+    "invalidColor": "Voer een kleur in als #RRGGBB",
+    "assetDefault": "Dat van BaSyx Studio",
+    "updated": "Laatst gewijzigd op {date} door {name}",
+    "save": "Opslaan",
+    "saved": "Huisstijl opgeslagen",
+    "uploaded": "Bestand geüpload",
+    "removed": "Bestand verwijderd",
+    "imported": "Huisstijl geïmporteerd"
   }
 }

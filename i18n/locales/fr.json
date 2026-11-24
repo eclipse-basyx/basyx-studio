@@ -65,7 +65,7 @@
       "ready": "Prêtes",
       "required": "Autorisation requise"
     },
-    "signInTitle": "Se connecter à BaSyx Studio",
+    "signInTitle": "Se connecter à {name}",
     "signInText": "Studio accède à vos infrastructures AAS en votre nom. Connectez-vous avec le compte de votre organisation pour continuer.",
     "noTargets": "Aucune infrastructure n'est encore configurée.",
     "noTargetsAdmin": "Ajoutez une infrastructure pour commencer.",
@@ -1075,6 +1075,7 @@
       "pink": "Rose",
       "graphite": "Graphite"
     },
+    "organisationAccent": "Couleur de votre organisation",
     "customAccent": "Couleur personnalisée",
     "background": "Arrière-plan",
     "backgrounds": {
@@ -1093,7 +1094,8 @@
     "version": "Version {version}",
     "commit": "Commit {commit}",
     "built": "Compilé le {date}",
-    "readOnly": "Ce déploiement est en lecture seule : rien ne peut être modifié sur ses infrastructures."
+    "readOnly": "Ce déploiement est en lecture seule : rien ne peut être modifié sur ses infrastructures.",
+    "locked": "Défini par votre organisation"
   },
   "invite": {
     "title": "Accepter l'invitation",
@@ -1345,5 +1347,124 @@
       "conceptDescriptions": "Descriptions de concept",
       "files": "Fichiers"
     }
+  },
+  "legal": {
+    "pages": {
+      "imprint": "Mentions légales",
+      "privacy": "Politique de confidentialité",
+      "accessibility": "Déclaration d'accessibilité",
+      "terms": "Conditions d'utilisation"
+    }
+  },
+  "about": {
+    "link": "À propos",
+    "title": "À propos de {name}",
+    "subtitle": "Qui exploite ce Studio, et le projet derrière lui",
+    "runBy": "Fourni par {organisation}",
+    "support": "Assistance",
+    "help": "Aide",
+    "basyxTitle": "Eclipse BaSyx",
+    "poweredBy": "Propulsé par Eclipse BaSyx",
+    "poweredByLabel": "Propulsé par Eclipse BaSyx : à propos du projet",
+    "basyxText": "Eclipse BaSyx est un projet open source de la fondation Eclipse pour l'industrie 4.0 : des composants et des SDK pour l'Asset Administration Shell, le jumeau numérique standardisé de l'IDTA.",
+    "studioText": "BaSyx Studio est son environnement pour travailler avec des Asset Administration Shells sur le web et sur le bureau, extensible par des apps.",
+    "links": {
+      "website": "Site du projet",
+      "basyxOrg": "basyx.org",
+      "go": "BaSyx Go Components",
+      "wiki": "Documentation (wiki)",
+      "github": "Code source sur GitHub",
+      "docker": "Images de conteneurs sur Docker Hub",
+      "mail": "Liste de diffusion des développeurs",
+      "openHour": "BaSyx Open Hour"
+    },
+    "license": "Licence",
+    "licenseText": "BaSyx Studio est open source sous licence MIT",
+    "team": "Équipe de développement",
+    "teamSubtitle": "Les personnes qui développent BaSyx Studio et les composants BaSyx",
+    "github": "{name} sur GitHub",
+    "linkedin": "{name} sur LinkedIn",
+    "organisations": "Organisations impliquées"
+  },
+  "branding": {
+    "title": "Image de marque",
+    "subtitle": "Nom, logos, couleurs, pages légales et réglages verrouillés de ce Studio",
+    "close": "Fermer l'image de marque",
+    "export": "Exporter",
+    "import": "Importer",
+    "notEditable": "Ce déploiement définit son image de marque (STUDIO_BRANDING_EDITABLE=false) ; elle est affichée ici en lecture seule.",
+    "preview": "Aperçu",
+    "previewButton": "Action principale",
+    "previewChip": "Secondaire",
+    "identity": "Nom et liens",
+    "fields": {
+      "productName": "Nom du produit",
+      "organisation": "Organisation",
+      "supportUrl": "Assistance (page web ou mailto:)",
+      "helpUrl": "Aide (page web)",
+      "theme": "Thème par défaut",
+      "background": "Arrière-plan par défaut",
+      "shape": "Forme par défaut",
+      "uiLanguage": "Langue par défaut",
+      "valueLanguage": "Langue par défaut des valeurs",
+      "languages": "Langues proposées",
+      "signInMessage": "Message de la page de connexion"
+    },
+    "files": "Logos et fichiers",
+    "filesSubtitle": "Logos SVG, PNG, WebP ou JPEG, favicon SVG, PNG ou ICO et police woff2, 2 Mo maximum chacun",
+    "assets": {
+      "logo-light": "Logo, thème clair",
+      "logo-dark": "Logo, thème sombre",
+      "logo-compact": "Logo compact (carré)",
+      "favicon": "Favicon",
+      "font": "Police (woff2)"
+    },
+    "upload": "Téléverser",
+    "remove": "Supprimer",
+    "colours": "Couleurs",
+    "coloursSubtitle": "Studio assombrit ou éclaircit les couleurs peu lisibles",
+    "color": {
+      "accent": {
+        "light": "Accent, thème clair",
+        "dark": "Accent, thème sombre"
+      },
+      "secondary": {
+        "light": "Secondaire, thème clair",
+        "dark": "Secondaire, thème sombre"
+      }
+    },
+    "lockAccent": "Les utilisateurs gardent cette couleur d'accent",
+    "defaults": "Valeurs par défaut et verrous",
+    "defaultsSubtitle": "Ce avec quoi les utilisateurs commencent ; un cadenas fermé les empêche de le modifier",
+    "lock": "Verrouiller : {setting}",
+    "languagesHint": "Toutes les langues si vide",
+    "studioDefault": "Défaut de Studio",
+    "texts": "Textes et pages légales",
+    "textsSubtitle": "Par langue ; les utilisateurs voient la leur, sinon la langue par défaut",
+    "legal": {
+      "none": "Aucune",
+      "url": "Lien",
+      "markdown": "Texte",
+      "urlLabel": "Adresse de la page",
+      "markdownLabel": "Texte (Markdown)",
+      "markdownHint": "Titres, listes et liens ; pas de HTML ni d'images",
+      "notice": "Studio montre ces pages à tous, même avant la connexion. Leur contenu relève de la responsabilité de votre organisation."
+    },
+    "fixed": "Défini par le déploiement ({source})",
+    "sources": {
+      "env": "variable d'environnement",
+      "file": "fichier d'image de marque",
+      "admin": "défini ici",
+      "default": "défaut de Studio"
+    },
+    "invalidUrl": "Saisissez une adresse http(s)",
+    "invalidColor": "Saisissez une couleur au format #RRGGBB",
+    "assetDefault": "Celui de BaSyx Studio",
+    "updated": "Modifié le {date} par {name}",
+    "save": "Enregistrer",
+    "saved": "Image de marque enregistrée",
+    "uploaded": "Fichier téléversé",
+    "removed": "Fichier supprimé",
+    "imported": "Image de marque importée"
   }
 }

@@ -143,6 +143,7 @@
   const { t, locale } = useI18n()
   const api = useStudioApi()
   const theme = useTheme()
+  const preferences = usePreferences()
   const ui = useUiStore()
   const label = useLocalizedLabel()
   const frame = useTemplateRef<HTMLIFrameElement>('frame')
@@ -183,7 +184,7 @@
     fullscreenControl: props.fullscreenControl ?? false,
     viewState: props.viewState ?? '',
     locale: locale.value,
-    theme: { dark: theme.current.value.dark, colors: themeColors.value },
+    theme: { dark: theme.current.value.dark, colors: themeColors.value, shape: preferences.preferences.value.shape },
     settings: targetContext.data.value?.settings ?? {},
     connections: targetContext.data.value?.connections ?? {},
   }))

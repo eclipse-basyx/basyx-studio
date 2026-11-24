@@ -1,9 +1,12 @@
+/** Pages anyone may open: the start page with the sign-in prompt, About and the legal pages (ADR 0055). */
+const publicPage = /^\/(?:about|legal\/[a-z]+)?\/?$/
+
 export default defineNuxtRouteMiddleware(async to => {
   const session = useSessionStore()
   await session.ensureLoaded()
 
-  // The start page shows the sign-in prompt; everything else needs a session.
-  if (session.needsLogin && to.path !== '/') {
+  // Everything else needs a session.
+  if (session.needsLogin && !publicPage.test(to.path)) {
     return navigateTo({ path: '/', query: { returnTo: to.fullPath } })
   }
   if (to.path.startsWith('/admin') && !session.isAdmin) {

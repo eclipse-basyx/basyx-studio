@@ -12,6 +12,7 @@ import { VTextField } from 'vuetify/components/VTextField'
 import { Tooltip } from 'vuetify/directives'
 import { aliases, mdi } from 'vuetify/iconsets/mdi'
 import { appDefaults } from './defaults.ts'
+import { roundedShapeDefaults, withShape } from './vuetify-defaults.ts'
 import '@mdi/font/css/materialdesignicons.css'
 import 'vuetify/styles'
 
@@ -50,6 +51,8 @@ export async function mountApp (app: Component, components: Record<string, Compo
     const name = theme.dark ? 'dark' : 'light'
     Object.assign(vuetify.theme.themes.value[name]!.colors, theme.colors)
     vuetify.theme.change(name)
+    // Studio's shape (app API 0.1.16): the rounded radii over the app's defaults.
+    vuetify.defaults.value = theme.shape === 'rounded' ? withShape(appDefaults, roundedShapeDefaults) : appDefaults
   }
   apply(client.context.theme)
   client.onContext(context => apply(context.theme))

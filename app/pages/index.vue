@@ -4,16 +4,19 @@
       v-if="session.needsLogin"
       :image="branding.logo.value"
       size="96"
-      :text="t('home.signInText')"
-      :title="t('home.signInTitle')"
+      :text="branding.signInMessage.value ?? t('home.signInText')"
+      :title="t('home.signInTitle', { name: branding.name.value })"
     >
       <template #actions>
         <div class="d-flex flex-column align-center ga-4">
           <v-btn-primary :loading="signingIn" prepend-icon="mdi-login" :text="t('app.signIn')" @click="signIn" />
 
+          <!-- The legal pages and About, readable without signing in (ADR 0055). -->
           <div class="d-flex flex-wrap justify-center">
-            <LegalLinks />
+            <LegalLinks about />
           </div>
+
+          <PoweredByBasyx />
         </div>
       </template>
     </v-empty-state>

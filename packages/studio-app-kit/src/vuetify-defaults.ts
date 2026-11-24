@@ -87,3 +87,46 @@ export const fullscreenDefaults = {
 
 /** Props that style a group; set them in the defaults above, never in a template. */
 export const buttonGroupStyleProps = ['variant', 'color', 'base-color', 'density', 'rounded', 'tile', 'border', 'divided', 'elevation', 'size'] as const
+
+const roundedField = { rounded: 'xl' } as const
+
+/**
+ * The `rounded` shape of Studio's appearance settings (ADR 0055): large
+ * radii, pill-shaped buttons and chips. Laid over the defaults above by
+ * Studio (shared/appearance.ts) and by apps when Studio's theme says
+ * `shape: 'rounded'` (mountApp); only radii change.
+ */
+export const roundedShapeDefaults = {
+  VBtn: { rounded: 'pill' },
+  VBtnPrimary: { rounded: 'pill' },
+  VBtnSecondary: { rounded: 'pill' },
+  VBtnToggle: { rounded: 'pill' },
+  VCard: { rounded: 'xl' },
+  VAvatar: { rounded: 'xl' },
+  VListItem: { rounded: 'xl' },
+  VChip: { label: false },
+  VAlert: { rounded: 'xl' },
+  VTextField: roundedField,
+  VSelect: roundedField,
+  VAutocomplete: roundedField,
+  VCombobox: roundedField,
+  VFileInput: roundedField,
+  VTextarea: roundedField,
+  VDialog: { VCard: { rounded: 'xl' } },
+  // Menu items stay a step smaller than their menu, as in the normal shape.
+  VMenu: { VCard: { rounded: 'xl' }, VList: { rounded: 'xl' }, VListItem: { rounded: 'lg' } },
+}
+
+type Defaults = Record<string, unknown>
+
+/** Lays a shape's defaults over others, component by component and into nested ones. */
+export function withShape (base: Defaults, shape: Defaults): Defaults {
+  const result: Defaults = { ...base }
+  for (const [component, values] of Object.entries(shape)) {
+    const current = result[component]
+    result[component] = current && typeof current === 'object' && values && typeof values === 'object'
+      ? withShape(current as Defaults, values as Defaults)
+      : values
+  }
+  return result
+}

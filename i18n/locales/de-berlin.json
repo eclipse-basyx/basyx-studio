@@ -53,7 +53,7 @@
       "ready": "Läuft",
       "required": "Wa brauchen die Erlaubnis"
     },
-    "signInTitle": "Bei BaSyx Studio rinjehn",
+    "signInTitle": "Bei {name} rinjehn",
     "signInText": "Studio holt dir deine AAS-Sachen. Meld dich mit dem Konto von deine Firma an, denn jeht's weiter.",
     "noTargets": "Hier is noch janüscht einjerichtet.",
     "noTargetsAdmin": "Mach 'ne Infrastruktur dazu, denn jeht's los.",
