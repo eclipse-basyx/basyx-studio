@@ -3,11 +3,11 @@
     <!-- Framed (useWindowPanel), the bar is the frame's top: compact, in the
          frame's colour, without a border. In the desktop app's window it is
          also the title bar, with the window controls inside it and the
-         window dragged by it (title-bar.css). Three parts: start, the
-         centred search, end. -->
+         window dragged by it (title-bar.css). Search sits between the start
+         and end controls. -->
     <v-app-bar
       :border="framed ? 0 : undefined"
-      :class="{ 'title-bar': inDesktopWindow, 'title-bar-centered': inDesktopWindow && (!activeTargetId || xlAndUp) }"
+      :class="{ 'title-bar': inDesktopWindow, 'title-bar-centered': inDesktopWindow && !activeTargetId }"
       :color="framed ? 'frame' : undefined"
       :density="framed ? 'compact' : undefined"
     >
@@ -81,7 +81,7 @@
       >
         <span class="w-0 flex-grow-1 text-truncate">{{ searchLabel }}</span>
 
-        <template v-if="!compactToolbar" #append>
+        <template v-if="lgAndUp" #append>
           <v-hotkey keys="cmd+k" />
         </template>
       </v-btn>
@@ -106,7 +106,7 @@
                   append-icon="mdi-chevron-down"
                   :aria-label="t('app.targetNamed', { name: target?.name ?? '' })"
                   border
-                  :max-width="compactToolbar ? 160 : 280"
+                  :max-width="targetMenuMaxWidth"
                   :prepend-icon="target?.workspace ? 'mdi-package-variant-closed' : 'mdi-server-network'"
                 >
                   <span class="text-truncate">{{ target?.name }}</span>
@@ -161,15 +161,8 @@
             class="me-2"
             mandatory
           >
-            <template v-if="!compactToolbar">
-              <v-btn prepend-icon="mdi-eye-outline" :text="t('app.view')" value="view" />
-              <v-btn prepend-icon="mdi-pencil-outline" :text="t('app.edit')" value="edit" />
-            </template>
-
-            <template v-else>
-              <v-btn-toggle-icon v-tooltip="t('app.view')" :aria-label="t('app.view')" icon="mdi-eye-outline" value="view" />
-              <v-btn-toggle-icon v-tooltip="t('app.edit')" :aria-label="t('app.edit')" icon="mdi-pencil-outline" value="edit" />
-            </template>
+            <v-btn-toggle-icon v-tooltip="t('app.view')" :aria-label="t('app.view')" icon="mdi-eye-outline" value="view" />
+            <v-btn-toggle-icon v-tooltip="t('app.edit')" :aria-label="t('app.edit')" icon="mdi-pencil-outline" value="edit" />
           </v-btn-toggle>
 
           <v-btn
@@ -599,7 +592,7 @@
   const ui = useUiStore()
   const drafts = useDraftStore()
   const label = useLocalizedLabel()
-  const { mdAndUp, smAndUp, lgAndUp, xlAndUp } = useDisplay()
+  const { mdAndUp, smAndUp, lgAndUp } = useDisplay()
   /**
    * Studio runs in the desktop app's own window (its native bridge is
    * there), not in a browser tab opened on the desktop server: the app bar
@@ -653,8 +646,11 @@
   // The route's own query is fresher than the list: an applied edit changes a
   // package's unsaved state there first (the package bar, H5).
   const target = computed(() => routeTarget.data.value?.id === listedTarget.value?.id ? (routeTarget.data.value ?? listedTarget.value) : listedTarget.value)
-  // Package actions need more room before the toolbar can show its full labels.
-  const compactToolbar = computed(() => target.value?.workspace ? !xlAndUp.value : !lgAndUp.value)
+  // Share extra room with search, allowing more space for package actions and native window controls.
+  const targetMenuMaxWidth = computed(() => {
+    const reserve = target.value?.workspace ? 1280 : 840
+    return `clamp(160px, calc(160px + (100vw - var(--title-bar-start, 0px) - var(--title-bar-end, 0px) - ${reserve}px) / 2), 280px)`
+  })
   // The list follows, so the target menu and the package groups mark it too (M1).
   const queryCache = useQueryCache()
   watch(() => JSON.stringify(routeTarget.data.value?.workspace ?? null), (state, previous) => {
