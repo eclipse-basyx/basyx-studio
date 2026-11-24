@@ -154,6 +154,32 @@ test('shows a full-page module filling the page\'s panel beside the rail, withou
   near(frame.y + frame.height, panel.y + panel.height)
 })
 
+test('marks nested app pages and Home as current in the rail', async ({ page }) => {
+  await page.goto('/')
+  const rail = page.locator('nav.v-navigation-drawer--rail')
+  const home = rail.getByRole('link', { name: 'Studio home', exact: true })
+  const app = rail.getByRole('link', { name: 'Origin probe' })
+  const current = rail.locator('.v-list-item--active[aria-current="page"]')
+  const nested = `${await app.getAttribute('href')}/details`
+
+  await page.goto(nested)
+  await expect(app.and(current)).toBeVisible()
+  await expect(home.and(current)).toHaveCount(0)
+
+  await rail.getByLabel('Settings', { exact: true }).click()
+  await expect(page).toHaveURL(`${nested}?panel=settings`)
+  await expect(app).not.toHaveClass(/\bv-list-item--active\b/)
+  await expect(rail.locator('[aria-current="page"]')).toHaveCount(0)
+  await page.goBack()
+  await expect(page).toHaveURL(nested)
+  await expect(app.and(current)).toBeVisible()
+
+  await home.click()
+  await expect(page).toHaveURL('/')
+  await expect(home.and(current)).toBeVisible()
+  await expect(app.and(current)).toHaveCount(0)
+})
+
 /** The Studio API with the anonymous session's CSRF token. */
 async function studioApi (page: Page) {
   await page.goto('/')
