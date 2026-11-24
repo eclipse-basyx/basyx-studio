@@ -248,9 +248,11 @@
 
     <!-- Framed, the frame's bottom edge, under the panel and the side list,
          and its end edge: registered right after the bar, so the other
-         drawers end above and before them. -->
+         drawers end above and before them. Decoration, hidden from screen
+         readers, which would otherwise announce an empty navigation. -->
     <v-navigation-drawer
       v-if="framed"
+      aria-hidden="true"
       border="0"
       color="frame"
       location="end"

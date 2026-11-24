@@ -6,10 +6,12 @@ import { key, registerOpenEnvironment, setMode, signIn } from './support'
 // client hints, as on a first visit or in browsers that send none.
 
 const motorShell = 'urn:fraunhofer:iese:dte:aas:drivemotor-dm3000:001'
+/** The details pane, not the frame's end edge, a hidden drawer at the same side. */
+const detailsPane = 'nav.v-navigation-drawer--right.v-navigation-drawer--active:not([aria-hidden="true"])'
 
 /** The layout offsets the server rendered on `v-main`, in pixels. */
 function mainOffsets (html: string) {
-  const style = /class="v-main"[^>]*style="([^"]*)"/.exec(html)?.[1] ?? ''
+  const style = /class="v-main(?:\s[^"]*)?"[^>]*style="([^"]*)"/.exec(html)?.[1] ?? ''
   const offset = (name: string) => Number(new RegExp(String.raw`--v-layout-${name}:(\d+)px`).exec(style)?.[1] ?? Number.NaN)
   return { top: offset('top'), left: offset('left') }
 }
@@ -18,12 +20,13 @@ test('reserves the app bar and the drawers in server-rendered pages', async ({ p
   await signIn(page, 'studio-admin')
   const targetId = await registerOpenEnvironment(page, 'E2E layout environment')
 
+  // The frame's compact app bar (48 px) on top, the rail (56 px) on the left.
   const targets = await (await page.request.get('/')).text()
-  expect(mainOffsets(targets)).toEqual({ top: 56, left: 56 })
+  expect(mainOffsets(targets)).toEqual({ top: 48, left: 56 })
 
-  // The rail (56 px) and the shell list (340 px) on the left.
+  // And the shell list (340 px) beside the rail.
   const shell = await (await page.request.get(`/targets/${targetId}/shells/${key(motorShell)}`)).text()
-  expect(mainOffsets(shell)).toEqual({ top: 56, left: 396 })
+  expect(mainOffsets(shell)).toEqual({ top: 48, left: 396 })
 
   // And the page does not move once it is interactive.
   await page.addInitScript(() => {
@@ -44,7 +47,7 @@ test('reserves the app bar and the drawers in server-rendered pages', async ({ p
 test('opens the details pane only with something to show, and only on the tree\'s tab (D1, D2)', async ({ page }) => {
   await signIn(page, 'studio-admin')
   const targetId = await registerOpenEnvironment(page, 'E2E layout environment')
-  const details = page.locator('nav.v-navigation-drawer--right.v-navigation-drawer--active')
+  const details = page.locator(detailsPane)
 
   // Growing past the breakpoint where the pane stops floating does not open it.
   await page.setViewportSize({ width: 1000, height: 800 })
@@ -75,7 +78,7 @@ test('lays out the shell header by the width the content area has (H2 to H4)', a
 
   // The details pane takes 440 px: medium, the actions below the title.
   await page.getByRole('tree').locator('.v-list-item-title').getByText('Nameplate', { exact: true }).click()
-  await expect(page.locator('nav.v-navigation-drawer--right.v-navigation-drawer--active')).toHaveCount(1)
+  await expect(page.locator(detailsPane)).toHaveCount(1)
   await expect(header.locator('.v-card-item').getByRole('button', { name: 'Export' })).toHaveCount(0)
   await expect(header.getByRole('button', { name: 'Export' })).toBeVisible()
   const title = await header.getByRole('heading').boundingBox()
