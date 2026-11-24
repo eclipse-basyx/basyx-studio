@@ -1,5 +1,7 @@
+import type { BrandingAssetSlot, BrandingSettings } from '#shared/branding'
 import type { AgentId, AppProjectOrigin, AppSettingValues, ClientCertificateSummary, Connection, ConversationEvent, EndpointInput, InfrastructureAppSettings, InfrastructureTemplate, ListSource, Preferences, SecuritySummary, ServiceProfiles, StackComponentId, StackSpec, SyncSettings } from '#shared/contract'
 import type { AppManifest } from '@basyx/studio-sdk/protocol'
+import { sql } from 'drizzle-orm'
 import { boolean, customType, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 
 const timestamps = {
@@ -243,4 +245,27 @@ export const machineSigningKeys = pgTable('machine_signing_keys', {
   privateKeyCiphertext: text('private_key_ciphertext').notNull(),
   fingerprint: text('fingerprint').notNull(),
   ...timestamps,
+})
+
+/**
+ * The branding administrators set in Studio (ADR 0055): one row, `deployment`.
+ * Values the deployment sets (environment, branding file) take precedence.
+ */
+export const brandingSettings = pgTable('branding_settings', {
+  id: text('id').primaryKey(),
+  settings: jsonb('settings').$type<BrandingSettings>().notNull(),
+  updatedBy: text('updated_by').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+/** Logos, favicon and font that administrators uploaded (ADR 0055), one per slot. */
+export const brandingAssets = pgTable('branding_assets', {
+  slot: text('slot').$type<BrandingAssetSlot>().primaryKey(),
+  contentType: text('content_type').notNull(),
+  content: bytea('content').notNull(),
+  url: text('url'),
+  version: text('version').notNull().generatedAlwaysAs(sql`left(encode(sha256(content), 'hex'), 12)`),
+  size: integer('size').notNull().generatedAlwaysAs(sql`octet_length(content)`),
+  updatedBy: text('updated_by').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

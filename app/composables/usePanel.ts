@@ -1,8 +1,8 @@
 import type { LocationQuery } from 'vue-router'
 
-export type PanelName = 'settings' | 'infrastructures' | 'apps'
+export type PanelName = 'settings' | 'infrastructures' | 'apps' | 'branding'
 
-const adminPanels = new Set<PanelName>(['infrastructures', 'apps'])
+const adminPanels = new Set<PanelName>(['infrastructures', 'apps', 'branding'])
 
 /**
  * Settings and the administration views open in place of the current page, in the
@@ -10,20 +10,25 @@ const adminPanels = new Set<PanelName>(['infrastructures', 'apps'])
  * target's items, and the browser's Back button closes the panel again.
  */
 export function usePanel () {
-  const route = useRoute()
   const router = useRouter()
+  // A panel replaces <NuxtPage>. Read the committed router location here so
+  // cross-page navigation can close the panel before Nuxt renders the page.
+  const route = router.currentRoute
   const session = useSessionStore()
 
   const current = computed<PanelName | null>(() => {
-    const name = route.query.panel
-    if (session.needsLogin || (name !== 'settings' && name !== 'infrastructures' && name !== 'apps')) {
+    const name = route.value.query.panel
+    if (session.needsLogin || (name !== 'settings' && name !== 'infrastructures' && name !== 'apps' && name !== 'branding')) {
       return null
     }
-    return adminPanels.has(name) && !session.isAdmin ? null : name
+    if ((adminPanels.has(name) && !session.isAdmin) || (name === 'branding' && session.context?.brandingEditable === false)) {
+      return null
+    }
+    return name
   })
 
   function withPanel (name: PanelName | null): LocationQuery {
-    const { panel: _, ...query } = route.query
+    const { panel: _, ...query } = route.value.query
     return name ? { ...query, panel: name } : query
   }
 
@@ -33,6 +38,11 @@ export function usePanel () {
   }
 
   function close () {
+    // Branding is opened from Settings and returns there even from a deep link.
+    if (current.value === 'branding') {
+      void router.replace({ query: withPanel('settings') })
+      return
+    }
     const page = router.resolve({ query: withPanel(null) }).fullPath
     // Opened from this page: go back, so Back afterwards does not reopen it.
     void (window.history.state?.back === page ? router.back() : router.replace(page))

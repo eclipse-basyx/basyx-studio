@@ -2,10 +2,12 @@ import { createError, defineEventHandler, getQuery, getRequestHost, getRouterPar
 import { appContentSecurityPolicy } from '~~/server/lib/apps/csp'
 import { verifyEmbedToken } from '~~/server/lib/apps/embeds'
 import { appBaseUrl, appsHostOf, coversStudioOrigin, hasInstallationOrigins, installationOriginsSource } from '~~/server/lib/apps/origins'
-import { readAppFile } from '~~/server/lib/apps/store'
+import { isInstallationId, readAppFile } from '~~/server/lib/apps/store'
+import { readBrandingAsset } from '~~/server/lib/branding'
 import { allowedOrigins } from '~~/server/lib/urls'
 import { hasBrokerSecret } from '~~/server/utils/desktop'
 import { useStudio } from '~~/server/utils/studio'
+import { appBrandFontPath } from '#shared/branding'
 import { embedTokenParameter } from '#shared/contract'
 
 /**
@@ -24,6 +26,23 @@ export default defineEventHandler(async event => {
   const path = getRouterParam(event, 'path', { decode: true }) ?? ''
   const host = baseUrl === null || desktop ? null : appsHostOf(baseUrl, getRequestHost(event))
   const allowed = baseUrl !== null && (desktop ? hasBrokerSecret(event) : host !== null && (host.installationId === null || host.installationId === installationId))
+  // Fonts use the existing app file origin and policy on web and desktop.
+  // They are public and carry no cookies, like app package files.
+  const version = getQuery(event).v
+  if (allowed && isInstallationId(installationId) && path === appBrandFontPath && typeof version === 'string' && /^[a-f0-9]{12}$/.test(version)) {
+    const font = await readBrandingAsset(studio, 'font', version)
+    if (!font) {
+      throw createError({ status: 404, statusText: 'Not Found' })
+    }
+    const headers = event.res.headers
+    headers.set('Content-Type', font.contentType)
+    headers.set('X-Content-Type-Options', 'nosniff')
+    headers.set('Access-Control-Allow-Origin', '*')
+    headers.set('Cross-Origin-Resource-Policy', 'cross-origin')
+    headers.set('Cache-Control', 'public, max-age=31536000, immutable')
+    const { bytes } = font
+    return Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+  }
   const file = allowed ? await readAppFile(studio, installationId, path) : null
   if (!file) {
     throw createError({ status: 404, statusText: 'Not Found' })

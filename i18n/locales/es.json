@@ -65,7 +65,7 @@
       "ready": "Listos",
       "required": "Requiere autorización"
     },
-    "signInTitle": "Iniciar sesión en BaSyx Studio",
+    "signInTitle": "Iniciar sesión en {name}",
     "signInText": "Studio accede a tus infraestructuras AAS en tu nombre. Inicia sesión con la cuenta de tu organización para continuar.",
     "noTargets": "Todavía no hay infraestructuras configuradas.",
     "noTargetsAdmin": "Añade una infraestructura para empezar.",
@@ -1075,6 +1075,7 @@
       "pink": "Rosa",
       "graphite": "Grafito"
     },
+    "organisationAccent": "Color de su organización",
     "customAccent": "Color personalizado",
     "background": "Fondo",
     "backgrounds": {
@@ -1093,7 +1094,8 @@
     "version": "Versión {version}",
     "commit": "Commit {commit}",
     "built": "Compilado el {date}",
-    "readOnly": "Este despliegue es de solo lectura: no se puede cambiar nada en sus infraestructuras."
+    "readOnly": "Este despliegue es de solo lectura: no se puede cambiar nada en sus infraestructuras.",
+    "locked": "Definido por su organización"
   },
   "invite": {
     "title": "Aceptar invitación",
@@ -1345,5 +1347,130 @@
       "conceptDescriptions": "Descripciones de concepto",
       "files": "Archivos"
     }
+  },
+  "legal": {
+    "navigation": "Información legal",
+    "pages": {
+      "imprint": "Aviso legal",
+      "privacy": "Política de privacidad",
+      "accessibility": "Declaración de accesibilidad",
+      "terms": "Condiciones de uso"
+    }
+  },
+  "about": {
+    "link": "Acerca de",
+    "title": "Acerca de {name}",
+    "subtitle": "Información sobre el despliegue, el proyecto de código abierto y su equipo",
+    "runBy": "Ofrecido por {organisation}",
+    "support": "Soporte",
+    "help": "Ayuda",
+    "basyxTitle": "Eclipse BaSyx",
+    "poweredBy": "Con la tecnología de Eclipse BaSyx",
+    "poweredByLabel": "Con la tecnología de Eclipse BaSyx: acerca del proyecto",
+    "basyxText": "Conecta máquinas, software y datos mediante gemelos digitales basados en la Asset Administration Shell (AAS). Eclipse BaSyx ofrece servicios y SDK de código abierto para crearlos.",
+    "studioText": "En Studio puedes explorar y editar shells, trabajar con paquetes AASX y añadir vistas y flujos de trabajo mediante aplicaciones.",
+    "projectResources": "Recursos del proyecto",
+    "community": "Comunidad",
+    "licences": "Licencias",
+    "links": {
+      "website": "Sitio web del proyecto",
+      "basyxOrg": "basyx.org",
+      "go": "BaSyx Go Components",
+      "wiki": "Leer la documentación",
+      "github": "BaSyx en GitHub",
+      "docker": "Imágenes de contenedor en Docker Hub",
+      "mail": "Lista de correo de desarrolladores",
+      "openHour": "BaSyx Open Hour"
+    },
+    "license": "Licencia",
+    "licenseText": "BaSyx Studio es de código abierto bajo la licencia MIT",
+    "thirdPartyNotices": "Avisos de licencias de terceros",
+    "team": "Equipo de desarrollo",
+    "teamSubtitle": "Las personas que desarrollan BaSyx Studio y los componentes de BaSyx",
+    "github": "{name} en GitHub",
+    "linkedin": "{name} en LinkedIn",
+    "organisations": "Organizaciones participantes"
+  },
+  "branding": {
+    "title": "Imagen de marca",
+    "subtitle": "Nombre, logotipos, colores, páginas legales y ajustes bloqueados de este Studio",
+    "close": "Cerrar imagen de marca",
+    "export": "Exportar",
+    "import": "Importar",
+    "notEditable": "Este despliegue define su imagen de marca (STUDIO_BRANDING_EDITABLE=false); aquí solo se muestra.",
+    "preview": "Vista previa",
+    "previewButton": "Acción principal",
+    "previewChip": "Secundario",
+    "identity": "Nombre y enlaces",
+    "fields": {
+      "productName": "Nombre del producto",
+      "organisation": "Organización",
+      "supportUrl": "Soporte (página web o mailto:)",
+      "helpUrl": "Ayuda (página web)",
+      "theme": "Tema predeterminado",
+      "background": "Fondo predeterminado",
+      "shape": "Forma predeterminada",
+      "uiLanguage": "Idioma predeterminado",
+      "valueLanguage": "Idioma predeterminado de los valores",
+      "languages": "Idiomas ofrecidos",
+      "signInMessage": "Mensaje en la página de inicio de sesión"
+    },
+    "files": "Logotipos y archivos",
+    "filesSubtitle": "Logotipos SVG, PNG, WebP o JPEG, un favicon SVG, PNG o ICO y una fuente woff2, hasta 2 MB cada uno",
+    "assets": {
+      "logo-light": "Logotipo, tema claro",
+      "logo-dark": "Logotipo, tema oscuro",
+      "logo-compact": "Logotipo compacto (cuadrado)",
+      "favicon": "Favicon",
+      "font": "Fuente (woff2)"
+    },
+    "upload": "Subir",
+    "remove": "Quitar",
+    "colours": "Colores",
+    "coloursSubtitle": "Studio oscurece o aclara los colores difíciles de leer",
+    "color": {
+      "accent": {
+        "light": "Acento, tema claro",
+        "dark": "Acento, tema oscuro"
+      },
+      "secondary": {
+        "light": "Secundario, tema claro",
+        "dark": "Secundario, tema oscuro"
+      }
+    },
+    "contrastWarning": "{field} ({color}) tiene un contraste inferior a 4,5:1. Studio muestra {shade} en su lugar.",
+    "lockAccent": "Los usuarios mantienen este color de acento",
+    "defaults": "Valores predeterminados y bloqueos",
+    "defaultsSubtitle": "Con qué empiezan los usuarios; un candado cerrado les impide cambiarlo",
+    "lock": "Bloquear: {setting}",
+    "languagesHint": "Todos los idiomas si está vacío",
+    "studioDefault": "Predeterminado de Studio",
+    "texts": "Textos y páginas legales",
+    "textsSubtitle": "Por idioma; los usuarios ven el suyo o, si no, el predeterminado",
+    "legal": {
+      "none": "Ninguna",
+      "url": "Enlace",
+      "markdown": "Texto",
+      "urlLabel": "Dirección de la página",
+      "markdownLabel": "Texto (Markdown)",
+      "markdownHint": "Títulos, listas y enlaces; sin HTML ni imágenes",
+      "notice": "Studio muestra estas páginas a todos, también antes de iniciar sesión. Su contenido es responsabilidad de su organización."
+    },
+    "fixed": "Definido por el despliegue ({source})",
+    "sources": {
+      "env": "variable de entorno",
+      "file": "archivo de imagen de marca",
+      "admin": "definido aquí",
+      "default": "predeterminado de Studio"
+    },
+    "invalidUrl": "Introduzca una dirección http(s)",
+    "invalidColor": "Introduzca un color como #RRGGBB",
+    "assetDefault": "El de BaSyx Studio",
+    "updated": "Modificado el {date} por {name}",
+    "save": "Guardar",
+    "saved": "Imagen de marca guardada",
+    "uploaded": "Archivo subido",
+    "removed": "Archivo quitado",
+    "imported": "Imagen de marca importada"
   }
 }

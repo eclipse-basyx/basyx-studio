@@ -178,6 +178,20 @@ Priority terms follow this meaning:
 | UX-005 | Should | Studio shall distinguish saved server/package state from unsaved editor drafts. |
 | UX-006 | Must | Changing AAS data shall need an explicit edit mode; view mode shall offer no edit controls, in Studio and in apps. |
 
+## Corporate design
+
+| ID | Priority | Requirement |
+| --- | --- | --- |
+| BRAND-001 | Must | A deployment shall set Studio's product name, logos, favicon, accent and secondary colours, default theme, background, shape and languages through environment variables, a branding file, or administrators in Studio, each value from the first of these that sets it. |
+| BRAND-002 | Must | A deployment shall be able to lock appearance settings for every user; the Studio Service shall enforce locks, and the UI shall show locked settings as such. |
+| BRAND-003 | Must | A deployment shall offer an imprint, a privacy policy, an accessibility statement and terms of use, each per language as a link or as text Studio shows; they shall be reachable without signing in and from every screen within two clicks. |
+| BRAND-004 | Must | Text that a deployment gives for legal pages shall be shown without HTML, scripts or resources from other hosts. |
+| BRAND-005 | Must | Every deployment shall show an About page with its own details and a fixed part about Eclipse BaSyx, and *Powered by Eclipse BaSyx*; no setting shall remove either. |
+| BRAND-006 | Should | Administrators shall export the branding in effect as a branding file with its files, and import one. |
+| BRAND-007 | Should | The desktop app shall read a branding file that IT manages for the whole computer, and use the brand for its windows, About panel and welcome screen. |
+| BRAND-008 | Should | Studio shall keep brand colours readable (WCAG AA) and say when it adjusts them. |
+| BRAND-009 | Could | A deployment shall set its own font, served by Studio. |
+
 ## Explicit non-goals for the first product increment
 
 - General-purpose arbitrary-code hosting inside the Studio Service process

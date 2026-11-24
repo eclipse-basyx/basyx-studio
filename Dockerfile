@@ -39,7 +39,9 @@ COPY . .
 RUN --mount=type=cache,id=basyx-studio-pnpm-store,target=/.pnpm-store \
     pnpm install --frozen-lockfile
 
-RUN STUDIO_VERSION="${STUDIO_VERSION}" \
+# Match the hosted Studio CI build's V8 heap limit for Nuxt/Nitro bundling.
+RUN NODE_OPTIONS=--max-old-space-size=8192 \
+    STUDIO_VERSION="${STUDIO_VERSION}" \
     STUDIO_COMMIT_SHA="${STUDIO_COMMIT_SHA}" \
     STUDIO_BUILD_DATE="${STUDIO_BUILD_DATE}" \
     pnpm build

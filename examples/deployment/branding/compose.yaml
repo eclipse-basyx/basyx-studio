@@ -1,0 +1,31 @@
+# BaSyx Studio with a company's branding (docs/deployment/branding.md).
+#
+#   cp ../quickstart/.env.example .env   # and set STUDIO_DATA_KEY
+#   docker compose up -d
+#   open http://localhost:3000
+#
+# Without login and published on loopback only, as the quick start.
+
+name: basyx-studio-branding
+
+services:
+  studio:
+    image: ${STUDIO_IMAGE:-eclipsebasyx/basyx-studio:SNAPSHOT}
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      STUDIO_PUBLIC_URL: http://localhost:3000
+      STUDIO_DATA_KEY: ${STUDIO_DATA_KEY:?set STUDIO_DATA_KEY in .env}
+      STUDIO_AUTH_MODE: none
+      STUDIO_ANONYMOUS_ROLES: studio-admin
+      # The folder with branding.yml, its logos and legal texts.
+      STUDIO_BRANDING_FILE: /etc/basyx-studio/branding/branding.yml
+      # Administrators may add to it in Studio; `false` shows it read-only.
+      STUDIO_BRANDING_EDITABLE: "true"
+    volumes:
+      - studio-data:/data
+      - ./:/etc/basyx-studio/branding:ro
+    restart: unless-stopped
+
+volumes:
+  studio-data:

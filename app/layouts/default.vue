@@ -61,7 +61,7 @@
             icon
             to="/"
           >
-            <v-img alt="" :src="branding.logo.value" width="24" />
+            <v-img alt="" height="24" :src="branding.mark.value" width="24" />
           </v-btn>
 
           <span v-if="lgAndUp" class="text-title-medium font-weight-bold me-2">{{ branding.name.value }}</span>
@@ -234,6 +234,40 @@
                 @click="togglePanel('settings')"
               />
 
+              <!-- The deployment's help and support, About and the legal pages (ADR 0055). -->
+              <v-divider class="my-1" />
+
+              <v-list-item
+                v-if="branding.helpUrl.value"
+                :href="branding.helpUrl.value"
+                prepend-icon="mdi-help-circle-outline"
+                rel="noopener noreferrer"
+                target="_blank"
+                :title="t('about.help')"
+              />
+
+              <v-list-item
+                v-if="branding.supportUrl.value"
+                :href="branding.supportUrl.value"
+                prepend-icon="mdi-lifebuoy"
+                rel="noopener noreferrer"
+                target="_blank"
+                :title="t('about.support')"
+              />
+
+              <v-list-item
+                v-for="link in branding.legalLinks.value"
+                :key="link.page"
+                :href="link.href"
+                :prepend-icon="link.icon"
+                :rel="link.href ? 'noopener noreferrer' : undefined"
+                :target="link.href ? '_blank' : undefined"
+                :title="link.title"
+                :to="link.to"
+              />
+
+              <v-list-item prepend-icon="mdi-information-outline" :title="t('about.link')" to="/about" />
+
               <v-list-item
                 v-if="session.context?.loginRequired"
                 prepend-icon="mdi-logout"
@@ -241,6 +275,12 @@
                 @click="session.logout()"
               />
             </v-list>
+
+            <v-divider />
+
+            <div class="d-flex justify-center pa-1">
+              <PoweredByBasyx />
+            </div>
           </v-card>
         </v-menu>
       </div>
@@ -453,6 +493,7 @@
         <SettingsPanel v-if="panel.current.value === 'settings'" />
         <InfrastructuresPanel v-else-if="panel.current.value === 'infrastructures'" />
         <AppsPanel v-else-if="panel.current.value === 'apps'" />
+        <BrandingPanel v-else-if="panel.current.value === 'branding'" />
         <slot v-else />
       </WindowContent>
     </v-main>

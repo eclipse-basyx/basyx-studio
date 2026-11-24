@@ -1,11 +1,13 @@
 import type { DeploymentMode } from '#shared/contract'
 import type { TrustStore } from './apps/trust'
+import type { BrandingLayer } from './branding/file'
 import type { OutboundProxy } from './network/proxy'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, extname, isAbsolute, resolve } from 'node:path'
 import { z } from 'zod'
 import { appsHostOf, installationPlaceholder } from './apps/origins'
 import { parseTrustStore, TrustStoreError } from './apps/trust'
+import { BrandingFileError, readBrandingFile, systemBrandingFile } from './branding/file'
 import { parseOutboundProxy, ProxyConfigurationError } from './network/proxy'
 
 const csv = z
@@ -60,6 +62,8 @@ const envSchema = z.object({
   STUDIO_COPYRIGHT_NAME: z.string().trim().min(1).max(200).optional(),
   STUDIO_LEGAL_NOTICE_URL: httpsUrl.optional(),
   STUDIO_PRIVACY_POLICY_URL: httpsUrl.optional(),
+  STUDIO_BRANDING_FILE: z.string().min(1).optional(),
+  STUDIO_BRANDING_EDITABLE: flag,
   STUDIO_READ_ONLY: flag,
   STUDIO_ALLOW_UPLOADS: flag,
   STUDIO_APPS_ALLOW_INSTALL: flag,
@@ -117,6 +121,20 @@ export interface DeploymentSettings {
   appInstalls: boolean
 }
 
+/** The deployment's sources of branding (ADR 0055); administrators add a third in Studio. */
+export interface BrandingConfig {
+  /** Branding from STUDIO_* variables: name, logos, accent, copyright and legal links. */
+  env: BrandingLayer
+  /** The branding file, `null` without one. */
+  file: BrandingLayer | null
+  /** Where the branding file was read from. */
+  filePath: string | null
+  /** Whether the system-wide desktop branding file is in effect. */
+  managed: boolean
+  /** Whether administrators may change the branding in Studio (STUDIO_BRANDING_EDITABLE). */
+  editable: boolean
+}
+
 export interface StudioConfig {
   deploymentMode: DeploymentMode
   /** Origin under which users reach this Studio Service; used for redirects and Origin checks. */
@@ -156,6 +174,8 @@ export interface StudioConfig {
   /** Whether administrators may add, change and remove infrastructures in Studio. */
   infrastructuresEditable: boolean
   deployment: DeploymentSettings
+  /** The corporate design from the environment and the branding file (ADR 0055). */
+  branding: BrandingConfig
   /** Largest AASX, JSON or XML file users may upload to a target (D16). */
   uploadMaxBytes: number
   /** Local BaSyx instances on Docker or Podman (ADR 0033); desktop only. */
@@ -288,6 +308,65 @@ function deploymentSettings (values: z.infer<typeof envSchema>): DeploymentSetti
   }
 }
 
+/** The branding that STUDIO_* variables set, as a layer below the branding file's. */
+function envBranding (values: z.infer<typeof envSchema>, deployment: DeploymentSettings): BrandingLayer {
+  const settings: BrandingLayer['settings'] = {}
+  if (values.STUDIO_PRODUCT_NAME) {
+    settings.productName = values.STUDIO_PRODUCT_NAME
+  }
+  if (values.STUDIO_COPYRIGHT_NAME) {
+    settings.organisation = values.STUDIO_COPYRIGHT_NAME
+  }
+  if (deployment.accent) {
+    settings.accent = deployment.accent
+  }
+  const legal: NonNullable<BrandingLayer['settings']['legal']> = {}
+  if (values.STUDIO_LEGAL_NOTICE_URL) {
+    legal.imprint = { en: { url: values.STUDIO_LEGAL_NOTICE_URL } }
+  }
+  if (values.STUDIO_PRIVACY_POLICY_URL) {
+    legal.privacy = { en: { url: values.STUDIO_PRIVACY_POLICY_URL } }
+  }
+  if (Object.keys(legal).length > 0) {
+    settings.legal = legal
+  }
+  const assets: BrandingLayer['assets'] = {}
+  for (const mode of ['light', 'dark'] as const) {
+    const source = deployment.logo[mode]
+    if (source) {
+      assets[`logo-${mode}`] = 'url' in source ? { url: source.url } : { bytes: new Uint8Array(readFileSync(source.file)), contentType: source.contentType }
+    }
+  }
+  return { settings, assets }
+}
+
+/**
+ * On desktop, the system-wide file takes precedence over STUDIO_BRANDING_FILE.
+ */
+function brandingConfig (values: z.infer<typeof envSchema>, deployment: DeploymentSettings, mode: DeploymentMode): BrandingConfig {
+  const system = mode === 'desktop' ? systemBrandingFile(process.platform, process.env) : null
+  const managed = system !== null && existsSync(system)
+  const filePath = managed ? system : values.STUDIO_BRANDING_FILE ?? null
+  let file: BrandingLayer | null = null
+  if (filePath) {
+    try {
+      file = readBrandingFile(filePath)
+    } catch (error) {
+      if (error instanceof BrandingFileError) {
+        throw new ConfigurationError(`STUDIO_BRANDING_FILE: ${filePath}: ${error.message}`)
+      }
+      throw error
+    }
+  }
+  return {
+    env: envBranding(values, deployment),
+    file,
+    filePath,
+    managed,
+    editable: values.STUDIO_BRANDING_EDITABLE !== 'false',
+  }
+}
+
 /**
  * Builds the validated Studio configuration from environment variables. The
  * deployment mode and the base path come from Nuxt runtime config: the mode
@@ -322,6 +401,7 @@ export function loadStudioConfig (env: NodeJS.ProcessEnv, deploymentMode: Deploy
     throw new ConfigurationError('STUDIO_PUBLIC_URL is required for hosted deployments.')
   }
 
+  const deployment = deploymentSettings(values)
   const dataKey = decodeDataKey(readSecret(values.STUDIO_DATA_KEY, values.STUDIO_DATA_KEY_FILE, 'STUDIO_DATA_KEY'))
 
   let login: StudioOidcConfig | null = null
@@ -377,7 +457,8 @@ export function loadStudioConfig (env: NodeJS.ProcessEnv, deploymentMode: Deploy
     },
     managedInfrastructures: readInfrastructureSources(values.STUDIO_INFRASTRUCTURES_FILE, values.STUDIO_INFRASTRUCTURES),
     infrastructuresEditable: (values.STUDIO_INFRASTRUCTURES_EDITABLE ?? 'true') === 'true',
-    deployment: deploymentSettings(values),
+    deployment,
+    branding: brandingConfig(values, deployment, deploymentMode),
     uploadMaxBytes: values.STUDIO_UPLOAD_MAX_BYTES,
     containers: deploymentMode === 'desktop' ? { dataDir: resolve(values.STUDIO_DATA_DIR, 'containers') } : null,
     appBuilder: deploymentMode === 'desktop' ? appBuilderSettings(values.STUDIO_DATA_DIR, values.STUDIO_APP_PROJECTS_DIR) : null,

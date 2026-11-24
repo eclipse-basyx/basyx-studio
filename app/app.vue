@@ -15,7 +15,7 @@
 <script lang="ts" setup>
   import { provideFileViewer } from '@basyx/file-viewer/vue'
   import { useDisplay, useTheme } from 'vuetify'
-  import { accentShade, roundedDefaults, themeColors, withOnColors } from '#shared/appearance'
+  import { roundedDefaults, themeColors } from '#shared/appearance'
   import { locales } from '#shared/i18n/locales'
 
   // `<html lang>` from the locale's BCP 47 tag, so screen readers and the
@@ -30,14 +30,34 @@
 
   // Public files under the deployment's base path. The layer order must come
   // before every other stylesheet, so Vuetify's layers stack as declared. The
-  // BaSyx logo is the favicon; favicon.ico for browsers without SVG icons.
+  // favicon is the deployment's (ADR 0055), else the BaSyx logo, with
+  // favicon.ico for browsers without SVG icons.
   const publicBase = useRuntimeConfig().app.baseURL
-  useHead({
-    link: [
-      { rel: 'stylesheet', href: `${publicBase}layers.css`, tagPriority: 'critical' },
-      { rel: 'icon', type: 'image/svg+xml', href: `${publicBase}favicon.svg` },
-      { rel: 'icon', sizes: '48x48', href: `${publicBase}favicon.ico` },
-    ],
+  const session = useSessionStore()
+  const branding = useBranding()
+  useHead(() => {
+    const favicon = branding.url(session.context?.branding.favicon)
+    return {
+      link: [
+        { rel: 'stylesheet' as const, href: `${publicBase}layers.css`, tagPriority: 'critical' as const },
+        ...(favicon
+          ? [{ rel: 'icon' as const, href: favicon }]
+          : [
+            { rel: 'icon' as const, type: 'image/svg+xml', href: `${publicBase}favicon.svg` },
+            { rel: 'icon' as const, sizes: '48x48', href: `${publicBase}favicon.ico` },
+          ]),
+      ],
+    }
+  })
+
+  // The deployment's font (ADR 0055), a woff2 file Studio serves: Vuetify's
+  // text takes it from --v-font-body, with Roboto where it lacks a glyph.
+  // Set from configuration, as the theme colours are, not written as a style sheet.
+  useHead(() => {
+    const font = branding.url(session.context?.branding.font)
+    return font
+      ? { style: [{ key: 'studio-brand-font', textContent: `@font-face{font-family:"Studio Brand";src:url(${JSON.stringify(font)}) format("woff2");font-display:swap}:root{--v-font-body:"Studio Brand","Roboto",sans-serif}` }] }
+      : {}
   })
 
   // The user's appearance (Settings): light, dark or "system", which follows
@@ -49,8 +69,6 @@
   // light or dark theme.
   const theme = useTheme()
   const preferences = usePreferences()
-  const session = useSessionStore()
-  const branding = useBranding()
   useHead({ title: () => branding.name.value })
 
   // The deployment's default accent (STUDIO_PRIMARY_COLOR*) replaces the BaSyx
@@ -60,17 +78,38 @@
     const brand = session.context?.branding
     return (dark ? brand?.accentDark : brand?.accentLight) ?? null
   }
+  // The secondary colour, the background and the shape are the deployment's
+  // too (ADR 0055); applied before rendering as well, so most users, who
+  // keep them, see no change after hydration.
+  function deploymentSecondary (dark: boolean): string | undefined {
+    const brand = session.context?.branding
+    return (dark ? brand?.secondaryDark : brand?.secondaryLight) ?? undefined
+  }
+  const brand = computed(() => session.context?.branding)
+  const initialTheme = brand.value?.theme
+  const colorScheme = useCookie<string>('color-scheme')
+  if ((initialTheme === 'light' || initialTheme === 'dark') && (brand.value?.locked.includes('theme') || !colorScheme.value)) {
+    theme.change(initialTheme)
+  }
   for (const mode of ['light', 'dark'] as const) {
-    const accent = deploymentAccent(mode === 'dark')
-    if (accent) {
-      Object.assign(theme.themes.value[mode]!.colors, withOnColors({ primary: accentShade(accent, mode === 'dark') }))
+    const initialBrand = brand.value
+    const dark = mode === 'dark'
+    const accent = deploymentAccent(dark)
+    if (accent || initialBrand?.background || deploymentSecondary(dark)) {
+      Object.assign(theme.themes.value[mode]!.colors, themeColors(accent ?? 'basyx', initialBrand?.background ?? 'neutral', dark, deploymentSecondary(dark)))
     }
   }
-  const shapeDefaults = ref<typeof roundedDefaults | undefined>(undefined)
+  const shapeDefaults = ref<typeof roundedDefaults | undefined>(session.context?.branding.shape === 'rounded' ? roundedDefaults : undefined)
   // On phones every dialog fills the screen; DialogCard then drops its radius and border.
   const { xs } = useDisplay()
   const defaults = computed(() => ({ ...shapeDefaults.value, ...(xs.value ? { VDialog: { fullscreen: true } } : {}) }))
+  function refreshBranding () {
+    // A temporary network failure leaves the last context in place.
+    void session.reloadContext().catch(() => {})
+  }
+  onUnmounted(() => window.removeEventListener('focus', refreshBranding))
   onMounted(() => {
+    window.addEventListener('focus', refreshBranding)
     // The stored UI language (Settings), applied after hydration like the
     // theme; setLocale() also rewrites the i18n_redirected cookie, so the
     // next server render starts in it (ADR 0026).
@@ -80,23 +119,23 @@
         void setLocale(known)
       }
     }, { immediate: true })
-
     const dark = window.matchMedia('(prefers-color-scheme: dark)')
     const apply = () => {
       const stored = preferences.query.data.value
-      if (stored) {
-        for (const mode of ['light', 'dark'] as const) {
-          const accent = stored.accent === 'basyx' ? (deploymentAccent(mode === 'dark') ?? stored.accent) : stored.accent
-          Object.assign(theme.themes.value[mode]!.colors, themeColors(accent, stored.background, mode === 'dark'))
-        }
-        theme.change((stored.theme === 'system' ? dark.matches : stored.theme === 'dark') ? 'dark' : 'light')
+      const current = brand.value
+      for (const mode of ['light', 'dark'] as const) {
+        const isDark = mode === 'dark'
+        const accent = stored?.accent && stored.accent !== 'basyx' ? stored.accent : (deploymentAccent(isDark) ?? 'basyx')
+        Object.assign(theme.themes.value[mode]!.colors, themeColors(accent, stored?.background ?? current?.background ?? 'neutral', isDark, deploymentSecondary(isDark)))
       }
+      const mode = stored?.theme ?? current?.theme
+      if (mode) {
+        theme.change((mode === 'system' ? dark.matches : mode === 'dark') ? 'dark' : 'light')
+      }
+      shapeDefaults.value = (stored?.shape ?? current?.shape) === 'rounded' ? roundedDefaults : undefined
     }
-    watch(() => [preferences.query.data.value?.theme, preferences.query.data.value?.accent, preferences.query.data.value?.background], apply, { immediate: true })
+    watch([preferences.query.data, brand], apply, { immediate: true })
     dark.addEventListener('change', apply)
-
-    watch(() => preferences.query.data.value?.shape, shape => {
-      shapeDefaults.value = shape === 'rounded' ? roundedDefaults : undefined
-    }, { immediate: true })
+    onUnmounted(() => dark.removeEventListener('change', apply))
   })
 </script>

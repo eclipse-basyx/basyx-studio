@@ -65,7 +65,7 @@
       "ready": "準備完了",
       "required": "認可が必要"
     },
-    "signInTitle": "BaSyx Studio にサインイン",
+    "signInTitle": "{name} にサインイン",
     "signInText": "Studio はあなたに代わって AAS インフラストラクチャにアクセスします。続行するには、組織のアカウントでサインインしてください。",
     "noTargets": "インフラストラクチャはまだ構成されていません。",
     "noTargetsAdmin": "インフラストラクチャを追加して始めましょう。",
@@ -1075,6 +1075,7 @@
       "pink": "ピンク",
       "graphite": "グラファイト"
     },
+    "organisationAccent": "組織の色",
     "customAccent": "カスタムカラー",
     "background": "背景",
     "backgrounds": {
@@ -1093,7 +1094,8 @@
     "version": "バージョン {version}",
     "commit": "コミット {commit}",
     "built": "ビルド日 {date}",
-    "readOnly": "このデプロイは読み取り専用です。インフラストラクチャ上では何も変更できません。"
+    "readOnly": "このデプロイは読み取り専用です。インフラストラクチャ上では何も変更できません。",
+    "locked": "組織によって設定されています"
   },
   "invite": {
     "title": "招待を承諾",
@@ -1345,5 +1347,130 @@
       "conceptDescriptions": "コンセプト記述",
       "files": "ファイル"
     }
+  },
+  "legal": {
+    "navigation": "法的情報",
+    "pages": {
+      "imprint": "運営者情報",
+      "privacy": "プライバシーポリシー",
+      "accessibility": "アクセシビリティ方針",
+      "terms": "利用規約"
+    }
+  },
+  "about": {
+    "link": "概要",
+    "title": "{name} について",
+    "subtitle": "この環境、オープンソースプロジェクト、開発チームについて",
+    "runBy": "提供: {organisation}",
+    "support": "サポート",
+    "help": "ヘルプ",
+    "basyxTitle": "Eclipse BaSyx",
+    "poweredBy": "Powered by Eclipse BaSyx",
+    "poweredByLabel": "Powered by Eclipse BaSyx: プロジェクトについて",
+    "basyxText": "Asset Administration Shell（AAS）に基づくデジタルツインで、機械、ソフトウェア、データをつなぎます。Eclipse BaSyx は、その構築に使えるオープンソースのサービスと SDK を提供します。",
+    "studioText": "Studio ではシェルの閲覧や編集、AASX パッケージの操作ができ、アプリでビューやワークフローを追加できます。",
+    "projectResources": "プロジェクトの資料",
+    "community": "コミュニティ",
+    "licences": "ライセンス",
+    "links": {
+      "website": "プロジェクトの Web サイト",
+      "basyxOrg": "basyx.org",
+      "go": "BaSyx Go Components",
+      "wiki": "ドキュメントを読む",
+      "github": "GitHub の BaSyx",
+      "docker": "Docker Hub のコンテナーイメージ",
+      "mail": "開発者メーリングリスト",
+      "openHour": "BaSyx Open Hour"
+    },
+    "license": "ライセンス",
+    "licenseText": "BaSyx Studio は MIT ライセンスのオープンソースです",
+    "thirdPartyNotices": "サードパーティーのライセンス表示",
+    "team": "開発チーム",
+    "teamSubtitle": "BaSyx Studio と BaSyx コンポーネントを開発しているメンバー",
+    "github": "GitHub の {name}",
+    "linkedin": "LinkedIn の {name}",
+    "organisations": "参加している組織"
+  },
+  "branding": {
+    "title": "ブランディング",
+    "subtitle": "この Studio の名前、ロゴ、色、法的ページ、ロックされた設定",
+    "close": "ブランディングを閉じる",
+    "export": "エクスポート",
+    "import": "インポート",
+    "notEditable": "このデプロイはブランディングを自身で設定しています（STUDIO_BRANDING_EDITABLE=false）。ここでは表示のみです。",
+    "preview": "プレビュー",
+    "previewButton": "主要な操作",
+    "previewChip": "セカンダリ",
+    "identity": "名前とリンク",
+    "fields": {
+      "productName": "製品名",
+      "organisation": "組織",
+      "supportUrl": "サポート（Web ページまたは mailto:）",
+      "helpUrl": "ヘルプ（Web ページ）",
+      "theme": "既定のテーマ",
+      "background": "既定の背景",
+      "shape": "既定の形状",
+      "uiLanguage": "既定の言語",
+      "valueLanguage": "値の既定の言語",
+      "languages": "提供する言語",
+      "signInMessage": "サインインページのメッセージ"
+    },
+    "files": "ロゴとファイル",
+    "filesSubtitle": "SVG、PNG、WebP、JPEG のロゴ、SVG、PNG、ICO のファビコン、woff2 フォント。各 2 MB まで",
+    "assets": {
+      "logo-light": "ロゴ（ライトテーマ）",
+      "logo-dark": "ロゴ（ダークテーマ）",
+      "logo-compact": "コンパクトなロゴ（正方形）",
+      "favicon": "ファビコン",
+      "font": "フォント（woff2）"
+    },
+    "upload": "アップロード",
+    "remove": "削除",
+    "colours": "色",
+    "coloursSubtitle": "読みにくい色は Studio が暗く、または明るくします",
+    "color": {
+      "accent": {
+        "light": "アクセント（ライトテーマ）",
+        "dark": "アクセント（ダークテーマ）"
+      },
+      "secondary": {
+        "light": "セカンダリ（ライトテーマ）",
+        "dark": "セカンダリ（ダークテーマ）"
+      }
+    },
+    "contrastWarning": "{field}（{color}）のコントラスト比は4.5:1未満です。Studioでは代わりに{shade}を表示します。",
+    "lockAccent": "ユーザーはこのアクセントカラーを使い続けます",
+    "defaults": "既定値とロック",
+    "defaultsSubtitle": "ユーザーの初期設定。ロックすると変更できません",
+    "lock": "ロック: {setting}",
+    "languagesHint": "空欄の場合はすべての言語",
+    "studioDefault": "Studio の既定",
+    "texts": "テキストと法的ページ",
+    "textsSubtitle": "言語ごと。ユーザーには自分の言語、なければ既定の言語が表示されます",
+    "legal": {
+      "none": "なし",
+      "url": "リンク",
+      "markdown": "テキスト",
+      "urlLabel": "ページのアドレス",
+      "markdownLabel": "テキスト（Markdown）",
+      "markdownHint": "見出し、リスト、リンク。HTML と画像は使えません",
+      "notice": "Studio はこれらのページをサインイン前も含めて全員に表示します。内容の責任は組織にあります。"
+    },
+    "fixed": "デプロイで設定済み（{source}）",
+    "sources": {
+      "env": "環境変数",
+      "file": "ブランディングファイル",
+      "admin": "ここで設定",
+      "default": "Studio の既定"
+    },
+    "invalidUrl": "http(s) のアドレスを入力してください",
+    "invalidColor": "#RRGGBB 形式で色を入力してください",
+    "assetDefault": "BaSyx Studio のもの",
+    "updated": "{date} に {name} が最終変更",
+    "save": "保存",
+    "saved": "ブランディングを保存しました",
+    "uploaded": "ファイルをアップロードしました",
+    "removed": "ファイルを削除しました",
+    "imported": "ブランディングをインポートしました"
   }
 }

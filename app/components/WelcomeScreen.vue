@@ -1,6 +1,6 @@
 <template>
   <v-dialog v-model="open" fullscreen transition="fade-transition">
-    <v-sheet
+    <v-card-fullscreen
       class="position-relative d-flex align-center justify-center overflow-hidden"
       color="black"
       height="100%"
@@ -11,14 +11,24 @@
       <canvas ref="canvas" aria-hidden="true" class="position-absolute top-0 left-0 w-100 h-100 pointer-events-none" />
 
       <div class="position-relative d-flex flex-column align-center text-center pa-6">
-        <!-- Where the canvas draws the logo. -->
+        <!-- Where the canvas draws the logo; a deployment's own logo instead (ADR 0055). -->
         <v-sheet
           ref="anchor"
-          class="mb-8"
+          class="d-flex align-center justify-center mb-8"
           color="transparent"
           height="168"
           width="168"
-        />
+        >
+          <v-fade-transition>
+            <v-img
+              v-if="brandLogo && clock >= timeline.layers"
+              :alt="branding.name.value"
+              height="168"
+              :src="brandLogo"
+              width="168"
+            />
+          </v-fade-transition>
+        </v-sheet>
 
         <v-sheet class="mb-2" color="transparent" min-height="24">
           <v-fade-transition>
@@ -28,7 +38,7 @@
           </v-fade-transition>
         </v-sheet>
 
-        <h1 :aria-label="t('app.name')" class="text-display-large font-weight-black text-no-wrap">
+        <h1 :aria-label="branding.name.value" class="text-display-large font-weight-black text-no-wrap">
           <span>{{ title.first }}</span>
           <span class="text-primary">{{ title.second }}</span>
         </h1>
@@ -63,11 +73,13 @@
                 :label="t('welcome.dontShow')"
                 @click.stop
               />
+
+              <PoweredByBasyx @click.stop="open = false" />
             </div>
           </v-fade-transition>
         </v-sheet>
       </div>
-    </v-sheet>
+    </v-card-fullscreen>
   </v-dialog>
 </template>
 
@@ -119,10 +131,15 @@
 
   const clock = ref(0)
 
-  // The product name is not translated.
-  const name = ['BaSyx', 'Studio'] as const
+  // The product name is not translated. A deployment's own name and logo
+  // replace BaSyx Studio's (ADR 0055); its first word stays white, the rest
+  // takes the accent.
+  const branding = useBranding()
+  const brandLogo = branding.url(session.context?.branding.logoDark ?? session.context?.branding.logoLight ?? session.context?.branding.logoCompact)
+  const [firstWord = '', ...otherWords] = branding.name.value.split(' ')
+  const name = [firstWord, otherWords.length > 0 ? ` ${otherWords.join(' ')}` : ''] as const
   const glyphs = String.raw`ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&<>/\=+*`
-  const fullName = name.join(' ')
+  const fullName = name.join('')
   const lockTimes = [...fullName].map((_, index) => timeline.title + index * (timeline.titleDuration * 0.55 / fullName.length) + Math.random() * timeline.titleDuration * 0.45)
 
   /** The name decodes from random glyphs into place, letter by letter. */
@@ -266,7 +283,9 @@
     drawNetwork(ctx, time, delta)
     drawLine(ctx, time, centre)
     drawRings(ctx, time, centre)
-    drawLogo(ctx, time, centre)
+    if (!brandLogo) {
+      drawLogo(ctx, time, centre)
+    }
 
     // Vignette: the edges fall off into black.
     const vignette = ctx.createRadialGradient(width / 2, height / 2, Math.min(width, height) * 0.3, width / 2, height / 2, Math.max(width, height) * 0.75)

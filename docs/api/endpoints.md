@@ -28,12 +28,16 @@ functional level without duplicating the OpenAPI schemas.
 
 | Method and path | Purpose |
 | --- | --- |
-| `GET /context` | Returns the deployment mode, API/Studio version, available platform functions and the session context for UI startup. Can be called anonymously. |
+| `GET /context` | Returns the deployment mode, API/Studio version, available platform functions, the branding, legal pages and locked settings (ADR 0055) and the session context for UI startup. Can be called anonymously. |
 | `GET /session` | Returns the signed-in user, groups/roles, CSRF value, active target and session expiry. |
 | `POST /auth/login` | Starts OIDC Authorization Code with PKCE. The response contains only a validated navigation URL. |
 | `GET /auth/callback` | Receives the OIDC code; the BFF checks state/nonce, exchanges tokens server-side and sets or resumes the session. Also applies to target reauthentication. |
 | `POST /auth/logout` | Ends the Studio session and the server-side target contexts. |
-| `GET/PUT /me/preferences` | Reads or replaces the signed-in user's preferences: recently opened shells (`{ key, title }`) per target, theme, language of multi-language values, auto-refresh and `syncOverrides` per infrastructure (MVP-4). |
+| `GET/PUT /me/preferences` | Reads or replaces the signed-in user's preferences: recently opened shells (`{ key, title }`) per target, theme, language of multi-language values, auto-refresh and `syncOverrides` per infrastructure (MVP-4). Settings the deployment locks keep its value whatever the request says; unset ones take its defaults (ADR 0055). |
+| `GET /legal/{page}?language=` | A legal page (`imprint`, `privacy`, `accessibility`, `terms`) the deployment hosts as Markdown, in the language or the closest one; `url` where it is elsewhere. Can be called anonymously (ADR 0055). |
+| `GET/PUT /branding` | Administrators: the branding they set, what is in effect and each value's source (`env`, `file`, `admin`); `PUT` replaces their settings unless `STUDIO_BRANDING_EDITABLE=false` (ADR 0055). |
+| `PUT/DELETE /branding/assets/{slot}` | Administrators: upload (the body is the file) or remove `logo-light`, `logo-dark`, `logo-compact`, `favicon` or `font`. Studio serves the file in effect at `<base>/branding/{slot}`. |
+| `GET /branding/export`, `POST /branding/import` | Administrators: the branding in effect as `branding.zip` (`branding.yml` and its files); an import replaces what administrators set. |
 
 ## Targets and infrastructures
 

@@ -53,7 +53,7 @@
       "ready": "Alla hopp",
       "required": "Mer brauche die Erlaubnis"
     },
-    "signInTitle": "Bei BaSyx Studio oomelde",
+    "signInTitle": "Bei {name} oomelde",
     "signInText": "Studio holt d'r doi AAS-Sache. Meld dich mit em Konto vun doiner Firma oo, donn geht's weider.",
     "noTargets": "Do is noch gar nix oigericht.",
     "noTargetsAdmin": "Mach e Infrastruktur dezu, donn geht's los.",

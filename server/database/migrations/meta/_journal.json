@@ -106,6 +106,20 @@
       "when": 1794559133562,
       "tag": "0014_app_preview_source",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1795517976980,
+      "tag": "0015_branding",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1795531797001,
+      "tag": "0016_branding_asset_metadata",
+      "breakpoints": true
     }
   ]
 }
