@@ -1,4 +1,5 @@
 import type { PreviewElement } from '#shared/app-preview-picker'
+import type { AppContributions } from '#shared/contract'
 
 export interface PreviewAnnotation {
   id: string
@@ -8,6 +9,7 @@ export interface PreviewAnnotation {
   contribution: string
   subPath: string
   digest: string | null
+  earlierBuild?: boolean
   element: PreviewElement
   text: string
 }
@@ -24,16 +26,30 @@ export function annotationDetails (note: PreviewAnnotation): string {
   return `Preview contribution: ${note.contribution}${note.digest ? ` (build ${note.digest})` : ''}\nPreview route: /${note.subPath}\nElement: ${note.element.path}`
 }
 
+/** The installed preview can change while another window owns the build UI. */
+export function markEarlierPreviewBuilds (notes: readonly PreviewAnnotation[], contributions: AppContributions | null) {
+  for (const note of notes) {
+    const current = note.contribution.startsWith('module:')
+      ? contributions?.modules.find(entry => `module:${entry.id}` === note.contribution)
+      : contributions?.submodelViews.find(entry => `view:${entry.id}` === note.contribution)
+    if (!current || current.digest !== note.digest) {
+      note.earlierBuild = true
+    }
+  }
+}
+
 export function annotationPrompt (text: string, notes: readonly PreviewAnnotation[]): string | null {
   if (notes.some(note => !note.text.trim())) {
     return null
   }
-  const sections = [text.trim()]
-  if (notes.length > 0) {
-    const annotations = notes.map(note => `${note.number}. ${note.text.trim()}\n   ${annotationDetails(note).replaceAll('\n', '\n   ')}`)
-    sections.push(`Preview annotations\n\n${annotations.join('\n\n')}`)
+  const message = text.trim()
+  if (notes.length === 0) {
+    return message || null
   }
-  return sections.filter(Boolean).join('\n\n') || null
+  const annotations = notes.map((note, index) => !message && index === 0
+    ? `${note.text.trim()}\n\nAnnotation ${note.number}\n${annotationDetails(note)}`
+    : `${note.number}. ${note.text.trim()}\n   ${annotationDetails(note).replaceAll('\n', '\n   ')}`)
+  return message ? `${message}\n\nPreview annotations\n\n${annotations.join('\n\n')}` : annotations.join('\n\n')
 }
 
 export async function submitChatDraft (draft: ChatDraft, send: (text: string) => Promise<boolean>): Promise<void> {

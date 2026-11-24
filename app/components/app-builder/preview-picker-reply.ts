@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { previewAnnotationLimit, previewElementPath, previewElementTag, previewPickerPathLimit, previewPickerProtocol } from '#shared/app-preview-picker'
+import { previewAnnotationLimit, previewElementPath, previewElementTag, previewMarkerId, previewPickerPathLimit, previewPickerProtocol } from '#shared/app-preview-picker'
 
 const rect = z.strictObject({
   x: z.number().min(-1e6).max(1e6),
@@ -16,6 +16,7 @@ const replySchema = z.discriminatedUnion('type', [
   z.strictObject({ ...envelope, type: z.literal('pick'), request, element: z.strictObject({
     tag,
     path: z.string().max(previewPickerPathLimit).regex(previewElementPath),
+    markerId: z.string().regex(previewMarkerId),
   }).nullable() }),
   z.strictObject({ ...envelope, type: z.literal('markers'), request, markers: z.array(z.strictObject({ number: request, rect })).max(previewAnnotationLimit) }),
 ])

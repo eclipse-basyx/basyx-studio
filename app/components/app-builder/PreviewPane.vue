@@ -390,8 +390,8 @@
   const annotationScope = computed(() => JSON.stringify([props.conversationId, annotationKey.value]))
   const nextAnnotationNumber = computed(() => (props.notes?.at(-1)?.number ?? 0) + 1)
   const annotationMarkers = computed(() => (props.notes ?? [])
-    .filter(note => note.previewKey === annotationKey.value)
-    .map(note => ({ number: note.number, path: note.element.path })))
+    .filter(note => note.previewKey === annotationKey.value && !note.earlierBuild)
+    .map(note => ({ number: note.number, id: note.element.markerId })))
   watch(annotationKey, key => {
     if (selected.value) {
       emit('annotation-context', key)

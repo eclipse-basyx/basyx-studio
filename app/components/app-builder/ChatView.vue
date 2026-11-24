@@ -164,7 +164,7 @@
             <div v-tooltip="annotationDetails(note)" class="text-body-small text-truncate" tabindex="0">{{ note.previewName }}</div>
           </div>
 
-          <div v-if="annotationContext && note.previewKey !== annotationContext" class="text-body-small text-warning mb-1">{{ t('annotations.previousPreview') }}</div>
+          <div v-if="note.earlierBuild || (annotationContext && note.previewKey !== annotationContext)" class="text-body-small text-warning mb-1">{{ t('annotations.previousPreview') }}</div>
 
           <div class="d-flex align-center ga-2">
             <v-textarea

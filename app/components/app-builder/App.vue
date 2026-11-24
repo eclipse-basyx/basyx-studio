@@ -162,7 +162,7 @@
             @show-changes="commit => showChanges(active!.project.id, commit)"
             @show-files="rightPane === 'files' && filesProject?.id === active!.project.id ? rightPane = null : openFiles(active!.project)"
             @stop="stop(active!.conversation.id)"
-            @submit="submitDraft(active.conversation.id, activeDraft)"
+            @submit="submitDraft(active.project.id, active.conversation.id, activeDraft)"
             @toggle-preview="rightPane = rightPane === 'preview' ? null : 'preview'"
             @undo="commit => undoing = { conversationId: active!.conversation.id, commit }"
           />
@@ -266,7 +266,7 @@
   import { previewAnnotationLimit } from '#shared/app-preview-picker'
   import { StudioApiError } from '~/composables/useStudioApi'
   import AgentStatusList from './AgentStatusList.vue'
-  import { maxAnnotationLength, submitChatDraft } from './annotation-draft'
+  import { markEarlierPreviewBuilds, maxAnnotationLength, submitChatDraft } from './annotation-draft'
   import ChangesDialog from './ChangesDialog.vue'
   import { chatStreamIds } from './chat-streams'
   import ChatView from './ChatView.vue'
@@ -325,6 +325,38 @@
     return null
   })
   const activeTranscript = computed(() => activeId.value ? transcripts.get(activeId.value) ?? null : null)
+  // Builds completed in another preview window or conversation don't necessarily
+  // reach the active chat's transcript. Check the installed preview while notes are visible.
+  watch([() => active.value?.project.id, activeDraft, () => activeDraft.value?.notes.some(note => !note.earlierBuild)], ([projectId, draft, hasCurrentNotes], _, onCleanup) => {
+    if (!projectId || !draft || !hasCurrentNotes) {
+      return
+    }
+    let refreshing = false
+    let stopped = false
+    const refresh = async () => {
+      if (refreshing) {
+        return
+      }
+      const notes = draft.notes.slice()
+      refreshing = true
+      try {
+        const preview = await client.call('getPreview', { projectId })
+        if (!stopped) {
+          markEarlierPreviewBuilds(notes, preview.contributions)
+        }
+      } catch {
+        // The background check retries. Sending also checks and displays any error.
+      } finally {
+        refreshing = false
+      }
+    }
+    void refresh()
+    const timer = setInterval(() => void refresh(), 2000)
+    onCleanup(() => {
+      stopped = true
+      clearInterval(timer)
+    })
+  })
   watch(() => active.value?.project.id, () => {
     if (rightPane.value === 'files' && active.value) {
       filesProject.value = active.value.project
@@ -484,8 +516,23 @@
     await run(() => client.call('sendPrompt', { conversationId, text }))
   }
 
-  async function submitDraft (conversationId: string, draft: ChatDraft) {
-    await submitChatDraft(draft, text => succeeded(() => client.call('sendPrompt', { conversationId, text })))
+  async function submitDraft (projectId: string, conversationId: string, draft: ChatDraft) {
+    await submitChatDraft(draft, async text => {
+      if (draft.notes.length > 0) {
+        const warned = new Set(draft.notes.filter(note => note.earlierBuild))
+        const preview = await run(() => client.call('getPreview', { projectId }))
+        if (!preview) {
+          return false
+        }
+        markEarlierPreviewBuilds(draft.notes, preview.contributions)
+        // A build may have completed just before Send. Leave the draft open
+        // when it has a new warning for the user to review.
+        if (draft.notes.some(note => note.earlierBuild && !warned.has(note))) {
+          return false
+        }
+      }
+      return await succeeded(() => client.call('sendPrompt', { conversationId, text }))
+    })
   }
 
   function updateDraftText (text: string) {

@@ -1,5 +1,5 @@
 import type { PreviewAnnotationMarker } from '../../shared/app-preview-picker'
-import { previewAnnotationLimit, previewElementPath, previewElementTag, previewPickerPathLimit, previewPickerProtocol } from '../../shared/app-preview-picker'
+import { previewAnnotationLimit, previewElementTag, previewMarkerId, previewPickerPathLimit, previewPickerProtocol } from '../../shared/app-preview-picker'
 
 // The helper has no visual DOM of its own and should not affect the app's
 // structural selectors or hydration.
@@ -8,11 +8,11 @@ document.currentScript?.remove()
 /** Describe page structure without reading text, attributes, or form values. */
 function elementPath (element: Element): string | null {
   const parts: string[] = []
-  for (let node: Element | null = element; node && parts.length < 32; node = node.parentElement) {
+  let length = 0
+  for (let node: Element | null = element; node; node = node.parentElement) {
     if (node === document.body || node === document.documentElement) {
-      parts.unshift(node.localName)
-      const path = parts.join(' > ')
-      return path.length <= previewPickerPathLimit ? path : null
+      parts.push(node.localName)
+      return length + node.localName.length <= previewPickerPathLimit ? parts.toReversed().join(' > ') : null
     }
     if (!previewElementTag.test(node.localName)) {
       return null
@@ -23,7 +23,12 @@ function elementPath (element: Element): string | null {
         index++
       }
     }
-    parts.unshift(`${node.localName}:nth-of-type(${index})`)
+    const part = `${node.localName}:nth-of-type(${index})`
+    length += part.length + ' > '.length
+    if (length > previewPickerPathLimit) {
+      return null
+    }
+    parts.push(part)
   }
   return null
 }
@@ -31,20 +36,9 @@ function elementPath (element: Element): string | null {
 const controls = 'button, a, input, select, textarea, label, summary, [role="button"], [role="link"], [role="tab"]'
 const unavailable = 'html, body, iframe, frame, embed, object, script, style'
 let highlighted: Element | null = null
-let publishMarkers: (() => void) | undefined
 let markerFrame = 0
-
-function scheduleMarkers () {
-  if (!markerFrame && publishMarkers) {
-    markerFrame = requestAnimationFrame(() => {
-      markerFrame = 0
-      publishMarkers?.()
-    })
-  }
-}
-
-window.addEventListener('scroll', scheduleMarkers, { capture: true, passive: true })
-window.addEventListener('resize', scheduleMarkers)
+const pickedElements = new Map<string, WeakRef<Element>>()
+const markerIds = new WeakMap<Element, string>()
 
 function elementAt (x: number, y: number): Element | null {
   const hit = document.elementFromPoint(x, y)
@@ -52,12 +46,78 @@ function elementAt (x: number, y: number): Element | null {
 }
 
 function visibleRect (element: Element) {
+  if (!element.checkVisibility({ visibilityProperty: true })) {
+    return null
+  }
   const bounds = element.getBoundingClientRect()
-  const x = Math.max(0, bounds.left)
-  const y = Math.max(0, bounds.top)
-  const width = Math.min(window.innerWidth, bounds.right) - x
-  const height = Math.min(window.innerHeight, bounds.bottom) - y
-  return width > 0 && height > 0 ? { x, y, width, height } : null
+  let left = Math.max(0, bounds.left)
+  let top = Math.max(0, bounds.top)
+  let right = Math.min(window.innerWidth, bounds.right)
+  let bottom = Math.min(window.innerHeight, bounds.bottom)
+  for (let ancestor = element.parentElement; ancestor && ancestor !== document.documentElement && right > left && bottom > top; ancestor = ancestor.parentElement) {
+    const { display, overflowX, overflowY } = getComputedStyle(ancestor)
+    if (display !== 'contents' && (overflowX !== 'visible' || overflowY !== 'visible')) {
+      const box = ancestor.getBoundingClientRect()
+      if (overflowX !== 'visible') {
+        const clipLeft = box.left + ancestor.clientLeft
+        left = Math.max(left, clipLeft)
+        right = Math.min(right, clipLeft + ancestor.clientWidth)
+      }
+      if (overflowY !== 'visible') {
+        const clipTop = box.top + ancestor.clientTop
+        top = Math.max(top, clipTop)
+        bottom = Math.min(bottom, clipTop + ancestor.clientHeight)
+      }
+    }
+  }
+  return right > left && bottom > top ? { x: left, y: top, width: right - left, height: bottom - top } : null
+}
+
+function registerPick (element: Element, id: string): string {
+  for (const [key, reference] of pickedElements) {
+    if (!reference.deref()?.isConnected) {
+      pickedElements.delete(key)
+    }
+  }
+  const existing = markerIds.get(element)
+  if (existing && pickedElements.has(existing)) {
+    return existing
+  }
+  markerIds.set(element, id)
+  pickedElements.set(id, new WeakRef(element))
+  return id
+}
+
+/** Measure while notes have live anchors, including shifts with no scroll or resize event. */
+function followMarkers (markers: PreviewAnnotationMarker[], request: number, reply: (message: object) => void) {
+  cancelAnimationFrame(markerFrame)
+  let previous: string | undefined
+  let sampledAt = -Infinity
+  function update (time: number) {
+    if (time - sampledAt < 32) {
+      markerFrame = requestAnimationFrame(update)
+      return
+    }
+    sampledAt = time
+    let hasLiveAnchors = false
+    const positions = markers.flatMap(({ id, number }) => {
+      const element = pickedElements.get(id)?.deref()
+      if (!element?.isConnected) {
+        pickedElements.delete(id)
+        return []
+      }
+      hasLiveAnchors = true
+      const rect = visibleRect(element)
+      return rect ? [{ number, rect }] : []
+    })
+    const serialized = JSON.stringify(positions)
+    if (previous !== serialized) {
+      previous = serialized
+      reply({ type: 'markers', request, markers: positions })
+    }
+    markerFrame = hasLiveAnchors ? requestAnimationFrame(update) : 0
+  }
+  update(performance.now())
 }
 
 /** Walk usable DOM elements with the keyboard, without moving focus into app code. */
@@ -104,15 +164,16 @@ function scrollFromPoint (x: number, y: number, deltaX: number, deltaY: number) 
 }
 
 function validMarker (value: unknown): value is PreviewAnnotationMarker {
-  if (!value || typeof value !== 'object' || !('number' in value) || !('path' in value)) {
+  if (!value || typeof value !== 'object' || !('number' in value) || !('id' in value)) {
     return false
   }
   return typeof value.number === 'number' && Number.isSafeInteger(value.number) && value.number > 0
-    && typeof value.path === 'string' && value.path.length <= previewPickerPathLimit && previewElementPath.test(value.path)
+    && typeof value.id === 'string' && previewMarkerId.test(value.id)
 }
 
-function inspect ({ type, request, x, y, direction, deltaX, deltaY }: {
+function inspect ({ type, session, request, x, y, direction, deltaX, deltaY }: {
   type: string
+  session: string
   request: number
   x: number
   y: number
@@ -134,11 +195,12 @@ function inspect ({ type, request, x, y, direction, deltaX, deltaY }: {
   }
 
   const element = highlighted?.isConnected ? highlighted : null
+  const path = element ? elementPath(element) : null
+  const rect = element && path ? visibleRect(element) : null
   if (type === 'pick' || type === 'pick-highlighted') {
-    const path = element ? elementPath(element) : null
-    reply({ type: 'pick', request, element: element && path ? { tag: element.localName, path } : null })
+    reply({ type: 'pick', request, element: element && path && rect ? { tag: element.localName, path, markerId: registerPick(element, `${session}:${request}`) } : null })
   } else {
-    reply({ type: 'hover', request, rect: element ? visibleRect(element) : null, tag: element?.localName ?? null })
+    reply({ type: 'hover', request, rect, tag: rect && element ? element.localName : null })
   }
 }
 
@@ -153,7 +215,8 @@ window.addEventListener('message', event => {
   const reply = (message: object) => window.parent.postMessage({ protocol: previewPickerProtocol, session, ...message }, event.origin)
   if (type === 'probe') {
     highlighted = null
-    publishMarkers = undefined
+    cancelAnimationFrame(markerFrame)
+    markerFrame = 0
     reply({ type: 'ready' })
     return
   }
@@ -161,21 +224,11 @@ window.addEventListener('message', event => {
     highlighted = null
     return
   }
-  if (!Number.isSafeInteger(request)) {
+  if (!Number.isSafeInteger(request) || request < 1) {
     return
   }
   if (type === 'markers' && Array.isArray(markers) && markers.length <= previewAnnotationLimit && markers.every(validMarker)) {
-    const update = () => reply({
-      type,
-      request,
-      markers: markers.flatMap(({ path, number }) => {
-        const element = document.querySelector(path)
-        const rect = element?.checkVisibility({ visibilityProperty: true }) ? visibleRect(element) : null
-        return rect ? [{ number, rect }] : []
-      }),
-    })
-    publishMarkers = markers.length > 0 ? update : undefined
-    update()
+    followMarkers(markers, request, reply)
     return
   }
   inspect(event.data, reply)

@@ -235,25 +235,32 @@ test('picks app elements and sends the reviewed notes to the current coding agen
     expect(await firstMarkerContrast()).toBeGreaterThanOrEqual(4.5)
     await screenshot(window, info, 'review-annotations-dark')
 
-    // A new package invalidates the selection, but retains the user's notes.
+    // A rebuild in the detached window must update the chat while its preview is closed.
     await annotate.click()
     expect(await hintContrast()).toBeGreaterThanOrEqual(4.5)
+    const [detached] = await Promise.all([
+      app.waitForEvent('window'),
+      preview.getByRole('button', { name: 'Open preview in a separate window' }).click(),
+    ])
+    await expect(preview).toHaveCount(0)
+    await expect(window.getByText('From an earlier preview')).toHaveCount(0)
     await appendFile(join(project, 'dist/ui/index.html'), '\n<!-- next preview build -->\n')
-    await window.locator('[data-test="app-builder-rebuild"]').click()
+    await detached.getByRole('button', { name: 'Build again', exact: true }).click()
     await expect(window.getByText('From an earlier preview')).toHaveCount(2)
-    await expect(annotate).toBeEnabled()
-    await expect(annotate).toHaveAttribute('aria-pressed', 'false')
     await expect(notes.nth(0)).toHaveValue(/Rename this tab/)
-    await shells.click()
-    await expect(shells).toHaveAttribute('aria-selected', 'true')
-    await window.getByRole('button', { name: 'Hide the preview', exact: true }).click()
-    await expect(window.getByText('From an earlier preview')).toHaveCount(2)
+    const detachedShells = detached.frameLocator('iframe[title="App: Inventory"]').getByRole('tab', { name: 'Shells' })
+    await detachedShells.click()
+    await expect(detachedShells).toHaveAttribute('aria-selected', 'true')
+
+    await screenshot(window, info, 'earlier-preview-notes')
+    await window.locator('[data-test="app-builder-prompt"]').getByRole('textbox').fill('')
 
     await window.getByRole('button', { name: 'Send', exact: true }).click()
     await expect(window.getByText('I received the preview annotations.')).toBeVisible({ timeout: 20_000 })
+    await expect(window.locator('[data-test^="app-builder-chat-"]').filter({ hasText: 'Rename this tab to Assets so it fits our terminology.' })).toHaveCount(1)
     await expect(notes).toHaveCount(0)
     const blocks = JSON.parse(await readFile(prompt, 'utf8'))
-    expect(blocks).toEqual([{ type: 'text', text: expect.stringMatching(/Make these changes[\s\S]+Rename this tab[\s\S]+module:inventory[\s\S]+Preview route: \/\n\s+Element: [\s\S]+Add a short explanation[\s\S]+module:inventory[\s\S]+Preview route: \/\n\s+Element: /) }])
+    expect(blocks).toEqual([{ type: 'text', text: expect.stringMatching(/\n\nRename this tab[^\n]+\n\nAnnotation 1\nPreview contribution: module:inventory[^\n]*\nPreview route: \/\nElement: [^\n]+\n\n2\. Add a short explanation[^\n]+\n {3}Preview contribution: module:inventory[^\n]*\n {3}Preview route: \/\n {3}Element: [^\n]+$/) }])
   } finally {
     await closeStudio(app)
     await rm(project, { recursive: true, force: true })
