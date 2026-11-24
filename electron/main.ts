@@ -204,7 +204,7 @@ function isolateApps (rendererSession: Electron.Session, url: string, launchSecr
     if (request.method !== 'GET' || !installationIdPattern.test(target.hostname)) {
       return new Response(null, { status: 404 })
     }
-    const response = await fetch(new URL(`app/${target.hostname}${target.pathname}`, url), {
+    const response = await fetch(new URL(`app/${target.hostname}${target.pathname}${target.search}`, url), {
       headers: {
         [brokerSecretHeader]: brokerSecret,
         ...(launchSecret ? { [launchSecretHeader]: launchSecret } : {}),

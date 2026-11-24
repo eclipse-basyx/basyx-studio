@@ -1349,6 +1349,7 @@
     }
   },
   "legal": {
+    "navigation": "Informations légales",
     "pages": {
       "imprint": "Mentions légales",
       "privacy": "Politique de confidentialité",
@@ -1359,27 +1360,31 @@
   "about": {
     "link": "À propos",
     "title": "À propos de {name}",
-    "subtitle": "Qui exploite ce Studio, et le projet derrière lui",
+    "subtitle": "Informations sur le déploiement, le projet open source et son équipe",
     "runBy": "Fourni par {organisation}",
     "support": "Assistance",
     "help": "Aide",
     "basyxTitle": "Eclipse BaSyx",
     "poweredBy": "Propulsé par Eclipse BaSyx",
     "poweredByLabel": "Propulsé par Eclipse BaSyx : à propos du projet",
-    "basyxText": "Eclipse BaSyx est un projet open source de la fondation Eclipse pour l'industrie 4.0 : des composants et des SDK pour l'Asset Administration Shell, le jumeau numérique standardisé de l'IDTA.",
-    "studioText": "BaSyx Studio est son environnement pour travailler avec des Asset Administration Shells sur le web et sur le bureau, extensible par des apps.",
+    "basyxText": "Reliez machines, logiciels et données avec des jumeaux numériques fondés sur l’Asset Administration Shell (AAS). Eclipse BaSyx fournit les services et SDK open source pour les créer.",
+    "studioText": "Studio permet d’explorer et de modifier des shells, de travailler avec des paquets AASX et d’ajouter des vues et des flux de travail grâce aux applications.",
+    "projectResources": "Ressources du projet",
+    "community": "Communauté",
+    "licences": "Licences",
     "links": {
       "website": "Site du projet",
       "basyxOrg": "basyx.org",
       "go": "BaSyx Go Components",
-      "wiki": "Documentation (wiki)",
-      "github": "Code source sur GitHub",
+      "wiki": "Lire la documentation",
+      "github": "BaSyx sur GitHub",
       "docker": "Images de conteneurs sur Docker Hub",
       "mail": "Liste de diffusion des développeurs",
       "openHour": "BaSyx Open Hour"
     },
     "license": "Licence",
     "licenseText": "BaSyx Studio est open source sous licence MIT",
+    "thirdPartyNotices": "Mentions de licence des logiciels tiers",
     "team": "Équipe de développement",
     "teamSubtitle": "Les personnes qui développent BaSyx Studio et les composants BaSyx",
     "github": "{name} sur GitHub",
@@ -1433,6 +1438,7 @@
         "dark": "Secondaire, thème sombre"
       }
     },
+    "contrastWarning": "{field} ({color}) présente un contraste inférieur à 4,5:1. Studio affiche {shade} à la place.",
     "lockAccent": "Les utilisateurs gardent cette couleur d'accent",
     "defaults": "Valeurs par défaut et verrous",
     "defaultsSubtitle": "Ce avec quoi les utilisateurs commencent ; un cadenas fermé les empêche de le modifier",

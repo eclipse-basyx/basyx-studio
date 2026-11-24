@@ -57,7 +57,7 @@ ranges on the packages to use what they added.
 | 0.1.13 | `ui.setViewState`, which Studio's full-screen button on the Overview opens the view with, and `context.fullscreenControl`, where Studio shows that button; `viewState` in `testing` |
 | 0.1.14 | `ui.saveFile` and permission `studio.ui.saveFiles`; `mailto:` and `tel:` in `ui.openExternal`; `savedFiles` in `testing`; in the app kit, `./contacts` for IDTA 02002 contact information (names, addresses, channels, vCard) |
 | 0.1.15 | `aas.describeConcepts` (units, names and definitions from the target's concept descriptions); `conceptDescriptions` in `memoryAas`; in the app kit, `./editing` for changing values in place (`useFieldEditor`, also Ranges, and the row actions) |
-| 0.1.16 | `shape` in `context.theme` (`normal` or `rounded`, Studio's appearance setting); in the app kit, `mountApp` lays `roundedShapeDefaults` (`./vuetify-defaults`) over the app's defaults when it is `rounded` |
+| 0.1.16 | `shape` and the optional deployment `font` URL in `context.theme`. The app kit's `mountApp` applies both. |
 
 While the app API is `0.x`, additions that existing apps do not need (new
 optional methods or manifest fields) are app API patch versions, so that a

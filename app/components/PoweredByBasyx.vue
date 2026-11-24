@@ -1,22 +1,26 @@
 <template>
-  <!-- Always shown, whatever the deployment's branding (ADR 0055): users of
-       a branded Studio can find the project behind it. -->
   <v-btn
     :aria-label="t('about.poweredByLabel')"
-    class="text-medium-emphasis"
-    size="small"
-    to="/about"
+    :href="project ? basyxWebsite : undefined"
+    :rel="project ? 'noopener noreferrer' : undefined"
+    :size="project ? 'x-large' : undefined"
+    :target="project ? '_blank' : undefined"
+    :to="project ? undefined : '/about'"
   >
-    <template #prepend>
-      <v-img alt="" :src="basyxLogo" width="16" />
-    </template>
-
-    {{ t('about.poweredBy') }}
+    <v-img
+      alt=""
+      eager
+      :height="project ? 46 : 34"
+      :src="poweredByLogo"
+      :width="project ? 138 : 102"
+    />
   </v-btn>
 </template>
 
 <script lang="ts" setup>
-  import basyxLogo from '~/assets/basyx-logo.svg'
+  import { basyxWebsite } from '#shared/about'
+  import poweredByLogo from '~/assets/powered-by-basyx.svg'
 
+  defineProps<{ project?: boolean }>()
   const { t } = useI18n()
 </script>

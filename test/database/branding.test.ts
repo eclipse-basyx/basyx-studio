@@ -3,6 +3,7 @@ import type { DatabaseHandle } from '~~/server/lib/database/client'
 import { randomBytes } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { assetContentType, brandingAdminView, deleteAdminAsset, replaceAdminBranding, resolveBranding, saveAdminAsset, saveAdminSettings } from '~~/server/lib/branding'
+import { exportBrandingArchive, importBrandingArchive } from '~~/server/lib/branding/archive'
 import { loadStudioConfig } from '~~/server/lib/config'
 import { openDatabase } from '~~/server/lib/database/client'
 import { applyMigrations, loadMigrationsFromDirectory } from '~~/server/lib/database/migrate'
@@ -67,9 +68,21 @@ describe('branding set by administrators (ADR 0055)', () => {
     expect(view.assets['logo-compact'].source).toBe('admin')
   })
 
+  it('round-trips externally configured logos without fetching them', async () => {
+    const deps = { db: handle.db, config }
+    const logoLight = { url: 'https://assets.example.org/logo.svg' }
+    await replaceAdminBranding(deps, { settings: { helpUrl: 'https://acme.example/help' }, assets: { 'logo-light': logoLight } }, 'admin-2')
+    const archive = exportBrandingArchive(await resolveBranding(deps))
+    const imported = importBrandingArchive(archive)
+    expect(imported.assets['logo-light']).toEqual(logoLight)
+    expect((await brandingAdminView(deps)).assets['logo-light']).toMatchObject({ source: 'admin', url: logoLight.url })
+  })
+
   it('ignores and refuses administrators\' branding where the deployment fixes it', async () => {
     const fixed = { db: handle.db, config: loadStudioConfig({ ...env, STUDIO_BRANDING_EDITABLE: 'false' }, 'hosted') }
-    expect((await resolveBranding(fixed)).settings.helpUrl).toBeUndefined()
+    const branding = await resolveBranding(fixed)
+    expect(branding.settings.helpUrl).toBeUndefined()
+    expect(branding.assets['logo-light']).toBeUndefined()
     await expect(saveAdminSettings(fixed, {}, 'admin-1')).rejects.toThrow(/STUDIO_BRANDING_EDITABLE/)
   })
 })

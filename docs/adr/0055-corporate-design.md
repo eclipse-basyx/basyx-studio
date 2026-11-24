@@ -65,10 +65,12 @@ a deployment set its own name.
 - **About and Powered by Eclipse BaSyx are not configurable.** Every
   deployment has `/about` with its own details and a fixed part about
   Eclipse BaSyx: its links, developer team and organisations, kept in
-  `shared/about.ts` and loading nothing from other hosts (initials instead
-  of photos). *Powered by Eclipse BaSyx* is shown on the sign-in page, in
-  the account menu, in Settings, on About and on a branded desktop welcome
+  `shared/about.ts`. Studio ships the available photos and organisation
+  logos with their source notices. *Powered by Eclipse BaSyx* is shown on
+  the sign-in page, in the account menu, in Settings, on About and on the desktop welcome
   screen. No setting removes them; Studio's licence still lets forks do so.
+  About links to the third-party licence notices generated from the installed
+  production dependency trees when Studio builds.
 - **Desktop.** Besides `STUDIO_BRANDING_FILE`, the desktop app reads a
   branding file for the whole computer (`/Library/Application Support/BaSyx
   Studio/branding.yml`, `%ProgramData%\BaSyx Studio\branding.yml`,
@@ -77,9 +79,10 @@ a deployment set its own name.
   names the windows and the About panel after the brand and uses a PNG
   compact logo as the dock and window icon; installers and bundle icons stay
   BaSyx Studio's.
-- **Apps follow the shape.** The theme Studio sends apps carries `shape`
-  (app API 0.1.16); the app kit lays `roundedShapeDefaults` over the app's
-  defaults. Colours already followed.
+- **Apps follow the shape and font.** The theme Studio sends apps carries
+  `shape` and the optional deployment font URL (app API 0.1.16). The app kit
+  applies both. The font is served under the installation's file URL and
+  the app's existing Content Security Policy applies.
 
 ## Consequences
 

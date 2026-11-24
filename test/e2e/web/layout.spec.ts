@@ -16,6 +16,22 @@ function mainOffsets (html: string) {
   return { top: offset('top'), left: offset('left') }
 }
 
+test('renders a page opened from Settings and restores Settings on Back', async ({ page }) => {
+  await signIn(page, 'studio-admin')
+  await page.goto('/?panel=settings')
+  const settings = page.getByRole('heading', { name: 'Settings', exact: true })
+  const about = page.getByRole('heading', { name: /^About / })
+  await expect(settings).toBeVisible()
+
+  await page.getByRole('link', { name: 'About', exact: true }).click()
+  await expect(page).toHaveURL(/\/about$/)
+  await expect(about).toBeVisible()
+
+  await page.goBack()
+  await expect(page).toHaveURL(/\/\?panel=settings$/)
+  await expect(settings).toBeVisible()
+})
+
 test('reserves the app bar and the drawers in server-rendered pages', async ({ page }) => {
   await signIn(page, 'studio-admin')
   const targetId = await registerOpenEnvironment(page, 'E2E layout environment')

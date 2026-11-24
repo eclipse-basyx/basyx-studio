@@ -8,7 +8,7 @@ import { brandingContext, brandingWarnings, mergeBranding, preferencePolicy } fr
 import { exportBrandingArchive, importBrandingArchive } from '~~/server/lib/branding/archive'
 import { BrandingFileError, parseBrandingFile, readBrandingFile, systemBrandingFile } from '~~/server/lib/branding/file'
 import { ConfigurationError, loadStudioConfig } from '~~/server/lib/config'
-import { colorNotes, pickLocalized } from '#shared/branding'
+import { appBrandFontUrl, colorNotes, pickLocalized } from '#shared/branding'
 import { roundedShapeDefaults, withShape } from '../../packages/studio-app-kit/src/vuetify-defaults'
 
 const env = {
@@ -197,7 +197,17 @@ describe('branding archive', () => {
   })
 })
 
-describe('app shape', () => {
+describe('app branding', () => {
+  it('uses the app’s own asset prefix for the current font on web and desktop', () => {
+    const id = 'app-0000000000000000'
+    const brandFont = '/branding/font?v=123456abcdef'
+    expect(appBrandFontUrl(`https://apps.example.org/studio/app/${id}/ui/index.html`, id, brandFont))
+      .toBe(`https://apps.example.org/studio/app/${id}/.studio-brand.woff2?v=123456abcdef`)
+    expect(appBrandFontUrl(`studio-app://${id}/ui/index.html`, id, brandFont))
+      .toBe(`studio-app://${id}/.studio-brand.woff2?v=123456abcdef`)
+    expect(appBrandFontUrl(`studio-app://${id}/ui/index.html`, id, null)).toBeUndefined()
+  })
+
   it('lays the rounded radii over an app\'s defaults without dropping the others', () => {
     const merged = withShape({ VCard: { flat: true, border: true, rounded: 'lg' }, VDialog: { VCard: { flat: false } } }, roundedShapeDefaults)
     expect(merged.VCard).toEqual({ flat: true, border: true, rounded: 'xl' })
@@ -209,7 +219,8 @@ describe('app shape', () => {
 describe('the documented example', () => {
   it('loads examples/deployment/branding/branding.yml', () => {
     const { settings, assets } = readBrandingFile(new URL('../../examples/deployment/branding/branding.yml', import.meta.url).pathname)
-    expect(settings.productName).toBe('Example Twin Studio')
+    expect(settings).toMatchObject({ productName: 'Example Twin Studio', background: 'neutral', shape: 'normal', uiLanguage: 'en' })
+    expect(settings.locked).not.toContain('background')
     expect(Object.keys(settings.legal ?? {})).toEqual(['imprint', 'privacy', 'accessibility'])
     expect(Object.keys(assets).toSorted()).toEqual(['favicon', 'logo-compact', 'logo-dark', 'logo-light'])
     expect(colorNotes(settings)).toEqual([])

@@ -118,14 +118,22 @@ export const roundedShapeDefaults = {
 }
 
 type Defaults = Record<string, unknown>
+type ComponentDefaults = Record<string, Defaults>
 
 /** Lays a shape's defaults over others, component by component and into nested ones. */
-export function withShape (base: Defaults, shape: Defaults): Defaults {
+export function withShape (base: ComponentDefaults, shape: ComponentDefaults): ComponentDefaults {
+  return {
+    ...base,
+    ...Object.fromEntries(Object.entries(shape).map(([component, values]) => [component, mergeDefaults(base[component] ?? {}, values)])),
+  }
+}
+
+function mergeDefaults (base: Defaults, shape: Defaults): Defaults {
   const result: Defaults = { ...base }
   for (const [component, values] of Object.entries(shape)) {
     const current = result[component]
     result[component] = current && typeof current === 'object' && values && typeof values === 'object'
-      ? withShape(current as Defaults, values as Defaults)
+      ? mergeDefaults(current as Defaults, values as Defaults)
       : values
   }
   return result

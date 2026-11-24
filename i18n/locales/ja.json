@@ -1349,6 +1349,7 @@
     }
   },
   "legal": {
+    "navigation": "法的情報",
     "pages": {
       "imprint": "運営者情報",
       "privacy": "プライバシーポリシー",
@@ -1359,27 +1360,31 @@
   "about": {
     "link": "概要",
     "title": "{name} について",
-    "subtitle": "この Studio の運営者と、その背後にあるプロジェクト",
+    "subtitle": "この環境、オープンソースプロジェクト、開発チームについて",
     "runBy": "提供: {organisation}",
     "support": "サポート",
     "help": "ヘルプ",
     "basyxTitle": "Eclipse BaSyx",
     "poweredBy": "Powered by Eclipse BaSyx",
     "poweredByLabel": "Powered by Eclipse BaSyx: プロジェクトについて",
-    "basyxText": "Eclipse BaSyx は、インダストリー 4.0 のための Eclipse Foundation のオープンソースプロジェクトです。IDTA が標準化したデジタルツインであるアセット管理シェルのためのコンポーネントと SDK を提供します。",
-    "studioText": "BaSyx Studio は、Web とデスクトップでアセット管理シェルを扱うための環境で、アプリで拡張できます。",
+    "basyxText": "Asset Administration Shell（AAS）に基づくデジタルツインで、機械、ソフトウェア、データをつなぎます。Eclipse BaSyx は、その構築に使えるオープンソースのサービスと SDK を提供します。",
+    "studioText": "Studio ではシェルの閲覧や編集、AASX パッケージの操作ができ、アプリでビューやワークフローを追加できます。",
+    "projectResources": "プロジェクトの資料",
+    "community": "コミュニティ",
+    "licences": "ライセンス",
     "links": {
       "website": "プロジェクトの Web サイト",
       "basyxOrg": "basyx.org",
       "go": "BaSyx Go Components",
-      "wiki": "ドキュメント（Wiki）",
-      "github": "GitHub のソースコード",
+      "wiki": "ドキュメントを読む",
+      "github": "GitHub の BaSyx",
       "docker": "Docker Hub のコンテナーイメージ",
       "mail": "開発者メーリングリスト",
       "openHour": "BaSyx Open Hour"
     },
     "license": "ライセンス",
     "licenseText": "BaSyx Studio は MIT ライセンスのオープンソースです",
+    "thirdPartyNotices": "サードパーティーのライセンス表示",
     "team": "開発チーム",
     "teamSubtitle": "BaSyx Studio と BaSyx コンポーネントを開発しているメンバー",
     "github": "GitHub の {name}",
@@ -1433,6 +1438,7 @@
         "dark": "セカンダリ（ダークテーマ）"
       }
     },
+    "contrastWarning": "{field}（{color}）のコントラスト比は4.5:1未満です。Studioでは代わりに{shade}を表示します。",
     "lockAccent": "ユーザーはこのアクセントカラーを使い続けます",
     "defaults": "既定値とロック",
     "defaultsSubtitle": "ユーザーの初期設定。ロックすると変更できません",

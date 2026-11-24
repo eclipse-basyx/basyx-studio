@@ -208,6 +208,8 @@ export interface ThemeTokens {
    * before, which means `normal`).
    */
   shape?: 'normal' | 'rounded'
+  /** URL of the deployment's woff2 font on this installation's file origin (app API 0.1.16). */
+  font?: string
 }
 
 /** Where the frame runs. Sent on connect and again with every change. */

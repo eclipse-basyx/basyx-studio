@@ -1349,6 +1349,7 @@
     }
   },
   "legal": {
+    "navigation": "法律信息",
     "pages": {
       "imprint": "法律声明",
       "privacy": "隐私政策",
@@ -1359,27 +1360,31 @@
   "about": {
     "link": "关于",
     "title": "关于 {name}",
-    "subtitle": "谁在运营此 Studio，以及其背后的项目",
+    "subtitle": "了解此部署、开源项目及其开发团队",
     "runBy": "由 {organisation} 提供",
     "support": "支持",
     "help": "帮助",
     "basyxTitle": "Eclipse BaSyx",
     "poweredBy": "由 Eclipse BaSyx 提供技术支持",
     "poweredByLabel": "由 Eclipse BaSyx 提供技术支持：关于该项目",
-    "basyxText": "Eclipse BaSyx 是 Eclipse 基金会面向工业 4.0 的开源项目：为资产管理壳（IDTA 的标准化数字孪生）提供组件和 SDK。",
-    "studioText": "BaSyx Studio 是它在网页和桌面上处理资产管理壳的环境，可通过应用扩展。",
+    "basyxText": "使用基于资产管理壳（AAS）的数字孪生连接机器、软件与数据。Eclipse BaSyx 提供构建数字孪生所需的开源服务和 SDK。",
+    "studioText": "在 Studio 中，您可以浏览和编辑资产管理壳、处理 AASX 包，并通过应用添加视图和工作流。",
+    "projectResources": "项目资源",
+    "community": "社区",
+    "licences": "许可证",
     "links": {
       "website": "项目网站",
       "basyxOrg": "basyx.org",
       "go": "BaSyx Go Components",
-      "wiki": "文档（Wiki）",
-      "github": "GitHub 上的源代码",
+      "wiki": "阅读文档",
+      "github": "在 GitHub 上查看 BaSyx",
       "docker": "Docker Hub 上的容器镜像",
       "mail": "开发者邮件列表",
       "openHour": "BaSyx Open Hour"
     },
     "license": "许可证",
     "licenseText": "BaSyx Studio 以 MIT 许可证开源",
+    "thirdPartyNotices": "第三方许可证声明",
     "team": "开发团队",
     "teamSubtitle": "开发 BaSyx Studio 和 BaSyx 组件的人",
     "github": "{name} 的 GitHub",
@@ -1433,6 +1438,7 @@
         "dark": "次要色，深色主题"
       }
     },
+    "contrastWarning": "{field}（{color}）的对比度低于 4.5:1。Studio 将改用 {shade}。",
     "lockAccent": "用户保持此强调色",
     "defaults": "默认值和锁定",
     "defaultsSubtitle": "用户的初始设置；锁定后用户无法更改",

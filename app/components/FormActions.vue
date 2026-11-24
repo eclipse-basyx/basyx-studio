@@ -1,8 +1,11 @@
 <template>
-  <!-- In a drawer that offers a footer, the actions sit there, always in view
-       below the scrolling form; elsewhere they stick to the bottom of the form. -->
+  <!-- Drawer actions stay in the drawer footer. An inline row scrolls with
+       the form; the remaining forms use a sticky row. -->
   <Teleport defer :disabled="!footer" :to="footer ?? 'body'">
-    <div class="bg-surface px-4 py-3 d-flex align-center ga-2" :class="footer ? 'border-t' : 'position-sticky bottom-0'">
+    <div
+      class="py-3 d-flex align-center ga-2"
+      :class="footer ? 'bg-surface px-4 border-t' : inline ? 'flex-wrap' : 'bg-surface px-4 position-sticky bottom-0'"
+    >
       <span v-if="message" class="text-body-small text-medium-emphasis">{{ message }}</span>
       <v-chip v-else-if="dirty" color="warning" :text="t('editor.unapplied')" />
       <v-spacer />
@@ -25,6 +28,7 @@
     dirty: boolean
     busy: boolean
     creating?: boolean
+    inline?: boolean
     blocked?: boolean
     message?: string | null
     applyText: string

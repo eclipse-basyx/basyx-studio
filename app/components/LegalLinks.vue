@@ -1,6 +1,6 @@
 <template>
   <v-btn
-    v-for="link in branding.legalLinks.value"
+    v-for="link in links"
     :key="link.page"
     :href="link.href"
     :prepend-icon="link.icon"
@@ -17,7 +17,10 @@
   // The deployment's legal pages in the UI language (ADR 0055): external
   // pages open in a new tab, hosted ones on Studio's /legal pages, which work
   // without signing in. Nothing for pages the deployment does not have.
-  withDefaults(defineProps<{ about?: boolean }>(), { about: false })
+  const props = defineProps<{ about?: boolean, externalOnly?: boolean }>()
   const { t } = useI18n()
   const branding = useBranding()
+  const links = computed(() => props.externalOnly
+    ? branding.legalLinks.value.filter(link => link.href)
+    : branding.legalLinks.value)
 </script>

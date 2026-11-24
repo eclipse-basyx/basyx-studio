@@ -1188,7 +1188,7 @@
       "normal": "Normal",
       "rounded": "Runder"
     },
-    "about": "Über {name}",
+    "about": "Info zu {name}",
     "version": "Version {version}",
     "commit": "Commit {commit}",
     "built": "Erstellt am {date}",
@@ -1530,6 +1530,7 @@
     }
   },
   "legal": {
+    "navigation": "Rechtliche Informationen",
     "pages": {
       "imprint": "Impressum",
       "privacy": "Datenschutzerklärung",
@@ -1538,29 +1539,33 @@
     }
   },
   "about": {
-    "link": "Über",
-    "title": "Über {name}",
-    "subtitle": "Wer dieses Studio betreibt, und das Projekt dahinter",
+    "link": "Info",
+    "title": "Info zu {name}",
+    "subtitle": "Informationen zur Bereitstellung, zum Open-Source-Projekt und zum Team",
     "runBy": "Bereitgestellt von {organisation}",
     "support": "Support",
     "help": "Hilfe",
     "basyxTitle": "Eclipse BaSyx",
     "poweredBy": "Powered by Eclipse BaSyx",
     "poweredByLabel": "Powered by Eclipse BaSyx: über das Projekt",
-    "basyxText": "Eclipse BaSyx ist ein Open-Source-Projekt der Eclipse Foundation für Industrie 4.0: Komponenten und SDKs für die Verwaltungsschale, den standardisierten digitalen Zwilling der IDTA.",
-    "studioText": "BaSyx Studio ist seine Umgebung für die Arbeit mit Verwaltungsschalen im Web und auf dem Desktop, erweiterbar mit Apps.",
+    "basyxText": "Vernetzen Sie Maschinen, Software und Daten mit digitalen Zwillingen auf Basis der Verwaltungsschale (AAS). Eclipse BaSyx stellt dafür Open-Source-Dienste und SDKs bereit.",
+    "studioText": "In Studio können Sie Verwaltungsschalen erkunden und bearbeiten, mit AASX-Paketen arbeiten und Ansichten und Arbeitsabläufe per App ergänzen.",
+    "projectResources": "Projektressourcen",
+    "community": "Community",
+    "licences": "Lizenzen",
     "links": {
       "website": "Projektwebsite",
       "basyxOrg": "basyx.org",
       "go": "BaSyx Go Components",
-      "wiki": "Dokumentation (Wiki)",
-      "github": "Quellcode auf GitHub",
+      "wiki": "Dokumentation lesen",
+      "github": "BaSyx auf GitHub",
       "docker": "Container-Images auf Docker Hub",
       "mail": "Mailingliste der Entwickler",
       "openHour": "BaSyx Open Hour"
     },
     "license": "Lizenz",
     "licenseText": "BaSyx Studio ist Open Source unter der MIT-Lizenz",
+    "thirdPartyNotices": "Lizenzhinweise für Drittsoftware",
     "team": "Entwicklungsteam",
     "teamSubtitle": "Die Menschen, die BaSyx Studio und die BaSyx-Komponenten entwickeln",
     "github": "{name} auf GitHub",
@@ -1614,6 +1619,7 @@
         "dark": "Sekundär, dunkles Design"
       }
     },
+    "contrastWarning": "{field} ({color}) hat einen Kontrast unter 4,5:1. Studio zeigt stattdessen {shade} an.",
     "lockAccent": "Nutzer behalten diese Akzentfarbe",
     "defaults": "Vorgaben und Sperren",
     "defaultsSubtitle": "Womit Nutzer beginnen; ein geschlossenes Schloss verhindert Änderungen",

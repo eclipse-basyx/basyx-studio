@@ -29,6 +29,25 @@ export const brandingAssetTypes: Record<BrandingAssetSlot, Record<string, string
   'font': { '.woff2': 'font/woff2' },
 }
 
+/** Path of the deployment font within an installation's files. */
+export const appBrandFontPath = '.studio-brand.woff2'
+
+/** Serve the deployment font on the app's own file origin, including on desktop. */
+export function appBrandFontUrl (entryUrl: string, installationId: string, font: string | null | undefined): string | undefined {
+  const version = font?.match(/^\/branding\/font\?v=([a-f0-9]{12})$/)?.[1]
+  if (!version) {
+    return undefined
+  }
+  const entry = new URL(entryUrl)
+  const installationPath = `/app/${installationId}/`
+  const start = entry.pathname.indexOf(installationPath)
+  if (entry.protocol !== 'studio-app:' && start === -1) {
+    return undefined
+  }
+  const base = entry.protocol === 'studio-app:' ? '/' : entry.pathname.slice(0, start + installationPath.length)
+  return new URL(`${base}${appBrandFontPath}?v=${version}`, entry).href
+}
+
 /** Largest brand file Studio accepts. */
 export const brandingAssetMaxBytes = 2 * 1024 * 1024
 
@@ -149,8 +168,8 @@ export function pickLocalized<T> (values: Record<string, T> | null | undefined, 
  * lighter shade of them (readableShade), so text in the colour reaches 4.5:1
  * (WCAG AA).
  */
-export function colorNotes (settings: Pick<BrandingSettings, 'accent' | 'secondary'>): string[] {
-  const notes: string[] = []
+export function colorAdjustments (settings: Pick<BrandingSettings, 'accent' | 'secondary'>) {
+  const notes: Array<{ name: 'accent' | 'secondary', mode: 'light' | 'dark', color: string, shade: string }> = []
   for (const name of ['accent', 'secondary'] as const) {
     const color = settings[name]
     if (!color) {
@@ -159,9 +178,14 @@ export function colorNotes (settings: Pick<BrandingSettings, 'accent' | 'seconda
     for (const mode of ['light', 'dark'] as const) {
       const shade = readableShade(color[mode], mode === 'dark')
       if (shade !== color[mode]) {
-        notes.push(`The ${name} colour ${color[mode]} is below 4.5:1 contrast in the ${mode} theme; Studio uses ${shade} instead.`)
+        notes.push({ name, mode, color: color[mode], shade })
       }
     }
   }
   return notes
+}
+
+/** English notes for deployment logs and API clients. */
+export function colorNotes (settings: Pick<BrandingSettings, 'accent' | 'secondary'>): string[] {
+  return colorAdjustments(settings).map(({ name, mode, color, shade }) => `The ${name} colour ${color} is below 4.5:1 contrast in the ${mode} theme; Studio uses ${shade} instead.`)
 }

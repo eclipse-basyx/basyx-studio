@@ -15,6 +15,8 @@ export const studioContextSchema = z.object({
   anonymous: z.boolean(),
   /** Whether administrators may add, change and remove infrastructures (STUDIO_INFRASTRUCTURES_EDITABLE). */
   infrastructuresEditable: z.boolean(),
+  /** Whether the deployment enables branding administration (STUDIO_BRANDING_EDITABLE). */
+  brandingEditable: z.boolean(),
   product: z.object({ name: z.string(), version: z.string(), commit: z.string().nullable(), buildDate: z.string().nullable() }),
   /**
    * The deployment's corporate design (ADR 0055): logos, favicon and font

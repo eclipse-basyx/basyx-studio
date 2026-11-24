@@ -16,6 +16,7 @@ export default defineStudioHandler(async (): Promise<StudioContext> => {
     loginRequired: studio.config.login !== null,
     anonymous: studio.config.anonymous !== null,
     infrastructuresEditable: studio.config.infrastructuresEditable,
+    brandingEditable: studio.config.branding.editable,
     product: { name: productName ?? 'BaSyx Studio', version, commit: commit || null, buildDate: buildDate || null },
     branding,
     legal,

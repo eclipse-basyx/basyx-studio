@@ -100,24 +100,36 @@
               <v-item v-for="name in backgroundNames" :key="name" v-slot="{ isSelected, toggle }" :value="name">
                 <!-- A small page: a card with an accent dot and a raised control on the background. -->
                 <v-card
+                  :aria-disabled="branding.locked('background') || undefined"
                   :aria-pressed="isSelected"
                   :border="isSelected ? 'primary md opacity-100' : true"
+                  class="text-start"
                   :color="backgrounds[name][mode].background"
                   :disabled="branding.locked('background')"
+                  tag="button"
+                  type="button"
                   width="104"
-                  @click="toggle"
+                  @click="!branding.locked('background') && toggle?.()"
                 >
                   <v-sheet
                     border
                     class="d-flex align-center ga-1 ma-2 mb-1 pa-2"
                     :color="backgrounds[name][mode].surface"
                     rounded
+                    tag="span"
                   >
-                    <v-avatar :color="swatchColor(preferences.accent)" size="10" />
-                    <v-sheet class="flex-grow-1" :color="backgrounds[name][mode]['surface-light']" height="6" rounded />
+                    <v-avatar :color="swatchColor(preferences.accent)" size="10" tag="span" />
+
+                    <v-sheet
+                      class="flex-grow-1"
+                      :color="backgrounds[name][mode]['surface-light']"
+                      height="6"
+                      rounded
+                      tag="span"
+                    />
                   </v-sheet>
 
-                  <div class="text-body-small text-truncate px-2 pb-2">{{ t(`settings.backgrounds.${name}`) }}</div>
+                  <span class="d-block text-body-small text-truncate px-2 pb-2">{{ t(`settings.backgrounds.${name}`) }}</span>
                 </v-card>
               </v-item>
             </v-item-group>
@@ -267,7 +279,7 @@
           <v-card-actions class="flex-wrap">
             <LegalLinks about />
             <v-spacer />
-            <PoweredByBasyx />
+            <PoweredByBasyx project />
           </v-card-actions>
         </v-card>
       </v-col>
@@ -286,8 +298,7 @@
   const { t, locale, localeCodes, setLocale } = useI18n()
   const session = useSessionStore()
   const branding = useBranding()
-  /** Administrators see the Branding page; read-only when the deployment fixes the branding. */
-  const brandingShown = computed(() => session.isAdmin)
+  const brandingShown = computed(() => session.isAdmin && session.context?.brandingEditable !== false)
   const product = computed(() => session.context?.product)
   const legal = computed(() => session.context?.legal)
   const features = computed(() => session.context?.features)

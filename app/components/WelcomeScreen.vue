@@ -1,6 +1,6 @@
 <template>
   <v-dialog v-model="open" fullscreen transition="fade-transition">
-    <v-sheet
+    <v-card-fullscreen
       class="position-relative d-flex align-center justify-center overflow-hidden"
       color="black"
       height="100%"
@@ -74,12 +74,12 @@
                 @click.stop
               />
 
-              <PoweredByBasyx v-if="branded" @click.stop="open = false" />
+              <PoweredByBasyx @click.stop="open = false" />
             </div>
           </v-fade-transition>
         </v-sheet>
       </div>
-    </v-sheet>
+    </v-card-fullscreen>
   </v-dialog>
 </template>
 
@@ -135,10 +135,7 @@
   // replace BaSyx Studio's (ADR 0055); its first word stays white, the rest
   // takes the accent.
   const branding = useBranding()
-  const branded = branding.customized.value && (session.context?.product.name !== 'BaSyx Studio' || Boolean(session.context?.branding.logoDark ?? session.context?.branding.logoLight))
-  const brandLogo = branded && (session.context?.branding.logoDark ?? session.context?.branding.logoLight ?? session.context?.branding.logoCompact)
-    ? branding.url(session.context?.branding.logoDark ?? session.context?.branding.logoLight ?? session.context?.branding.logoCompact)
-    : null
+  const brandLogo = branding.url(session.context?.branding.logoDark ?? session.context?.branding.logoLight ?? session.context?.branding.logoCompact)
   const [firstWord = '', ...otherWords] = branding.name.value.split(' ')
   const name = [firstWord, otherWords.length > 0 ? ` ${otherWords.join(' ')}` : ''] as const
   const glyphs = String.raw`ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&<>/\=+*`

@@ -60,13 +60,13 @@ appearance:
   theme: system                       # light, dark or system
   accent: { light: "#00549F", dark: "#5FA8FF" }   # or one "#RRGGBB" for both
   secondary: "#F69222"
-  background: slate                   # neutral, slate, warm, midnight, contrast
-  shape: rounded                      # normal or rounded
+  background: neutral                   # neutral, slate, warm, midnight, contrast
+  shape: normal                      # normal or rounded
 
 languages:
-  default: de                         # for users who pick none; else the browser's
-  available: [de, en]                 # the languages users can pick from
-  values: de                          # default language of multi-language values
+  default: en                         # for users who pick none; else the browser's
+  available: [en, de]                 # the languages users can pick from
+  values: en                          # default language of multi-language values
 
 signInMessage:
   de: Willkommen im Digital-Twin-Portal der Example GmbH.
@@ -109,7 +109,7 @@ the dark theme, and says so in the log and on the Branding page. Give the
 dark theme its own, lighter colour to keep control over it.
 
 **Font.** The font replaces Roboto in the whole interface; Roboto stays the
-fallback for missing characters. Bundled apps keep their own font.
+fallback for missing characters. Bundled apps use the same deployment font.
 
 ## Environment variables
 
@@ -237,7 +237,7 @@ Every Studio has an About page (`/about`, also without signing in): this
 deployment's name, organisation, version, support and legal links, then
 Eclipse BaSyx, its links, its developer team and the organisations involved.
 *Powered by Eclipse BaSyx* is shown on the sign-in page, in the account menu,
-in Settings, on the About page and on the branded desktop welcome screen. No
+in Settings, on the About page and on the desktop welcome screen. No
 setting removes it.
 
 ## Coming from the BaSyx AAS Web UI

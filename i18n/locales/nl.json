@@ -1349,6 +1349,7 @@
     }
   },
   "legal": {
+    "navigation": "Juridische informatie",
     "pages": {
       "imprint": "Colofon",
       "privacy": "Privacyverklaring",
@@ -1359,27 +1360,31 @@
   "about": {
     "link": "Over",
     "title": "Over {name}",
-    "subtitle": "Wie deze Studio beheert, en het project erachter",
+    "subtitle": "Informatie over deze installatie, het opensourceproject en het team",
     "runBy": "Aangeboden door {organisation}",
     "support": "Ondersteuning",
     "help": "Help",
     "basyxTitle": "Eclipse BaSyx",
     "poweredBy": "Powered by Eclipse BaSyx",
     "poweredByLabel": "Powered by Eclipse BaSyx: over het project",
-    "basyxText": "Eclipse BaSyx is een opensourceproject van de Eclipse Foundation voor Industrie 4.0: componenten en SDK's voor de Asset Administration Shell, de gestandaardiseerde digitale tweeling van de IDTA.",
-    "studioText": "BaSyx Studio is de omgeving om met Asset Administration Shells te werken op het web en op de desktop, uitbreidbaar met apps.",
+    "basyxText": "Verbind machines, software en gegevens met digitale tweelingen op basis van de Asset Administration Shell (AAS). Eclipse BaSyx biedt de opensourcediensten en SDK’s om ze te bouwen.",
+    "studioText": "In Studio kun je shells bekijken en bewerken, met AASX-pakketten werken en via apps weergaven en werkstromen toevoegen.",
+    "projectResources": "Projectbronnen",
+    "community": "Community",
+    "licences": "Licenties",
     "links": {
       "website": "Projectwebsite",
       "basyxOrg": "basyx.org",
       "go": "BaSyx Go Components",
-      "wiki": "Documentatie (wiki)",
-      "github": "Broncode op GitHub",
+      "wiki": "Lees de documentatie",
+      "github": "BaSyx op GitHub",
       "docker": "Container-images op Docker Hub",
       "mail": "Mailinglijst voor ontwikkelaars",
       "openHour": "BaSyx Open Hour"
     },
     "license": "Licentie",
     "licenseText": "BaSyx Studio is open source onder de MIT-licentie",
+    "thirdPartyNotices": "Licentievermeldingen van derden",
     "team": "Ontwikkelteam",
     "teamSubtitle": "De mensen die BaSyx Studio en de BaSyx-componenten bouwen",
     "github": "{name} op GitHub",
@@ -1433,6 +1438,7 @@
         "dark": "Secundair, donker thema"
       }
     },
+    "contrastWarning": "{field} ({color}) heeft een contrast lager dan 4,5:1. Studio toont in plaats daarvan {shade}.",
     "lockAccent": "Gebruikers houden deze accentkleur",
     "defaults": "Standaarden en vergrendelingen",
     "defaultsSubtitle": "Waarmee gebruikers beginnen; een gesloten slot voorkomt dat ze het wijzigen",

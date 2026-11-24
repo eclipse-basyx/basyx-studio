@@ -2,11 +2,13 @@
   <v-container>
     <v-empty-state
       v-if="session.needsLogin"
-      :image="branding.logo.value"
-      size="96"
       :text="branding.signInMessage.value ?? t('home.signInText')"
       :title="t('home.signInTitle', { name: branding.name.value })"
     >
+      <template #media>
+        <v-img :alt="branding.name.value" height="96" :src="branding.logo.value" width="96" />
+      </template>
+
       <template #actions>
         <div class="d-flex flex-column align-center ga-4">
           <v-btn-primary :loading="signingIn" prepend-icon="mdi-login" :text="t('app.signIn')" @click="signIn" />

@@ -51,7 +51,7 @@
       />
 
       <v-alert
-        v-for="note in data.notes"
+        v-for="note in contrastWarnings"
         :key="note"
         class="mb-4"
         :text="note"
@@ -97,6 +97,7 @@
 
                     <div class="d-flex flex-wrap align-center ga-2">
                       <v-btn-primary
+                        :class="mode.colors['on-primary'] === '#000000' ? 'text-black' : 'text-white'"
                         :color="mode.colors.primary"
                         :rounded="previewShape === 'rounded' ? 'pill' : 'lg'"
                         tabindex="-1"
@@ -319,7 +320,7 @@
                 @update:model-value="value => setSignInMessage(value)"
               />
 
-              <div v-for="page in legalPages" :key="page">
+              <div v-for="page in legalPages" :key="page" :aria-label="t(`legal.pages.${page}`)" role="group">
                 <SettingLabel :text="t(`legal.pages.${page}`)" />
 
                 <v-btn-toggle
@@ -363,18 +364,22 @@
           </v-card>
         </v-col>
       </v-row>
+    </template>
+
+    <div v-if="editable && !view.error.value" class="mt-6" data-test="branding-actions">
+      <v-divider />
 
       <FormActions
-        v-if="editable"
         :apply-text="t('branding.save')"
-        :blocked="!valid"
+        :blocked="!valid || busy !== null"
         :busy="busy === 'save'"
         :dirty="dirty"
+        inline
         :message="dirty ? null : updatedText"
         @apply="save"
         @discard="discard"
       />
-    </template>
+    </div>
   </v-container>
 </template>
 
@@ -383,7 +388,7 @@
   import type { LocaleCode } from '#shared/i18n/locales'
   import { useQuery, useQueryCache } from '@pinia/colada'
   import { backgroundNames, hexColorPattern, shapes, themeColors } from '#shared/appearance'
-  import { brandingAssetSlots, brandingAssetTypes, legalPages } from '#shared/branding'
+  import { brandingAssetSlots, brandingAssetTypes, colorAdjustments, legalPages } from '#shared/branding'
   import { locales } from '#shared/i18n/locales'
   import basyxLogo from '~/assets/basyx-logo.svg'
 
@@ -407,11 +412,11 @@
 
   // The administrators' settings being edited.
   const draft = ref<BrandingSettings>({})
-  watch(() => data.value?.admin, admin => {
-    if (admin) {
+  watch(() => data.value?.admin, (admin, previous) => {
+    if (admin && (!previous || stable(admin) !== stable(previous))) {
       draft.value = structuredClone(toRaw(admin))
     }
-  }, { immediate: true })
+  }, { immediate: true, flush: 'sync' })
 
   /** The object without a key. */
   function without<T extends object, K extends keyof T> (value: T, key: K): Omit<T, K> {
@@ -536,6 +541,8 @@
   }
 
   // The preview: the draft where administrators may change it, else what is in effect.
+  const contrastWarnings = computed(() => colorAdjustments({ accent: shownValue('accent'), secondary: shownValue('secondary') })
+    .map(({ name, mode, color, shade }) => t('branding.contrastWarning', { field: t(`branding.color.${name}.${mode}`), color, shade })))
   const previewName = computed(() => shownValue('productName') ?? t('app.name'))
   const previewShape = computed(() => shownValue('shape') ?? 'normal')
   const previews = computed(() => (['light', 'dark'] as const).map(name => {
@@ -568,7 +575,11 @@
     busy.value = what
     error.value = null
     try {
-      queryCache.setQueryData(key, await request())
+      const updated = await request()
+      if (what === 'save' || what === 'import') {
+        draft.value = structuredClone(updated.admin)
+      }
+      queryCache.setQueryData(key, updated)
       await session.reloadContext()
       // Defaults and locks change what users' preferences are in effect.
       await queryCache.invalidateQueries({ key: ['me', 'preferences'] })

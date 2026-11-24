@@ -85,12 +85,18 @@
     const brand = session.context?.branding
     return (dark ? brand?.secondaryDark : brand?.secondaryLight) ?? undefined
   }
+  const brand = computed(() => session.context?.branding)
+  const initialTheme = brand.value?.theme
+  const colorScheme = useCookie<string>('color-scheme')
+  if ((initialTheme === 'light' || initialTheme === 'dark') && (brand.value?.locked.includes('theme') || !colorScheme.value)) {
+    theme.change(initialTheme)
+  }
   for (const mode of ['light', 'dark'] as const) {
-    const brand = session.context?.branding
+    const initialBrand = brand.value
     const dark = mode === 'dark'
     const accent = deploymentAccent(dark)
-    if (accent || brand?.background || brand?.secondaryLight) {
-      Object.assign(theme.themes.value[mode]!.colors, themeColors(accent ?? 'basyx', brand?.background ?? 'neutral', dark, deploymentSecondary(dark)))
+    if (accent || initialBrand?.background || deploymentSecondary(dark)) {
+      Object.assign(theme.themes.value[mode]!.colors, themeColors(accent ?? 'basyx', initialBrand?.background ?? 'neutral', dark, deploymentSecondary(dark)))
     }
   }
   const shapeDefaults = ref<typeof roundedDefaults | undefined>(session.context?.branding.shape === 'rounded' ? roundedDefaults : undefined)
@@ -107,32 +113,23 @@
         void setLocale(known)
       }
     }, { immediate: true })
-    // A deployment that offers only some languages (ADR 0055): a browser
-    // language outside them switches to the deployment's default.
-    watch(locale, current => {
-      const brand = session.context?.branding
-      const offered = brand?.languages
-      if (offered && !offered.some(code => code === current || locales.find(entry => entry.code === current)?.base === code)) {
-        void setLocale(brand.uiLanguage && offered.includes(brand.uiLanguage) ? brand.uiLanguage : offered[0]!)
-      }
-    }, { immediate: true })
-
     const dark = window.matchMedia('(prefers-color-scheme: dark)')
     const apply = () => {
       const stored = preferences.query.data.value
-      if (stored) {
-        for (const mode of ['light', 'dark'] as const) {
-          const accent = stored.accent === 'basyx' ? (deploymentAccent(mode === 'dark') ?? stored.accent) : stored.accent
-          Object.assign(theme.themes.value[mode]!.colors, themeColors(accent, stored.background, mode === 'dark', deploymentSecondary(mode === 'dark')))
-        }
-        theme.change((stored.theme === 'system' ? dark.matches : stored.theme === 'dark') ? 'dark' : 'light')
+      const current = brand.value
+      for (const mode of ['light', 'dark'] as const) {
+        const isDark = mode === 'dark'
+        const accent = stored?.accent && stored.accent !== 'basyx' ? stored.accent : (deploymentAccent(isDark) ?? 'basyx')
+        Object.assign(theme.themes.value[mode]!.colors, themeColors(accent, stored?.background ?? current?.background ?? 'neutral', isDark, deploymentSecondary(isDark)))
       }
+      const mode = stored?.theme ?? current?.theme
+      if (mode) {
+        theme.change((mode === 'system' ? dark.matches : mode === 'dark') ? 'dark' : 'light')
+      }
+      shapeDefaults.value = (stored?.shape ?? current?.shape) === 'rounded' ? roundedDefaults : undefined
     }
-    watch(() => [preferences.query.data.value?.theme, preferences.query.data.value?.accent, preferences.query.data.value?.background], apply, { immediate: true })
+    watch([preferences.query.data, brand], apply, { immediate: true })
     dark.addEventListener('change', apply)
-
-    watch(() => preferences.query.data.value?.shape, shape => {
-      shapeDefaults.value = shape === 'rounded' ? roundedDefaults : undefined
-    }, { immediate: true })
+    onUnmounted(() => dark.removeEventListener('change', apply))
   })
 </script>

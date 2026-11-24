@@ -3710,6 +3710,7 @@ components:
         loginRequired: { type: boolean, description: Users sign in to Studio (OIDC). }
         anonymous: { type: boolean, description: 'Hosted without login (STUDIO_AUTH_MODE=none, ADR 0036).' }
         infrastructuresEditable: { type: boolean, description: 'Administrators may change infrastructures (STUDIO_INFRASTRUCTURES_EDITABLE, ADR 0037).' }
+        brandingEditable: { type: boolean, description: 'Branding administration is enabled (STUDIO_BRANDING_EDITABLE, ADR 0055).' }
         product:
           type: object
           description: Product name, version and build (ADR 0035).

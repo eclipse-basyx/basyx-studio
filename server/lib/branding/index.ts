@@ -9,6 +9,8 @@ import { brandingAssets, brandingSettings } from '../../database/schema'
 import { StudioProblem } from '../problem'
 
 const rowId = 'deployment'
+// Exports may reference operator-configured external logos and favicons.
+const assetUrlContentType = 'text/uri-list'
 
 /** An asset in effect, with a version that changes with its content, for caching. */
 export interface ResolvedAsset {
@@ -96,7 +98,9 @@ export async function loadAdminBranding (deps: Pick<StudioDeps, 'db'>): Promise<
   const assets: BrandingLayer['assets'] = {}
   for (const asset of assetRows) {
     if ((brandingAssetSlots as readonly string[]).includes(asset.slot)) {
-      assets[asset.slot] = { bytes: asset.content, contentType: asset.contentType }
+      assets[asset.slot] = asset.contentType === assetUrlContentType
+        ? { url: new TextDecoder().decode(asset.content) }
+        : { bytes: asset.content, contentType: asset.contentType }
     }
   }
   const times = [row?.updatedAt, ...assetRows.map(asset => asset.updatedAt)].filter((time): time is Date => time instanceof Date)
@@ -177,15 +181,13 @@ export async function deleteAdminAsset (deps: Pick<StudioDeps, 'db' | 'config'>,
 /** Replaces everything administrators set with an imported branding (ADR 0055). */
 export async function replaceAdminBranding (deps: Pick<StudioDeps, 'db' | 'config'>, layer: BrandingLayer, subject: string): Promise<void> {
   requireEditable(deps)
-  for (const [slot, asset] of Object.entries(layer.assets)) {
-    if ('url' in asset) {
-      throw new StudioProblem('invalid_request', `${slot}: an imported branding must contain its files, not links to them.`)
-    }
-  }
   await deps.db.transaction(async tx => {
     await tx.delete(brandingAssets)
-    for (const [slot, asset] of Object.entries(layer.assets) as Array<[BrandingAssetSlot, { bytes: Uint8Array, contentType: string }]>) {
-      await tx.insert(brandingAssets).values({ slot, contentType: asset.contentType, content: asset.bytes, updatedBy: subject })
+    for (const [slot, asset] of Object.entries(layer.assets) as Array<[BrandingAssetSlot, BrandingAsset]>) {
+      const file = 'url' in asset
+        ? { contentType: assetUrlContentType, content: new TextEncoder().encode(asset.url) }
+        : { contentType: asset.contentType, content: asset.bytes }
+      await tx.insert(brandingAssets).values({ slot, ...file, updatedBy: subject })
     }
     await tx.insert(brandingSettings)
       .values({ id: rowId, settings: layer.settings, updatedBy: subject })
