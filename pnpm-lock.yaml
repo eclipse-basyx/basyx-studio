@@ -832,8 +832,8 @@ importers:
         specifier: ^0.187.0
         version: 0.187.0
       web-ifc:
-        specifier: ^0.0.79
-        version: 0.0.79
+        specifier: ^0.0.80
+        version: 0.0.80
     devDependencies:
       '@types/three':
         specifier: ^0.187.0
@@ -8348,8 +8348,8 @@ packages:
       webpack-plugin-vuetify:
         optional: true
 
-  web-ifc@0.0.79:
-    resolution: {integrity: sha512-g7bGXiW3ewxwnw9zJdVzZnRiRbDl+Fd3HWuFYs1rosQ5tmDRsOOM9pwKLBjWJYla3t88hPclJWD0J2mlksWFMQ==}
+  web-ifc@0.0.80:
+    resolution: {integrity: sha512-Tvj4nRgm3H3nQYa9mOv+7rQIPcmm+t00sGWsYoCOZ8rgR5MLJqbIFBDF7K+xuQyNQIKWzBjVRFQQDqiA5tpeRQ==}
 
   web-worker@1.5.0:
     resolution: {integrity: sha512-RiMReJrTAiA+mBjGONMnjVDP2u3p9R1vkcGz6gDIrOMT3oGuYwX2WRMYI9ipkphSuE5XKEhydbhNEJh4NY9mlw==}
@@ -16722,7 +16722,7 @@ snapshots:
       - posthog-js
       - vue-i18n
 
-  web-ifc@0.0.79: {}
+  web-ifc@0.0.80: {}
 
   web-worker@1.5.0: {}
 
