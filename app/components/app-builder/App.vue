@@ -138,25 +138,31 @@
           <ProblemAlert v-if="error" class="ma-3" :error="error" />
 
           <ChatView
-            v-if="active && activeTranscript"
+            v-if="active && activeTranscript && activeDraft"
             :key="active.conversation.id"
             :agent-name="agentName(active.conversation.agentId)"
+            :annotation-context="annotationContexts.get(active.project.id) ?? null"
             :answering="answering"
             :connected="connected.get(active.conversation.id) ?? true"
             :conversation="active.conversation"
+            :draft="activeDraft"
             :files-open="rightPane === 'files'"
             :preview-open="rightPane === 'preview'"
             :project-name="active.project.name"
             :transcript="activeTranscript"
             @answer="(approvalId, decision) => answer(active!.conversation.id, approvalId, decision)"
             @delete="deleting = active!.conversation.id"
+            @draft-text="updateDraftText"
+            @edit-note="editNote"
             @install="installing = active!.project"
+            @remove-note="removeNote"
             @send="text => send(active!.conversation.id, text)"
             @set-permission-mode="(mode, acknowledgeRisk) => setPermissionMode(active!.conversation.id, mode, acknowledgeRisk)"
             @set-setting="(setting, value) => setSetting(active!.conversation.id, setting, value)"
             @show-changes="commit => showChanges(active!.project.id, commit)"
             @show-files="rightPane === 'files' && filesProject?.id === active!.project.id ? rightPane = null : openFiles(active!.project)"
             @stop="stop(active!.conversation.id)"
+            @submit="submitDraft(active.project.id, active.conversation.id, activeDraft)"
             @toggle-preview="rightPane = rightPane === 'preview' ? null : 'preview'"
             @undo="commit => undoing = { conversationId: active!.conversation.id, commit }"
           />
@@ -173,9 +179,14 @@
         <v-sheet v-if="rightPane === 'preview' && active" class="flex-shrink-0 border-s" width="42%">
           <PreviewPane
             :key="active.project.id"
+            :annotation-disabled="activeDraft?.sending || (activeDraft?.notes.length ?? 0) >= previewAnnotationLimit"
             :build-seq="buildSeq"
+            :conversation-id="active.conversation.id"
             :default-target-id="active.project.previewTargetId"
+            :notes="activeDraft?.notes"
             :project-id="active.project.id"
+            @annotate="addNote"
+            @annotation-context="annotationContexts.set(active.project.id, $event)"
             @close="rightPane = null"
           />
         </v-sheet>
@@ -248,11 +259,14 @@
 
 <script lang="ts" setup>
   import type { AgentId, AgentSettingKind, AppBuilderStatus, AppProject, ApprovalDecision, BundledAppSource, ConversationSummary, PermissionMode } from '#shared/contract'
+  import type { ChatDraft, PreviewAnnotation } from './annotation-draft'
   import type { NewAppRequest } from './NewAppDialog.vue'
   import type { Transcript } from './transcript'
   import { computed, onBeforeUnmount, onMounted, reactive, ref, shallowReactive, watch } from 'vue'
+  import { previewAnnotationLimit } from '#shared/app-preview-picker'
   import { StudioApiError } from '~/composables/useStudioApi'
   import AgentStatusList from './AgentStatusList.vue'
+  import { markEarlierPreviewBuilds, maxAnnotationLength, submitChatDraft } from './annotation-draft'
   import ChangesDialog from './ChangesDialog.vue'
   import { chatStreamIds } from './chat-streams'
   import ChatView from './ChatView.vue'
@@ -283,6 +297,9 @@
   const answering = shallowReactive(new Set<string>())
   const followers = new Map<string, () => void>()
   const activeId = ref<string | null>(null)
+  const drafts = reactive(new Map<string, ChatDraft>())
+  const activeDraft = computed(() => activeId.value ? drafts.get(activeId.value) : undefined)
+  const annotationContexts = reactive(new Map<string, string>())
   const newApp = ref(false)
   const rightPane = ref<'preview' | 'files' | null>('preview')
   const installing = ref<AppProject | null>(null)
@@ -308,6 +325,38 @@
     return null
   })
   const activeTranscript = computed(() => activeId.value ? transcripts.get(activeId.value) ?? null : null)
+  // Builds completed in another preview window or conversation don't necessarily
+  // reach the active chat's transcript. Check the installed preview while notes are visible.
+  watch([() => active.value?.project.id, activeDraft, () => activeDraft.value?.notes.some(note => !note.earlierBuild)], ([projectId, draft, hasCurrentNotes], _, onCleanup) => {
+    if (!projectId || !draft || !hasCurrentNotes) {
+      return
+    }
+    let refreshing = false
+    let stopped = false
+    const refresh = async () => {
+      if (refreshing) {
+        return
+      }
+      const notes = draft.notes.slice()
+      refreshing = true
+      try {
+        const preview = await client.call('getPreview', { projectId })
+        if (!stopped) {
+          markEarlierPreviewBuilds(notes, preview.contributions)
+        }
+      } catch {
+        // The background check retries. Sending also checks and displays any error.
+      } finally {
+        refreshing = false
+      }
+    }
+    void refresh()
+    const timer = setInterval(() => void refresh(), 2000)
+    onCleanup(() => {
+      stopped = true
+      clearInterval(timer)
+    })
+  })
   watch(() => active.value?.project.id, () => {
     if (rightPane.value === 'files' && active.value) {
       filesProject.value = active.value.project
@@ -396,6 +445,9 @@
   }
 
   function select (conversationId: string) {
+    if (!drafts.has(conversationId)) {
+      drafts.set(conversationId, { text: '', notes: [], sending: false })
+    }
     activeId.value = conversationId
     const conversation = active.value?.conversation
     if (conversation) {
@@ -464,6 +516,53 @@
     await run(() => client.call('sendPrompt', { conversationId, text }))
   }
 
+  async function submitDraft (projectId: string, conversationId: string, draft: ChatDraft) {
+    await submitChatDraft(draft, async text => {
+      if (draft.notes.length > 0) {
+        const warned = new Set(draft.notes.filter(note => note.earlierBuild))
+        const preview = await run(() => client.call('getPreview', { projectId }))
+        if (!preview) {
+          return false
+        }
+        markEarlierPreviewBuilds(draft.notes, preview.contributions)
+        // A build may have completed just before Send. Leave the draft open
+        // when it has a new warning for the user to review.
+        if (draft.notes.some(note => note.earlierBuild && !warned.has(note))) {
+          return false
+        }
+      }
+      return await succeeded(() => client.call('sendPrompt', { conversationId, text }))
+    })
+  }
+
+  function updateDraftText (text: string) {
+    if (activeDraft.value && !activeDraft.value.sending) {
+      activeDraft.value.text = text
+    }
+  }
+
+  function addNote (annotation: Omit<PreviewAnnotation, 'id' | 'text'>) {
+    const draft = activeDraft.value
+    if (draft && !draft.sending && draft.notes.length < previewAnnotationLimit) {
+      draft.notes.push({ ...annotation, id: crypto.randomUUID(), text: '' })
+    }
+  }
+
+  function editNote (id: string, text: string) {
+    const draft = activeDraft.value
+    const note = draft?.notes.find(note => note.id === id)
+    if (note && !draft?.sending) {
+      note.text = text.slice(0, maxAnnotationLength)
+    }
+  }
+
+  function removeNote (id: string) {
+    const draft = activeDraft.value
+    if (draft && !draft.sending) {
+      draft.notes = draft.notes.filter(note => note.id !== id)
+    }
+  }
+
   async function stop (conversationId: string) {
     await run(() => client.call('cancelTurn', { conversationId }))
   }
@@ -511,6 +610,7 @@
     followers.get(conversationId)?.()
     followers.delete(conversationId)
     transcripts.delete(conversationId)
+    drafts.delete(conversationId)
     connected.delete(conversationId)
     if (activeId.value === conversationId) {
       activeId.value = null
@@ -535,6 +635,7 @@
       for (const conversation of target.project.conversations) {
         forget(conversation.id)
       }
+      annotationContexts.delete(target.project.id)
       projects.value = projects.value.filter(entry => entry.id !== target.project.id)
     }
   }

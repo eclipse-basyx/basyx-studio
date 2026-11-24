@@ -1,4 +1,13 @@
 {
+  "annotations": {
+    "toggle": "Annotate element",
+    "picking": "Select an element, or use the arrow keys and Enter. Esc cancels.",
+    "highlighted": "Highlighted element: {tag}",
+    "title": "Preview annotations",
+    "note": "Annotation {number}",
+    "remove": "Remove annotation",
+    "previousPreview": "From an earlier preview"
+  },
   "app": {
     "title": "App Builder",
     "subtitle": "Describe an app, and a coding agent builds it on this computer."

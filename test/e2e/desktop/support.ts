@@ -33,7 +33,7 @@ function executablePath (): string {
  * processes left over would hold up the worker's teardown), and it is
  * started once more, with the test given the time for it.
  */
-async function startWithWindow (directory: string): Promise<{ app: ElectronApplication, window: Page }> {
+async function startWithWindow (directory: string, env: NodeJS.ProcessEnv): Promise<{ app: ElectronApplication, window: Page }> {
   const windowTimeout = 60_000
   for (let attempt = 1; ; attempt++) {
     const app = await electron.launch({
@@ -41,7 +41,7 @@ async function startWithWindow (directory: string): Promise<{ app: ElectronAppli
       // macOS: an in-memory keychain, so test runs never prompt for Keychain access.
       // Linux: the Secret Service (CI unlocks a gnome-keyring), never plain text.
       args: process.platform === 'darwin' ? ['--use-mock-keychain'] : (process.platform === 'linux' ? ['--password-store=gnome-libsecret'] : []),
-      env: { ...process.env, STUDIO_USER_DATA_DIR: join(directory, 'user-data') },
+      env: { ...process.env, ...env, STUDIO_USER_DATA_DIR: join(directory, 'user-data') },
     })
     const output: string[] = []
     const collect = (chunk: Buffer) => output.push(chunk.toString())
@@ -78,9 +78,9 @@ function killProcessGroup (app: ElectronApplication): void {
 }
 
 /** Starts the packaged app with a throwaway data directory and waits for the start page. */
-export async function launchStudio (): Promise<{ app: ElectronApplication, window: Page, directory: string }> {
+export async function launchStudio (env: NodeJS.ProcessEnv = {}): Promise<{ app: ElectronApplication, window: Page, directory: string }> {
   const directory = await mkdtemp(join(tmpdir(), 'studio-e2e-'))
-  const { app, window } = await startWithWindow(directory)
+  const { app, window } = await startWithWindow(directory, env)
   // A new profile starts with the welcome screen over the app; a click skips
   // its intro, and Enter Studio closes it for this start.
   const welcome = window.getByRole('dialog')

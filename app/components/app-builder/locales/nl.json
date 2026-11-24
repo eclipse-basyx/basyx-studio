@@ -1,4 +1,13 @@
 {
+  "annotations": {
+    "toggle": "Element annoteren",
+    "picking": "Selecteer een element met de muis of met de pijltjestoetsen en Enter. Druk op Esc om te annuleren.",
+    "highlighted": "Gemarkeerd element: {tag}",
+    "title": "Voorbeeldannotaties",
+    "note": "Annotatie {number}",
+    "remove": "Annotatie verwijderen",
+    "previousPreview": "Uit een eerder voorbeeld"
+  },
   "app": {
     "title": "App Builder",
     "subtitle": "Beschrijf een app, en een codeeragent bouwt hem op deze computer."

@@ -447,6 +447,8 @@ export interface AppFile {
   sandbox: AppSandbox
   /** The installation may show other apps' views in its pages (`studio.ui.navigation`, ADR 0051). */
   embedsViews: boolean
+  /** App Builder preview contribution entry, eligible for the desktop picker. */
+  previewEntry: boolean
 }
 
 // Digests already verified in this process. Blobs are immutable.
@@ -463,6 +465,7 @@ export async function readAppFile (deps: Pick<StudioDeps, 'db' | 'config'>, inst
       contentType: appFiles.contentType,
       digest: appFiles.digest,
       manifest: appInstallations.manifest,
+      preview: appInstallations.preview,
       installation: { appId: appInstallations.appId, trust: appInstallations.trust, bundled: appInstallations.bundled, keyFingerprint: appInstallations.keyFingerprint },
     })
     .from(appFiles)
@@ -478,8 +481,10 @@ export async function readAppFile (deps: Pick<StudioDeps, 'db' | 'config'>, inst
     }
     verified.add(row.digest)
   }
-  const { manifest, installation: _installation, ...file } = row
-  return { ...file, sandbox: manifest.sandbox ?? {}, embedsViews: manifest.permissions.includes('studio.ui.navigation') }
+  const { manifest, preview, installation: _installation, ...file } = row
+  const previewEntry = preview && file.contentType.startsWith('text/html')
+    && [manifest.contributes.modules, manifest.contributes.submodelViews].some(entries => entries?.some(entry => entry.entry === path))
+  return { ...file, sandbox: manifest.sandbox ?? {}, embedsViews: manifest.permissions.includes('studio.ui.navigation'), previewEntry }
 }
 
 /** Files below a directory of an installation, for extracting a backend. */

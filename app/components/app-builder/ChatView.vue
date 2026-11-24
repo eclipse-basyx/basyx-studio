@@ -148,14 +148,60 @@
         <v-btn class="mt-1 ms-n2" data-test="app-builder-unrestricted-off" :text="t('mode.back')" @click="emit('set-permission-mode', 'ask', false)" />
       </v-alert>
 
+      <v-card
+        v-if="draft.notes.length > 0"
+        class="mb-2 pa-3 overflow-y-auto d-flex flex-column ga-2"
+        color="surface-light"
+        data-test="app-builder-annotations"
+        max-height="260"
+      >
+        <div class="text-label-large">{{ t('annotations.title') }}</div>
+
+        <div v-for="note in draft.notes" :key="note.id" data-test="app-builder-annotation">
+          <div class="d-flex align-center ga-2 mb-1">
+            <v-avatar aria-hidden="true" class="text-label-small" color="primary" size="20">{{ note.number }}</v-avatar>
+
+            <div v-tooltip="annotationDetails(note)" class="text-body-small text-truncate" tabindex="0">{{ note.previewName }}</div>
+          </div>
+
+          <div v-if="note.earlierBuild || (annotationContext && note.previewKey !== annotationContext)" class="text-body-small text-warning mb-1">{{ t('annotations.previousPreview') }}</div>
+
+          <div class="d-flex align-center ga-2">
+            <v-textarea
+              auto-grow
+              autofocus
+              class="flex-grow-1"
+              data-test="app-builder-annotation-note"
+              :disabled="draft.sending"
+              hide-details
+              :label="t('annotations.note', { number: note.number })"
+              :maxlength="maxAnnotationLength"
+              :model-value="note.text"
+              rows="1"
+              @update:model-value="text => emit('edit-note', note.id, text)"
+            />
+
+            <v-btn
+              v-tooltip="t('annotations.remove')"
+              :aria-label="t('annotations.remove')"
+              data-test="app-builder-annotation-remove"
+              :disabled="draft.sending"
+              icon="mdi-close"
+              @click="emit('remove-note', note.id)"
+            />
+          </div>
+        </div>
+      </v-card>
+
       <v-sheet-composer>
         <v-textarea
-          v-model="draft"
           :aria-label="t('chat.placeholder')"
           data-test="app-builder-prompt"
-          :disabled="transcript.state === 'closed'"
+          :disabled="draft.sending || transcript.state === 'closed'"
+          :model-value="draft.text"
           :placeholder="t('chat.placeholder')"
           @keydown.enter.exact.prevent="send"
+          @update:model-value="text => emit('draft-text', text)"
         />
 
         <v-btn
@@ -174,6 +220,7 @@
           data-test="app-builder-send"
           :disabled="!canSend"
           icon="mdi-arrow-up"
+          :loading="draft.sending"
           @click="send"
         />
       </v-sheet-composer>
@@ -213,9 +260,11 @@
 
 <script lang="ts" setup>
   import type { AgentSettingKind, ApprovalDecision, ConversationSummary, PermissionMode } from '#shared/contract'
+  import type { ChatDraft } from './annotation-draft'
   import type { ActivityEntry } from './ToolGroup.vue'
   import type { Transcript, TranscriptItem } from './transcript'
   import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
+  import { annotationDetails, annotationPrompt, maxAnnotationLength } from './annotation-draft'
   import ApprovalCard from './ApprovalCard.vue'
   import BuildItem from './BuildItem.vue'
   import CheckpointItem from './CheckpointItem.vue'
@@ -235,9 +284,15 @@
     agentName: string
     connected: boolean
     answering: Set<string>
+    draft: ChatDraft
+    annotationContext: string | null
   }>()
   const emit = defineEmits<{
     'send': [text: string]
+    'submit': []
+    'draft-text': [text: string]
+    'edit-note': [id: string, text: string]
+    'remove-note': [id: string]
     'stop': []
     'answer': [approvalId: string, decision: ApprovalDecision]
     'set-setting': [setting: AgentSettingKind, value: string]
@@ -288,10 +343,9 @@
     return result
   })
 
-  const draft = ref('')
   /** While the agent starts or works, the chat's files and history change. */
   const busy = computed(() => props.transcript.state === 'working' || props.transcript.state === 'starting')
-  const canSend = computed(() => ['idle', 'inactive', 'failed'].includes(props.transcript.state) && draft.value.trim().length > 0)
+  const canSend = computed(() => !props.draft.sending && ['idle', 'inactive', 'failed'].includes(props.transcript.state) && annotationPrompt(props.draft.text, props.draft.notes) !== null)
 
   const status = computed(() => {
     if (!props.connected) {
@@ -333,8 +387,7 @@
     if (!canSend.value) {
       return
     }
-    emit('send', draft.value.trim())
-    draft.value = ''
+    emit('submit')
   }
 
   // Follows new output while the user is at the bottom.

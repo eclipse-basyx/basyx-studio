@@ -1,4 +1,13 @@
 {
+  "annotations": {
+    "toggle": "标注元素",
+    "picking": "点击元素，或用方向键移动后按 Enter 选择。按 Esc 取消。",
+    "highlighted": "已突出显示的元素：{tag}",
+    "title": "预览标注",
+    "note": "标注 {number}",
+    "remove": "移除标注",
+    "previousPreview": "来自此前的预览"
+  },
   "app": {
     "title": "应用构建器",
     "subtitle": "描述一个应用，编码代理会在这台计算机上构建它。"
