@@ -10,12 +10,25 @@ test('widens search on the start page and keeps it usable beside package control
     const search = bar.getByRole('button', { name: /^Search / })
     const view = bar.getByRole('button', { name: 'View', exact: true })
     const edit = bar.getByRole('button', { name: 'Edit', exact: true })
+
+    async function expectSearchOpened () {
+      const dialog = window.getByRole('dialog')
+      const input = dialog.getByRole('textbox')
+      await expect(input).toBeFocused()
+      // The textbox can autofocus before the opening dialog is ready for Escape.
+      await input.click({ trial: true })
+      await window.keyboard.press('Escape')
+      await expect(dialog).toBeHidden()
+    }
+
     await expect(search).toBeVisible()
     expect((await search.boundingBox())!.width).toBeGreaterThan(560)
+    await test.step('exposes a readable search shortcut in the accessible name', async () => {
+      const modifier = process.platform === 'darwin' ? 'Command' : 'Ctrl'
+      await expect.soft(search).toHaveAccessibleName(`Search targets and actions… Keyboard shortcut: ${modifier} plus K`, { timeout: 1000 })
+    })
     await window.keyboard.press('ControlOrMeta+k')
-    await expect(window.getByRole('dialog').getByRole('textbox')).toBeFocused()
-    await window.keyboard.press('Escape')
-    await expect(window.getByRole('dialog')).toBeHidden()
+    await expectSearchOpened()
 
     const path = join(directory, 'Motor diagnostic package with a deliberately long file name.aasx')
     await copyFile(fixture, path)
@@ -57,11 +70,18 @@ test('widens search on the start page and keeps it usable beside package control
       expect(field!.width).toBeGreaterThan(120)
       expect(field!.x).toBeGreaterThanOrEqual(list!.x + list!.width)
       expect(field!.x + field!.width).toBeLessThanOrEqual(target!.x)
+      if (width === 1024) {
+        await test.step('keeps the package icon and chevron inside the target menu button at 1,024 px', async () => {
+          for (const icon of ['mdi-package-variant-closed', 'mdi-chevron-down']) {
+            const bounds = (await after.locator(`.${icon}`).boundingBox())!
+            expect.soft(bounds.x, `${icon} left edge`).toBeGreaterThanOrEqual(target!.x)
+            expect.soft(bounds.x + bounds.width, `${icon} right edge`).toBeLessThanOrEqual(target!.x + target!.width)
+          }
+        })
+      }
       await bar.getByRole('button', { name: 'Package actions' }).click({ trial: true })
       await search.click()
-      await expect(window.getByRole('dialog').getByRole('textbox')).toBeFocused()
-      await window.keyboard.press('Escape')
-      await expect(window.getByRole('dialog')).toBeHidden()
+      await expectSearchOpened()
     }
   } finally {
     await closeStudio(app)

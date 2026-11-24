@@ -71,7 +71,6 @@
       <!-- Search uses the available space between the two groups of controls. -->
       <v-btn
         v-if="!session.needsLogin && mdAndUp"
-        :aria-label="searchLabel"
         class="flex-1-1-100 mx-2 text-medium-emphasis"
         max-width="720"
         prepend-icon="mdi-magnify"
@@ -82,7 +81,9 @@
         <span class="w-0 flex-grow-1 text-truncate">{{ searchLabel }}</span>
 
         <template v-if="lgAndUp" #append>
-          <v-hotkey keys="cmd+k" />
+          <!-- Text mode gives screen readers localized key names even when the visible hint uses icons. -->
+          <v-hotkey aria-hidden="true" :keys="searchShortcut" />
+          <v-hotkey class="d-sr-only" display-mode="text" :keys="searchShortcut" />
         </template>
       </v-btn>
 
@@ -106,6 +107,7 @@
                   append-icon="mdi-chevron-down"
                   :aria-label="t('app.targetNamed', { name: target?.name ?? '' })"
                   border
+                  class="title-bar-target"
                   :max-width="targetMenuMaxWidth"
                   :prepend-icon="target?.workspace ? 'mdi-package-variant-closed' : 'mdi-server-network'"
                 >
@@ -619,6 +621,7 @@
   const navigation = useNavigationStore()
   const targetId = computed(() => typeof route.params.targetId === 'string' ? route.params.targetId : null)
   const searchLabel = computed(() => t(targetId.value ? 'palette.searchTarget' : 'palette.search'))
+  const searchShortcut = 'cmd+k'
   // Outside any target (the targets list, global modules) the last opened
   // target stays current, so its navigation and controls do not disappear.
   const rememberedTargetId = computed(() => targetId.value ?? navigation.currentTarget)
@@ -1109,7 +1112,7 @@
     return displayName.value.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]!.toUpperCase()).join('')
   })
 
-  useHotkey('cmd+k', () => {
+  useHotkey(searchShortcut, () => {
     ui.commandOpen = true
   }, { inputs: true })
   useHotkey('cmd+e', () => {
