@@ -10,6 +10,9 @@ on:
       - "**/*.md"
       - ".markdownlint-cli2.jsonc"
       - ".markdown-link-check.json"
+      - "scripts/check-markdown-links.mjs"
+      - "package.json"
+      - "pnpm-lock.yaml"
       - ".github/workflows/docs.yml"
   push:
     branches: [main]
@@ -17,6 +20,9 @@ on:
       - "**/*.md"
       - ".markdownlint-cli2.jsonc"
       - ".markdown-link-check.json"
+      - "scripts/check-markdown-links.mjs"
+      - "package.json"
+      - "pnpm-lock.yaml"
       - ".github/workflows/docs.yml"
   # Links break without a change here; check them once a week.
   schedule:

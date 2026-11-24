@@ -58,7 +58,9 @@ the fix is then a path added to the job's rule.
 
 Because `ci.yml` ignores documentation, `.github/workflows/docs.yml` checks it:
 on pull requests and pushes to `main` that change a Markdown file or the
-workflow's configuration, and once a week for links that broke on their own.
+checks themselves (their configuration, `scripts/check-markdown-links.mjs`,
+the workflow, and `package.json` and `pnpm-lock.yaml`, which pin the tools),
+and once a week for links that broke on their own.
 
 | Job | What it proves |
 | --- | --- |
