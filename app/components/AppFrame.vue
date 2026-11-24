@@ -32,9 +32,12 @@
       referrerpolicy="no-referrer"
       :sandbox="contribution.frameOrigin ? 'allow-scripts allow-same-origin' : 'allow-scripts'"
       :src="contribution.entryUrl"
+      :tabindex="overlayActive ? -1 : undefined"
       :title="t('apps.frameTitle', { name: label(contribution.title) })"
-      @load="onLoad"
+      @load="load"
     />
+
+    <slot v-if="frame && connected" :frame="frame" :load-sequence="loadSequence" name="overlay" />
 
     <!-- The same view again, filling the window (studio.ui.openFullscreen):
          a second frame, so the embedded one keeps its size and state. Without
@@ -132,6 +135,8 @@
     viewState?: string
     /** Studio draws a full-screen button for the frame, e.g. on an Overview card (`context.fullscreenControl`). */
     fullscreenControl?: boolean
+    /** A host overlay covers the frame and handles interaction. */
+    overlayActive?: boolean
   }>()
   const emit = defineEmits<{
     'navigate': [subPath: string, history: 'push' | 'replace']
@@ -286,6 +291,11 @@
     onOpenView: props.fullscreen ? undefined : openView,
     shownView: () => viewOpen.value ? openedView.value : null,
   })
+  const loadSequence = ref(0)
+  function load () {
+    loadSequence.value++
+    onLoad()
+  }
   watch(height, value => {
     if (value !== null) {
       emit('content-height', value)

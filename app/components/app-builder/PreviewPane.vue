@@ -12,6 +12,19 @@
       />
 
       <v-btn
+        v-if="conversationId && !detached"
+        ref="annotateButton"
+        v-tooltip="t('annotations.toggle')"
+        :active="annotating"
+        :aria-label="t('annotations.toggle')"
+        :aria-pressed="annotating"
+        data-test="app-builder-annotate"
+        :disabled="!pickerReady || building || approving || annotationDisabled"
+        icon="mdi-comment-plus-outline"
+        @click="annotating = !annotating"
+      />
+
+      <v-btn
         v-if="desktop?.openAppPreview && !detached"
         v-tooltip="t('preview.popOut')"
         :aria-label="t('preview.popOut')"
@@ -40,6 +53,8 @@
 
     <div class="d-flex flex-column ga-2 pa-2 flex-grow-1 overflow-y-auto bg-background">
       <ProblemAlert v-if="error" :error="error" />
+
+      <v-alert v-if="annotating" data-test="app-builder-picker-hint" :text="t('annotations.picking')" type="info" />
 
       <v-progress-linear v-if="!preview && !error" />
 
@@ -125,12 +140,26 @@
             <AppFrame
               :key="frameKey"
               :contribution="selected"
+              :overlay-active="annotating"
               :shell-id="shell?.id ?? null"
               :sub-path="subPath"
               :submodel="submodel"
               :target="needsTarget ? target.data.value ?? null : null"
               @navigate="path => (subPath = path)"
-            />
+            >
+              <template #overlay="{ frame, loadSequence }">
+                <PreviewElementPicker
+                  v-if="conversationId && !detached && selected.frameOrigin"
+                  :key="annotationScope"
+                  v-model="annotating"
+                  :frame="frame"
+                  :load-sequence="loadSequence"
+                  :origin="selected.frameOrigin"
+                  @pick="addAnnotation"
+                  @ready="pickerAvailability"
+                />
+              </template>
+            </AppFrame>
           </v-card-pane>
         </template>
       </template>
@@ -147,16 +176,31 @@
 </template>
 
 <script lang="ts" setup>
+  import type { PreviewElement } from '#shared/app-preview-picker'
   import type { PreviewSelection } from '#shared/app-preview-window'
   import type { AppContributionInfo, AppPreview, ShellSummary, SubmodelRef, Target } from '#shared/contract'
+  import type { PreviewAnnotation } from './annotation-draft'
   import { useQuery } from '@pinia/colada'
   import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
   import { useI18n } from './i18n'
+  import PreviewElementPicker from './PreviewElementPicker.vue'
 
   // The app as the last build made it (ADR 0054, plan B3): its preview
   // installation in a frame like any app's, on a target the user picks.
-  const props = defineProps<{ projectId: string, buildSeq: number, defaultTargetId: string | null, initialSelection?: PreviewSelection | null, detached?: boolean }>()
-  const emit = defineEmits<{ close: [] }>()
+  const props = defineProps<{
+    projectId: string
+    buildSeq: number
+    defaultTargetId: string | null
+    initialSelection?: PreviewSelection | null
+    detached?: boolean
+    conversationId?: string
+    annotationDisabled?: boolean
+  }>()
+  const emit = defineEmits<{
+    'close': []
+    'annotation-context': [key: string]
+    'annotate': [annotation: Omit<PreviewAnnotation, 'id' | 'text'>]
+  }>()
   const { t } = useI18n()
   const client = useAppBuilderClient()
   const api = useStudioApi()
@@ -175,6 +219,9 @@
   const submodelId = ref<string | null>(props.initialSelection?.submodelId ?? null)
   const subPath = ref(props.initialSelection?.subPath ?? '')
   const picking = ref(false)
+  const annotating = ref(false)
+  const pickerReady = ref(false)
+  const annotateButton = useTemplateRef<{ $el: HTMLElement }>('annotateButton')
 
   const buildColors = { none: undefined, running: undefined, succeeded: 'success', failed: 'error' } as const
   const buildIcons = { none: 'mdi-minus', running: 'mdi-progress-clock', succeeded: 'mdi-check', failed: 'mdi-alert-circle-outline' } as const
@@ -261,9 +308,12 @@
   onMounted(() => {
     if (props.detached) {
       refreshTimer = setInterval(() => void load(), 2000)
+    } else {
+      window.addEventListener('keydown', cancelOnEscape, true)
     }
   })
   onBeforeUnmount(() => {
+    window.removeEventListener('keydown', cancelOnEscape, true)
     clearInterval(refreshTimer)
     loadVersion++
   })
@@ -334,5 +384,33 @@
   })
 
   // A new build (digest), app part, target, shell or submodel is a new frame.
-  const frameKey = computed(() => [selected.value?.installationId, selected.value?.digest, selected.value?.id, targetId.value, shell.value?.id, submodel.value?.id].join(':'))
+  const frameKey = computed(() => JSON.stringify([selected.value?.installationId, selected.value?.digest, selectedKey.value, targetId.value, shell.value?.id, submodel.value?.id]))
+  const annotationKey = computed(() => JSON.stringify([frameKey.value, subPath.value]))
+  const annotationScope = computed(() => JSON.stringify([props.conversationId, annotationKey.value]))
+  watch(annotationKey, key => emit('annotation-context', key), { immediate: true })
+  watch(() => [annotationScope.value, props.buildSeq, building.value, approving.value, props.annotationDisabled], () => {
+    annotating.value = false
+  }, { flush: 'sync' })
+
+  function addAnnotation (element: PreviewElement) {
+    if (props.conversationId && selectedKey.value && selected.value && !props.annotationDisabled) {
+      emit('annotate', { element, contribution: selectedKey.value, digest: selected.value.digest, previewKey: annotationKey.value })
+    }
+  }
+
+  function pickerAvailability (ready: boolean) {
+    pickerReady.value = ready
+    if (!ready) {
+      annotating.value = false
+    }
+  }
+
+  function cancelOnEscape (event: KeyboardEvent) {
+    if (event.key === 'Escape' && annotating.value) {
+      event.preventDefault()
+      event.stopPropagation()
+      annotating.value = false
+      annotateButton.value?.$el.focus()
+    }
+  }
 </script>

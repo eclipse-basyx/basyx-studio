@@ -115,6 +115,18 @@ window refreshes after builds. Each app has one preview window; opening it
 again focuses the existing window. Closing it leaves the app and its chat
 open. Use the chat's preview toggle to show the inline preview again.
 
+### Annotating elements
+
+Choose **Annotate element** in the inline preview. Hover to highlight an
+element, then select it to add a note to the current chat. Press **Esc** to
+leave picking mode. While you pick, Studio handles the clicks so they do not
+activate the app underneath.
+
+You can add several notes, edit or remove them, and send them with an optional
+chat message. The agent receives each note with the app view, build, and an
+element path. If the preview changes, Studio marks older notes in the draft
+so you can decide whether to update them before sending.
+
 ## Installing
 
 *Install in Studio* in the chat header:

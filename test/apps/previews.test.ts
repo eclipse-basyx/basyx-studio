@@ -5,7 +5,7 @@ import { randomBytes } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { previewAppId, ProjectPreviews } from '~~/server/lib/app-projects/previews'
 import { parseManifest } from '~~/server/lib/apps/manifest'
-import { findPreviewApp, installApp, installPreviewApp, listActiveInstallations, listInstallations, removeInstallation } from '~~/server/lib/apps/store'
+import { findPreviewApp, installApp, installPreviewApp, listActiveInstallations, listInstallations, readAppFile, removeInstallation } from '~~/server/lib/apps/store'
 import { emptyTrustStore } from '~~/server/lib/apps/trust'
 import { SecretCipher } from '~~/server/lib/crypto/cipher'
 import { openDatabase } from '~~/server/lib/database/client'
@@ -73,6 +73,17 @@ describe('App Builder previews in the app store (ADR 0054, plan B3)', () => {
     await expect(installPreviewApp(signedOnly, zipApp(manifestOf()), 'local.x.preview', 'app-builder')).rejects.toMatchObject({ code: 'app_unsigned_disabled' })
     const fixedApps = { ...deps, config: { ...configWith({}), deployment: { appInstalls: false } } as StudioConfig }
     await expect(installPreviewApp(fixedApps, zipApp(manifestOf()), 'local.x.preview', 'app-builder')).rejects.toMatchObject({ code: 'forbidden' })
+  })
+
+  it('identifies only preview contribution entries for the element picker', async () => {
+    const app = manifestOf({ id: 'org.example.picker' })
+    const files = { 'ui/index.html': '<!doctype html><title>Entry</title>', 'ui/other.html': '<!doctype html><title>Other</title>' }
+    const installed = await installApp(deps, admin, zipApp(app, files), null, 'picker')
+    const preview = await installPreviewApp(deps, zipApp(app, files), 'local.picker.preview', 'app-builder')
+
+    expect(await readAppFile(deps, preview.record.id, 'ui/index.html')).toMatchObject({ previewEntry: true })
+    expect(await readAppFile(deps, preview.record.id, 'ui/other.html')).toMatchObject({ previewEntry: false })
+    expect(await readAppFile(deps, installed.record.id, 'ui/index.html')).toMatchObject({ previewEntry: false })
   })
 
   it('requires renewed consent for changed OpenAPI methods and paths, including after a restart', async () => {

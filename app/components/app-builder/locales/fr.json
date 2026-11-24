@@ -1,4 +1,12 @@
 {
+  "annotations": {
+    "toggle": "Annoter un élément",
+    "picking": "Sélectionnez un élément dans l’aperçu. Appuyez sur Échap pour annuler.",
+    "title": "Annotations de l’aperçu",
+    "note": "Annotation {number}",
+    "remove": "Supprimer l’annotation",
+    "previousPreview": "Issu d’un aperçu précédent"
+  },
   "app": {
     "title": "Créateur d'applications",
     "subtitle": "Décrivez une application, et un agent de programmation la crée sur cet ordinateur."

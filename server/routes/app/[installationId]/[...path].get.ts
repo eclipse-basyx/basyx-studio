@@ -7,8 +7,10 @@ import { readBrandingAsset } from '~~/server/lib/branding'
 import { allowedOrigins } from '~~/server/lib/urls'
 import { hasBrokerSecret } from '~~/server/utils/desktop'
 import { useStudio } from '~~/server/utils/studio'
+import { previewPickerScriptParam } from '#shared/app-preview-picker'
 import { appBrandFontPath } from '#shared/branding'
 import { embedTokenParameter } from '#shared/contract'
+import pickerScript from '#studio-preview-picker'
 
 /**
  * Serves the files of installed apps (ADR 0017). Hosted, only on the apps
@@ -44,6 +46,8 @@ export default defineEventHandler(async event => {
     return Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength)
   }
   const file = allowed ? await readAppFile(studio, installationId, path) : null
+  const withPicker = desktop && file?.previewEntry === true
+  const pickerRequest = withPicker && getQuery(event)[previewPickerScriptParam] === '1'
   if (!file) {
     throw createError({ status: 404, statusText: 'Not Found' })
   }
@@ -52,7 +56,7 @@ export default defineEventHandler(async event => {
   const embed = typeof embedToken === 'string' && !desktop ? verifyEmbedToken(studio.embedKey, embedToken) : null
   const frameAncestors = embed && embed.installationId === installationId && embed.path === path ? [...studioOrigins, embed.embedderOrigin] : studioOrigins
   const headers = event.res.headers
-  headers.set('Content-Type', file.contentType)
+  headers.set('Content-Type', pickerRequest ? 'text/javascript; charset=utf-8' : file.contentType)
   headers.set('Content-Security-Policy', appContentSecurityPolicy(appBaseUrl(baseUrl!, installationId), frameAncestors, file.sandbox, {
     sameOrigin: hasInstallationOrigins(baseUrl!),
     // Refused at install; dropped here too, in case Studio's URLs changed since.
@@ -71,6 +75,16 @@ export default defineEventHandler(async event => {
   // why a frame did not start. App files are not secret and carry no cookies.
   headers.set('Access-Control-Allow-Origin', '*')
   headers.set('Cross-Origin-Resource-Policy', 'cross-origin')
+  if (withPicker) {
+    // Serve the Studio helper on the preview's own allowed origin. The stored
+    // package and its verified per-file digests are used as-is for releases.
+    headers.set('Cache-Control', 'no-store')
+    if (pickerRequest) {
+      return pickerScript
+    }
+    const entryPath = path.split('/').map(part => encodeURIComponent(part)).join('/')
+    return Buffer.concat([file.content, Buffer.from(`\n<script src="/${entryPath}?${previewPickerScriptParam}=1"></script>`)])
+  }
   headers.set('Cache-Control', 'no-cache')
   headers.set('ETag', `"${file.digest}"`)
   return file.content

@@ -1,4 +1,12 @@
 {
+  "annotations": {
+    "toggle": "Element annotieren",
+    "picking": "Wähle ein Element in der Vorschau. Drücke Esc zum Abbrechen.",
+    "title": "Vorschau-Anmerkungen",
+    "note": "Anmerkung {number}",
+    "remove": "Anmerkung entfernen",
+    "previousPreview": "Aus einer früheren Vorschau"
+  },
   "app": {
     "title": "App Builder",
     "subtitle": "Beschreibe eine App, und ein Coding-Agent baut sie auf diesem Computer."
