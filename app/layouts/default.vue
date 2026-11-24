@@ -278,16 +278,14 @@
       permanent
       rail
     >
-      <!-- Home, the targets page: part of Studio itself, so above the
-           groups and not reordered or hidden; a fixed control, so it never
-           shows a selected state. Outside the rail's list, which measures
-           only its groups. The list's own 8 px above it, as beside it: the
-           icon as far below the bar as from the window's edge. -->
+      <!-- Studio Home sits above the groups, outside the list measured for overflow.
+           The list's padding aligns the icon with the rail's edge. -->
       <template #prepend>
         <v-list class="pb-0" nav>
           <v-list-item
             v-tooltip:end="t('nav.home')"
-            :active="false"
+            :active="homeActive"
+            :aria-current="homeActive ? 'page' : undefined"
             :aria-label="t('nav.home')"
             prepend-icon="mdi-home-outline"
             to="/"
@@ -329,13 +327,13 @@
               v-for="item in group.items"
               :key="item.key"
               v-tooltip:end="{ text: item.title, disabled: dragging !== null }"
-              :active="pageActive"
+              :active="item.key === activeRailKey"
+              :aria-current="item.key === activeRailKey ? 'page' : undefined"
               :aria-label="item.title"
               :class="{ 'opacity-40': dragging?.lifted && dragging.key === item.key }"
               :data-rail-group="group.name"
               :data-rail-key="item.key"
               draggable="true"
-              :exact="item.exact"
               :prepend-icon="item.icon"
               :to="item.to"
               @contextmenu="openItemMenu(item.key, $event)"
@@ -722,8 +720,8 @@
 
   /**
    * The rail's two groups: the current infrastructure's pages and apps, then
-   * the global ones. The targets page is Studio's home, not an app: the app
-   * bar's Home button leads there. Each group keeps the user's order.
+   * the global ones. Studio Home sits above both groups. Each group keeps
+   * the user's order.
    */
   const railGroups = computed<Array<{ name: RailGroup, items: NavItem[] }>>(() => {
     const infrastructure: NavItem[] = []
@@ -801,10 +799,12 @@
     if (panel.current.value) {
       return null
     }
+    const currentPath = route.path.replace(/\/$/, '')
     let active: { key: string, length: number } | null = null
     for (const item of railGroups.value.flatMap(group => group.items)) {
       const path = (typeof item.to === 'string' ? item.to : item.to.path).split(/[?#]/, 1)[0]!
-      if ((route.path === path || route.path.startsWith(`${path}/`)) && path.length > (active?.length ?? -1)) {
+      const matches = currentPath === path || (!item.exact && currentPath.startsWith(`${path}/`))
+      if (matches && path.length > (active?.length ?? -1)) {
         active = { key: item.key, length: path.length }
       }
     }
@@ -1061,6 +1061,7 @@
   // Settings and administration are panels over the current page: their
   // items open and close them instead of navigating.
   const panel = usePanel()
+  const homeActive = computed(() => !panel.current.value && route.path === '/')
   // `false` overrides the router link's own active state; `undefined` keeps it.
   const pageActive = computed(() => panel.current.value ? false : undefined)
   function togglePanel (name: PanelName) {
