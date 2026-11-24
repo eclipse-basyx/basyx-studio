@@ -64,9 +64,6 @@ interface Timeouts {
 }
 
 // Readiness gives each component up to five minutes (plan E4).
-/** What aasenvironment-go logs once it has imported its preconfiguration (AASX files). */
-const preconfigurationCompleted = 'AAS preconfiguration completed'
-
 const defaultTimeouts: Timeouts = { databaseMs: 120_000, schemaMs: 180_000, keycloakMs: 300_000, serviceMs: 300_000, pollMs: 1000 }
 
 interface StagedImport {
@@ -961,13 +958,13 @@ export class ContainerManager {
   }
 
   async #waitForService (engine: EngineClient, id: string, container: PlannedContainer, record: StackRecord): Promise<void> {
-    const url = `http://127.0.0.1:${portOf(record.spec, container.component)}/description`
+    // /description can answer while AASX import is in progress. /health waits for it to finish.
+    const requiresPreconfiguration = container.component === 'environment' && record.spec.aasxFiles.length > 0
+    const path = requiresPreconfiguration ? 'health' : 'description'
+    const url = `http://127.0.0.1:${portOf(record.spec, container.component)}/${path}`
     const deadline = Date.now() + this.#timeouts.serviceMs
-    // The environment answers while it still imports the AASX files of
-    // GENERAL_AAS_PRECONFIG_PATHS: until it says it has, it is empty or partly filled.
-    const preconfiguring = container.component === 'environment' && record.spec.aasxFiles.length > 0
     while (Date.now() < deadline) {
-      if (await this.#isReady(url) && (!preconfiguring || await this.#preconfigured(engine, id))) {
+      if (await this.#isReady(url)) {
         return
       }
       const details = await engine.inspectContainer(id)
@@ -977,18 +974,6 @@ export class ContainerManager {
       await sleep(this.#timeouts.pollMs)
     }
     throw await this.#failure(engine, id, container.component, `${container.component} did not answer in time.`)
-  }
-
-  /**
-   * Whether this start of the environment has imported its AASX files. The
-   * pinned aasenvironment-go image (catalog.ts) logs it once per start; only
-   * the output since the container's current start counts, so a restart
-   * waits again.
-   */
-  async #preconfigured (engine: EngineClient, id: string): Promise<boolean> {
-    const startedAt = Date.parse((await engine.inspectContainer(id))?.State.StartedAt ?? '')
-    const text = await engine.logs(id, 'all', Number.isNaN(startedAt) ? undefined : Math.floor(startedAt / 1000))
-    return text.includes(preconfigurationCompleted)
   }
 
   #takeImport (id: string): StagedImport {
