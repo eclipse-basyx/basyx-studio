@@ -61,24 +61,47 @@ test('widens search on the start page and keeps it usable beside package control
     await expect.soft(edit).toBeFocused({ timeout: 1000 })
     expect((await search.boundingBox())!.width).toBe(narrowSearchWidth)
 
+    const listToggle = bar.getByRole('button', { name: 'Show or hide the shell list' })
+    const targetMenu = bar.getByRole('button', { name: /^Target: Motor diagnostic package/ })
+    const titleBarControls = listToggle.or(search).or(targetMenu)
+
     for (const width of [1280, 1145, 1144, 1024]) {
       await resize(width)
+      const iconClasses = width === 1024 ? ['mdi-package-variant-closed', 'mdi-chevron-down'] : []
 
-      const before = bar.getByRole('button', { name: 'Show or hide the shell list' })
-      const after = bar.getByRole('button', { name: /^Target: Motor diagnostic package/ })
-      const [list, field, target] = await Promise.all([before, search, after].map(button => button.boundingBox()))
-      expect(field!.width).toBeGreaterThan(120)
-      expect(field!.x).toBeGreaterThanOrEqual(list!.x + list!.width)
-      expect(field!.x + field!.width).toBeLessThanOrEqual(target!.x)
-      if (width === 1024) {
-        await test.step('keeps the package icon and chevron inside the target menu button at 1,024 px', async () => {
-          for (const icon of ['mdi-package-variant-closed', 'mdi-chevron-down']) {
-            const bounds = (await after.locator(`.${icon}`).boundingBox())!
-            expect.soft(bounds.x, `${icon} left edge`).toBeGreaterThanOrEqual(target!.x)
-            expect.soft(bounds.x + bounds.width, `${icon} right edge`).toBeLessThanOrEqual(target!.x + target!.width)
+      await test.step(`keeps the title-bar controls within bounds at ${width} px`, async () => {
+        // The title bar can still move after innerWidth changes. Read all
+        // related bounds in one renderer call and retry the layout assertion.
+        await expect(async () => {
+          const { buttons, icons } = await titleBarControls.evaluateAll((elements, expectedIcons) => {
+            function bounds (element: Element) {
+              const { left, right, width } = element.getBoundingClientRect()
+              return { left, right, width }
+            }
+
+            // The matched controls are in DOM order: list, search, target.
+            const target = elements[2]
+            return {
+              buttons: elements.map(element => bounds(element)),
+              icons: expectedIcons.map(name => {
+                const icon = target?.querySelector(`.${name}`)
+                return { name, box: icon ? bounds(icon) : null }
+              }),
+            }
+          }, iconClasses)
+
+          expect(buttons).toHaveLength(3)
+          const [list, field, target] = buttons
+          expect(field!.width).toBeGreaterThan(120)
+          expect(field!.left).toBeGreaterThanOrEqual(list!.right)
+          expect(field!.right).toBeLessThanOrEqual(target!.left)
+          for (const { name, box } of icons) {
+            expect(box?.width ?? 0, `${name} width`).toBeGreaterThan(0)
+            expect(box!.left, `${name} left edge`).toBeGreaterThanOrEqual(target!.left)
+            expect(box!.right, `${name} right edge`).toBeLessThanOrEqual(target!.right)
           }
-        })
-      }
+        }).toPass({ timeout: 5000 })
+      })
       await bar.getByRole('button', { name: 'Package actions' }).click({ trial: true })
       await search.click()
       await expectSearchOpened()

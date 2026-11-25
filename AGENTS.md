@@ -55,6 +55,19 @@
   derived from `vuetify.config.ts` and the kit's `defaults.ts`
   automatically.
 
+## End-to-end tests
+
+- After resizing a window, wait for the rendered behavior under test with
+  Playwright's retrying assertions. The viewport size can update before the
+  layout and native window controls settle.
+- When comparing element positions or sizes, read all related bounds in one
+  browser evaluation per assertion attempt. Use a bounded `expect.poll` or
+  `toPass` for asynchronous layout. Keep every edge and visibility check
+  that defines the expected behavior.
+- Avoid fixed sleeps and whole-test retries as substitutes for observable
+  readiness. Verify changes to platform-specific behavior on the affected
+  platform.
+
 ## Server code
 
 - Route handlers, server middleware, and `server/utils` import their helpers
