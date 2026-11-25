@@ -61,7 +61,7 @@
     "grid-layout-plus": "1.1.1",
     "jsqr": "1.4.0",
     "monaco-editor": "^0.57.0",
-    "node-forge": "^1.4.3",
+    "node-forge": "^1.4.4",
     "nuxt": "^4.7.0",
     "openid-client": "^6.9.1",
     "pg": "^8.23.1",
