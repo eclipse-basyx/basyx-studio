@@ -12,6 +12,13 @@ name: Release
 # Publishing uses npm trusted publishing: each package's trusted publisher on
 # npmjs.com names this repository and this workflow file, so no token is
 # stored. Every version carries a provenance statement.
+#
+# The Windows installers are signed with the Eclipse Foundation's
+# certificate through SignPath, as the trusted build system GitHub.com of
+# the EF project dt.basyx (EclipseFdn/sealform-configuration). The
+# SIGNPATH_API_TOKEN secret is set on the eclipse-basyx organization, so
+# forks attach unsigned installers. The macOS and Linux binaries are not
+# signed yet.
 
 on:
   workflow_dispatch:
@@ -180,6 +187,9 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: write
+      # SignPath reads the job and downloads the unsigned installers with the
+      # job's token.
+      actions: read
     strategy:
       fail-fast: false
       matrix:
@@ -239,6 +249,56 @@ jobs:
       # with the tag.
       - name: Build ${{ matrix.platform }} binaries
         run: pnpm ${{ matrix.build_script }}
+
+      # SignPath signs the files of a workflow artifact. The artifact
+      # configuration exe-in-zip signs every .exe at the root of the zip, so
+      # both installers go in one request. A re-run replaces the artifact.
+      - name: Upload the unsigned installers
+        id: unsigned
+        if: matrix.platform == 'Windows' && github.repository == 'eclipse-basyx/basyx-studio'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: windows-installers-unsigned
+          path: dist/*.exe
+          if-no-files-found: error
+          retention-days: 1
+          overwrite: true
+
+      # release-signing uses the Eclipse Foundation's certificate;
+      # test-signing would use a self-signed one that Windows does not trust.
+      - name: Sign the installers
+        if: steps.unsigned.outcome == 'success'
+        uses: signpath/github-action-submit-signing-request@c92b958760219087e01f8d67a1669ed57afe2627 # v2
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: 46624a66-6595-48fd-85c3-64bdee7fecc9
+          project-slug: dt.basyx
+          signing-policy-slug: release-signing
+          artifact-configuration-slug: exe-in-zip
+          github-artifact-id: ${{ steps.unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: dist/signed
+
+      # The signed installers replace the unsigned ones, so the next step
+      # attaches them. Each must carry a valid Authenticode signature.
+      - name: Check and use the signed installers
+        if: steps.unsigned.outcome == 'success'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $unsigned = Get-ChildItem dist -Filter *.exe
+          foreach ($file in $unsigned) {
+            $signed = Join-Path dist/signed $file.Name
+            if (-not (Test-Path $signed)) {
+              throw "SignPath returned no signed $($file.Name)."
+            }
+            $signature = Get-AuthenticodeSignature $signed
+            if ($signature.Status -ne 'Valid') {
+              throw "$($file.Name): signature $($signature.Status), $($signature.StatusMessage)"
+            }
+            Write-Output "$($file.Name): signed by $($signature.SignerCertificate.Subject)"
+            Move-Item -Force $signed $file.FullName
+          }
 
       # gh finds draft releases by their tag, and replaces the files of an
       # earlier attempt.

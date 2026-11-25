@@ -86,9 +86,9 @@ Download the installer for your system from the
 | macOS (Apple silicon) | `BaSyx.Studio-<version>-mac-arm64.dmg` |
 | Linux (x86-64, Arm64) | `BaSyx.Studio-<version>-linux-<arch>.AppImage` |
 
-The installers are not yet signed. On macOS, allow the app under *System
-Settings → Privacy & Security* after the first start; on Windows, choose
-*More info → Run anyway*.
+The Windows installers are signed by the Eclipse Foundation. The macOS and
+Linux binaries are not yet signed: on macOS, allow the app under *System
+Settings → Privacy & Security* after the first start.
 
 ### Docker
 
