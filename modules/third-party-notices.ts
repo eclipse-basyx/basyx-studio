@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { basename, join, resolve } from 'node:path'
 import { defineNuxtModule } from 'nuxt/kit'
 
 interface DependencyLicences {
@@ -13,12 +13,29 @@ interface DependencyLicences {
 
 const noticeFile = /^(?:licen[cs]es?|copying|copyright|notices?|ofl|unlicense|third[-_ ]party[-_ ](?:licen[cs]es?|notices?))(?:$|[-_. ])/i
 
+/**
+ * Runs the pnpm that runs this build. Scripts put node_modules/.bin first on
+ * the PATH, and on Windows its pnpm shim cannot start, because the install
+ * script of the pnpm devDependency is denied (pnpm-workspace.yaml). Run from
+ * outside pnpm, the pnpm on the PATH is used.
+ */
+function pnpm (args: string[], cwd: string): string {
+  const options = { cwd, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 } as const
+  const execPath = process.env.npm_execpath
+  if (execPath && /pnpm/i.test(basename(execPath))) {
+    return /\.[cm]?js$/i.test(execPath)
+      ? execFileSync(process.execPath, [execPath, ...args], options)
+      : execFileSync(execPath, args, { ...options, shell: /\.(?:cmd|bat)$/i.test(execPath) })
+  }
+  return execFileSync('pnpm', args, { ...options, shell: process.platform === 'win32' })
+}
+
 /** Reads the notices distributed in the installed production dependency trees. */
 function generateNotices (rootDir: string): string {
-  const inventory = execFileSync('pnpm', [
+  const inventory = pnpm([
     '--filter', 'studio', '--filter', './apps/*', '--filter', './packages/*',
     'licenses', 'list', '--prod', '--json',
-  ], { cwd: rootDir, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, shell: process.platform === 'win32' })
+  ], rootDir)
 
   const dependencies = Object.values(JSON.parse(inventory) as Record<string, DependencyLicences[]>).flat()
   const packages = new Map<string, { licence: string, homepage?: string, notices: Map<string, string> }>()
