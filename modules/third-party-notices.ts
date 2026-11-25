@@ -1,6 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { basename, join, resolve } from 'node:path'
 import { defineNuxtModule } from 'nuxt/kit'
 
@@ -90,7 +89,12 @@ export default defineNuxtModule({
   setup (_, nuxt) {
     nuxt.hook('nitro:config', nitroConfig => {
       // Nuxt recreates its build directory before Nitro copies public assets.
-      const dir = mkdtempSync(join(tmpdir(), 'studio-third-party-notices-'))
+      // The directory is in the project: Nitro makes its ignore patterns
+      // relative to each public directory, which fails across drives, as
+      // between the temporary directory and the project on Windows runners.
+      const cacheDir = join(nuxt.options.rootDir, 'node_modules/.cache')
+      mkdirSync(cacheDir, { recursive: true })
+      const dir = mkdtempSync(join(cacheDir, 'studio-third-party-notices-'))
       nuxt.hook('close', () => rmSync(dir, { recursive: true, force: true }))
       writeFileSync(join(dir, 'third-party-notices.txt'), generateNotices(nuxt.options.rootDir))
       nitroConfig.publicAssets ??= []
