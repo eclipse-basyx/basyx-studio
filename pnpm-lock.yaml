@@ -195,8 +195,8 @@ importers:
         specifier: 0.109.0
         version: 0.109.0(@anthropic-ai/sdk@1.8.0(zod@4.6.7))(@modelcontextprotocol/sdk@1.32.1(supports-color@10.2.2)(zod@4.6.7))
       '@agentclientprotocol/codex-acp':
-        specifier: 2.7.0
-        version: 2.7.0
+        specifier: 2.12.0
+        version: 2.12.0
       '@agentclientprotocol/sdk':
         specifier: 2.9.1
         version: 2.9.1(zod@4.6.7)
@@ -932,18 +932,9 @@ packages:
     engines: {node: '>=22'}
     hasBin: true
 
-  '@agentclientprotocol/codex-acp@2.7.0':
-    resolution: {integrity: sha512-fFFU/tV5DltBzN4cZIh5tJEWGTZFXbwHU7I5RxPkmrGraw3jhAIuvTeudYwK3wAbV311WgIi7qONl2I8uRV2jw==}
+  '@agentclientprotocol/codex-acp@2.12.0':
+    resolution: {integrity: sha512-UYZwEZoDUdzre4VG/ECGlAVVWlB4tSuy40WiGGiNcA/t3qx0i2Iz9i1BRgzrFHhq2QgEsxH8c7FFEdRwgLUBvg==}
     hasBin: true
-
-  '@agentclientprotocol/sdk@2.6.0':
-    resolution: {integrity: sha512-3FtL6MkAV5F9qxg0FQV8wmBszIm2xuVPoDWOILIFSDQ+Vq3Twdh7Cw6Hk2GOPUbevgrTUpUAqZXQy7Geaj79mw==}
-    peerDependencies:
-      '@modelcontextprotocol/server': ^2.4.0
-      zod: ^3.25.76 || ^4.0.0
-    peerDependenciesMeta:
-      '@modelcontextprotocol/server':
-        optional: true
 
   '@agentclientprotocol/sdk@2.8.0':
     resolution: {integrity: sha512-EjsvoRX8nEH2z3PAVI2ILsVXAefVcSlLPeXGjlQoFgkJE71F2J0Fj7N6oL/k7SnP0vY+9hmONPFz/K2zalnTiw==}
@@ -2552,8 +2543,8 @@ packages:
     resolution: {integrity: sha512-hAX0pT/73190NLqBPPWSdBVGtbY6VOhWYK3qqHqtXQ1gK7kS2yz4+ivsN07hpJ6I3aeMtKP6J6npsEKOAzuTLA==}
     engines: {node: '>=20.0'}
 
-  '@openai/codex@0.166.0':
-    resolution: {integrity: sha512-2Szlp1l1cz5TX1ccpX4Zok3DZrot9xeZe0km+6/1v8JmqxADwyJxKBJah4dBymkwtS25j/u6dipJusTOI97Z8Q==}
+  '@openai/codex@0.171.0':
+    resolution: {integrity: sha512-1IOFzL2Xg86tLdw6kDo3GoKbkQENgQi7TI6rlEvN132R7ngSw7SNOIQoTcnKzSZZ8kf9N9GynCweSoaFbqk2Eg==}
     engines: {node: '>=16'}
     hasBin: true
 
@@ -8640,10 +8631,10 @@ snapshots:
       - '@modelcontextprotocol/sdk'
       - '@modelcontextprotocol/server'
 
-  '@agentclientprotocol/codex-acp@2.7.0':
+  '@agentclientprotocol/codex-acp@2.12.0':
     dependencies:
-      '@agentclientprotocol/sdk': 2.6.0(zod@4.6.7)
-      '@openai/codex': 0.166.0
+      '@agentclientprotocol/sdk': 2.9.1(zod@4.6.7)
+      '@openai/codex': 0.171.0
       cross-spawn: 7.0.6
       diff: 9.0.0
       open: 11.0.4
@@ -8651,10 +8642,6 @@ snapshots:
       zod: 4.6.7
     transitivePeerDependencies:
       - '@modelcontextprotocol/server'
-
-  '@agentclientprotocol/sdk@2.6.0(zod@4.6.7)':
-    dependencies:
-      zod: 4.6.7
 
   '@agentclientprotocol/sdk@2.8.0(zod@4.6.7)':
     dependencies:
@@ -10809,7 +10796,7 @@ snapshots:
 
   '@oozcitak/util@10.0.0': {}
 
-  '@openai/codex@0.166.0': {}
+  '@openai/codex@0.171.0': {}
 
   '@opentelemetry/api@1.10.0': {}
 
