@@ -98,7 +98,7 @@
     "markdown-link-check": "^3.15.0",
     "markdownlint-cli2": "^0.24.2",
     "nuxt-electron": "^0.7.0",
-    "pnpm": "12.21.0",
+    "pnpm": "12.23.0",
     "sass": "^1.108.2",
     "typescript": "^6.0.3",
     "vite-plugin-electron": "^1.2.0",
