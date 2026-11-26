@@ -268,7 +268,7 @@ jobs:
       # test-signing would use a self-signed one that Windows does not trust.
       - name: Sign the installers
         if: steps.unsigned.outcome == 'success'
-        uses: signpath/github-action-submit-signing-request@c92b958760219087e01f8d67a1669ed57afe2627 # v2
+        uses: signpath/github-action-submit-signing-request@a2c5b60d9c75f073142b653c354b632eedce097b # v3.2
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           organization-id: 46624a66-6595-48fd-85c3-64bdee7fecc9
