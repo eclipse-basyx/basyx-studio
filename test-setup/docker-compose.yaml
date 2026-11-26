@@ -23,7 +23,7 @@ x-basyx-env: &basyx-env
 services:
   # Studio metadata (database "studio") and the BaSyx databases share one server.
   postgres:
-    image: postgres:18
+    image: postgres:19
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -41,7 +41,7 @@ services:
   # BFF on the host and the BaSyx containers, hence keycloak.localhost (resolves
   # to loopback on the host; mapped to the host gateway inside containers).
   keycloak:
-    image: keycloak/keycloak:26.8.2-2
+    image: keycloak/keycloak:26.8.2-3
     command: ["start-dev", "--import-realm"]
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
@@ -152,7 +152,7 @@ services:
   #   pnpm testenv:large
   # Not part of `testenv:up`, so the regular suites stay fast.
   basyx-large-db:
-    image: postgres:18
+    image: postgres:19
     profiles: [large]
     environment:
       PGPASSWORD: postgres
@@ -206,7 +206,7 @@ services:
   # About 110 twins of a fictitious bottling plant, generated on demand:
   #   pnpm testenv:demo        (pnpm testenv:demo:live animates its live data)
   basyx-demo-db:
-    image: postgres:18
+    image: postgres:19
     profiles: [demo]
     environment:
       PGPASSWORD: postgres
