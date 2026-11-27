@@ -43,7 +43,7 @@
   },
   "dependencies": {
     "@aas-core-works/aas-core3.1-typescript": "^1.0.1",
-    "@agentclientprotocol/claude-agent-acp": "0.109.0",
+    "@agentclientprotocol/claude-agent-acp": "0.112.0",
     "@agentclientprotocol/codex-acp": "2.12.0",
     "@agentclientprotocol/sdk": "2.12.0",
     "@electric-sql/pglite": "^0.6.0",
